@@ -1,21 +1,21 @@
-# TEAM CHARTER
+# ORCA TEAM CHARTER
 
 ## Member 1 - Workflow
 
 ### Team Members
 - Shatha
-- Yara
 - Fatima
-- Hadeel
+- Abd alHadi
+- Saja
 
 ### Branch Strategy
-Each team member works on her own branch.
+Each team member works on their own branch.
 
 - feature/charter-shatha
-- feature/charter-yara
 - feature/charter-fatima
-- feature/charter-hadeel
-
+- feature/charter-abd-al-hadi
+- feature/charter-saja
+- 
 The `main` branch is only for the final approved version.
 
 ### Commit Rules
