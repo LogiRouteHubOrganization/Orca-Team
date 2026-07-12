@@ -7,6 +7,7 @@
 - Fatima
 - Abd alHadi
 - Saja
+- Raghad
 
 ### Branch Strategy
 Each team member works on their own branch.
@@ -15,7 +16,8 @@ Each team member works on their own branch.
 - feature/charter-fatima
 - feature/charter-abd-al-hadi
 - feature/charter-saja
-- 
+- feature/charcter-raghad
+
 The `main` branch is only for the final approved version.
 
 ### Commit Rules
