@@ -266,6 +266,44 @@ Examples of small improvements:
 You don't need to rewrite the entire project—small continuous improvements make the whole project cleaner over time.
 
 
+## Member 3 - Communication & SLAs
+
+1) Communication Channels
+
+- The team will use WhatsApp as the main communication channel for quick updates, questions, and coordination.
+- Trello may be used to organize tasks, track progress, and clarify who is responsible for each part.
+- Miro may be used for visual planning, such as mapping the Git workflow, organizing team responsibilities, and tracking task progress.
+
+2) Team Communication Rules
+
+- All team communication should be clear, respectful, and focused on the assigned tasks.
+- Each team member is responsible for sharing progress updates, asking for clarification when needed, and informing the team about any blockers that may affect the workflow.
+- Major decisions, task changes, or updates that affect other team members should be discussed before being applied.
+- Team members should avoid editing another member's assigned section without prior discussion or approval.
+
+3) Standing Follow-up Times
+
+- The team should have regular follow-ups to keep the work organized and avoid delays.
+- Each team member should share completed work, pending tasks, and blockers during the follow-up.
+- The team may agree on a suitable follow-up time through WhatsApp based on members' availability.
+- Before the final submission, the team should review the full TEAM_CHARTER.md file together to make sure all sections are complete and consistent.
+
+4) Peer Review Rules
+
+- All Pull Requests must be reviewed before being merged into the main branch.
+- Each Pull Request should include a clear title, a short description of the changes, and should be related to one specific task or section.
+- Reviewers should check clarity, formatting, naming, and whether the changes match the assigned responsibility.
+- Feedback should be respectful, specific, and focused on improving the work.
+- The Pull Request author should apply the required changes before requesting final approval.
+- At least two team members should approve the Pull Request before it is merged.
+
+5) Response Time and SLA Boundaries
+
+- Team members should respond to normal messages within 24 hours whenever possible.
+- Urgent issues related to Pull Requests, merge conflicts, or blocked tasks should be handled as soon as possible.
+- Pull Requests should be reviewed within 24 hours when possible to avoid delaying the team workflow.
+- If a team member is unavailable or unable to complete a task on time, they should inform the team early.
+- No changes should be merged into the main branch without the required review and approval.
 
 **4. Project Architecture & Repository Rules**
 
