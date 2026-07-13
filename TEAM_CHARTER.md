@@ -503,5 +503,49 @@ That honesty is what turns a group of individuals into a team worth being part o
 
 
 
+## 6. Security and Data Protection Guidelines
 
+### 6.1 Secure Coding Practices
 
+The team should follow secure coding practices to reduce vulnerabilities and protect the system from potential threats.
+
+The following rules should be followed:
+
+- Never store passwords, API keys, or sensitive information directly in the source code.
+- Validate all user inputs before processing them.
+- Avoid exposing sensitive information in error messages or logs.
+- Keep dependencies and libraries updated to reduce security risks.
+- Follow the principle of least privilege when designing system components.
+
+### 6.2 Data Protection Rules
+
+The team must ensure that project data is handled responsibly.
+
+Guidelines:
+
+- Sensitive user data should only be collected when necessary.
+- Data access should be limited to authorized components.
+- Personal information should not be shared outside the project environment.
+- Backup and recovery procedures should be considered for important project data.
+
+### 6.3 Security Review Process
+
+Before merging major changes, team members should consider possible security impacts.
+
+The review process includes:
+
+- Checking for exposed credentials or sensitive files.
+- Reviewing input validation and authentication logic.
+- Ensuring that new features do not introduce unnecessary risks.
+- Reporting security concerns immediately to the team.
+
+### 6.4 Responsibility and Awareness
+
+Security is a shared responsibility among all team members.
+
+Each member should:
+
+- Follow security guidelines during development.
+- Report discovered vulnerabilities or risks.
+- Learn and apply secure development practices.
+- Consider security when designing, implementing, and reviewing features.
