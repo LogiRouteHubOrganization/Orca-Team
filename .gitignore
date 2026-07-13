@@ -1,2 +1,5 @@
+# IntelliJ IDEA local files
 .idea/
 *.iml
+out/
+gen/
