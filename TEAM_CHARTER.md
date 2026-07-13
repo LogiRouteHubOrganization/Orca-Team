@@ -265,3 +265,175 @@ Examples of small improvements:
 •	Remove unused code. 
 You don't need to rewrite the entire project—small continuous improvements make the whole project cleaner over time.
 
+
+
+**4. Project Architecture & Repository Rules**
+
+## 4.1 Project Architecture Overview
+
+The project architecture is designed to maintain a clear separation of responsibilities, improve scalability, and make the system easier to understand, test, and maintain.
+
+The team will follow a modular architecture where each component has a specific responsibility and communicates with other components through well-defined interfaces.
+
+The main goals of this architecture are:
+
+- Maintain clean and organized project structure.
+- Reduce code dependency between components.
+- Improve scalability for future features.
+- Make testing and debugging easier.
+
+
+## 4.2 Directory Structure
+
+The project will follow the following directory organization:
+src/
+│
+├── main/
+│ │
+│ ├── controller/
+│ ├── service/
+│ ├── repository/
+│ ├── model/
+│ ├── utils/
+│ ├── config/
+│ └── resources/
+│
+└── test/
+├── unit/
+└── integration/
+
+### Directory Responsibilities:
+
+### Controller Layer
+Responsible for handling user requests, receiving inputs, and communicating with the service layer.
+
+### Service Layer
+Contains the main business logic and application rules.
+
+### Repository Layer
+Responsible for managing data access and communication with databases or external storage.
+
+### Model Layer
+Contains the main data objects and entities used throughout the application.
+
+### Utils Layer
+Contains reusable helper functions and common utilities.
+
+### Config Layer
+Contains application configuration files and environment settings.
+
+### Test Layer
+Contains automated tests to verify system functionality and reliability.
+
+
+
+## 4.3 Package Organization
+
+The project packages should follow a feature-based and responsibility-driven structure.
+
+Example:
+com.projectname
+
+├── controller
+├── service
+├── repository
+├── model
+├── exception
+├── security
+├── utils
+└── config
+**Package names should be:**
+- Clear and meaningful.
+- Written using lowercase letters.
+- Organized according to their responsibility.
+
+## 4.4 Use Case Organization
+
+The system functionality will be divided into independent use cases.
+
+Each use case should represent a specific user goal or business operation.
+
+Example:
+usecases/
+
+├── authentication/
+│ ├── Login
+│ └── Register
+│
+├── userManagement/
+│ ├── CreateUser
+│ └── UpdateUser
+│
+└── reporting/
+├── GenerateReport
+└── ExportData
+
+**Benefits:**
+- Easier feature development.
+- Better separation of business logic.
+- Simpler testing process.
+- Easier future modifications.
+
+## 4.5 Repository Management Rules
+
+To maintain a clean and professional repository:
+- Only required source files should be committed.
+- Temporary files and generated files must not be pushed.
+- Sensitive information such as passwords, API keys, and private credentials must never be stored in the repository.
+- Every contribution must follow the defined Git workflow.
+- All changes must be introduced through Pull Requests.
+
+## 4.6 .gitignore Configuration
+
+The `.gitignore` file is used to prevent unnecessary files from being uploaded to the repository.
+
+## Purpose:
+Keep the repository clean.
+Avoid uploading machine-specific settings.
+Prevent sensitive data exposure.
+Reduce unnecessary repository size.
+
+**The following files should be excluded:**
+
+**gitignore**
+
+1.IDE files
+.idea/
+.vscode/
+*.iml
+
+2.Build files
+build/
+target/
+out/
+
+3.Compiled files
+*.class
+*.jar
+
+4.Logs
+*.log
+
+5.Environment files
+.env
+6.Operating system files
+.DS_Store
+Thumbs.db 
+
+## 4.7 Architecture Maintenance Guidelines
+
+The architecture should evolve with the project while maintaining consistency.
+
+Before introducing major structural changes:
+
+Discuss the change with team members.
+Evaluate the impact on existing components.
+Update documentation if needed.
+Ensure the project build and tests remain successful.
+
+
+
+
+
+
+
