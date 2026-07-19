@@ -6,7 +6,7 @@ fun main() {
   val packageFilePath = "src/main/resources/packages.csv"
   val packageParser = PackageParser()
 
-  val packages = packageParser.parse(filePath)
+  val packages = packageParser.parse( packageFilePath)
 
   packages.forEach { logisticsPackage ->
     println(logisticsPackage)
@@ -16,7 +16,7 @@ fun main() {
     val warehouseFilePath = "src/main/resources/warehouses.csv"
 
     println("Starting Warehouse Data Pipeline...")
-    val parsedWarehouses = WarehouseParser.parseWarehouses(filePath)
+    val parsedWarehouses = WarehouseParser.parseWarehouses(warehouseFilePath)
 
     println("\n--- Verification Results ---")
     println("Successfully parsed records count: ${parsedWarehouses.size}")
