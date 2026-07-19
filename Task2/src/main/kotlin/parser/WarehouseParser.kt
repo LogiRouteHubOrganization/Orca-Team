@@ -3,49 +3,65 @@ package parser
 import java.io.File
 import model.Warehouse
 
-object WarehouseParser {
+private const val EXPECTED_COLUMN_COUNT = 3
+private const val COLUMN_INDEX_ID = 0
+private const val COLUMN_INDEX_NAME = 1
+private const val COLUMN_INDEX_RegionalZone = 2
+private const val HEADER_LINE_COUNT = 1
 
-    //Parses the warehouses CSV file, handles edge cases, and returns a clean list of Warehouse models.
+private fun isRowStructureInvalid(columns: List<String>): Boolean {
+    return columns.size < EXPECTED_COLUMN_COUNT
+}
 
-    fun parseWarehouses(filePath: String): List<Warehouse> {
-        val warehouses = mutableListOf<Warehouse>()
-        val file = File(filePath)
+private fun areFieldsEmpty(id: String, name: String, regionalZone: String): Boolean {
+    return id.isEmpty() || name.isEmpty() || regionalZone.isEmpty()
+}
 
-        //  Ensure the file exists before processing to prevent application crashes
-        if (!file.exists()) {
-            println("Error: File not found at $filePath")
-            return warehouses
-        }
+private fun buildWarehouseFromColumns(columns: List<String>, originalRow: String): Warehouse? {
+    val id = columns[COLUMN_INDEX_ID].trim()
+    val name = columns[COLUMN_INDEX_NAME].trim()
+    val regionalZone = columns[COLUMN_INDEX_RegionalZone].trim()
 
-        val lines = file.readLines()
+    if (areFieldsEmpty(id, name, regionalZone)) {
+        println("Diagnostic Warning: Skipping row with empty fields: '$originalRow'")
+        return null
+    }
+    return Warehouse(id = id, name = name, regionalZone = regionalZone)
+}
 
-        //  Drop the first header line and ignore completely blank or whitespace-only lines
-        val dataLines = lines.drop(1).filter { it.isNotBlank() }
+private fun parseWarehouseRow(row: String): Warehouse? {
+    val trimmedRow = row.trim()
 
-        for ((index, line) in dataLines.withIndex()) {
+    if (trimmedRow.isEmpty()) {
+        return null
+    }
+    val columns = trimmedRow.split(",")
 
-            // Edge Case 1: Split the row by commas and trim leading/trailing whitespaces from each token
-            val tokens = line.split(",").map { it.trim() }
+    if (isRowStructureInvalid(columns)) {
+        println("Diagnostic Warning: Skipping malformed row due to missing columns: '$row'")
+        return null
+    }
+    return buildWarehouseFromColumns(columns, row)
+}
 
-            // Edge Case 2: Validate column count and critical data presence (Must have at least 3 columns)
+fun parseWarehousesFile(warehouseFile: File): List<Warehouse> {
+    val warehouses = mutableListOf<Warehouse>()
 
-            if (tokens.size < 3 || tokens[0].isEmpty() || tokens[1].isEmpty()) {
-                println("Diagnostic Warning [Line ${index + 2}]: Column count mismatch or missing critical data. Skipping row: \"$line\"")
-                continue
-            }
-
-            val id = tokens[0]
-            val name = tokens[1]
-
-            // Edge Case 4: Standardize priority/string values case-insensitively
-
-            val regionalZone = if (tokens[2].isEmpty()) "UNKNOWN" else tokens[2].uppercase()
-
-            // Add the successfully validated and cleaned record to the final list
-            warehouses.add(Warehouse(id, name, regionalZone))
-        }
-
+    if (!warehouseFile.exists()) {
+        println("Diagnostic Warning: File ${warehouseFile.name} does not exist.")
         return warehouses
     }
 
+    val WarehouseRows = warehouseFile.readLines()
+    val dataRows = WarehouseRows.drop(HEADER_LINE_COUNT)
+
+    for (warehouseRow in dataRows) {
+        val warehouse = parseWarehouseRow(warehouseRow)
+
+        if (warehouse != null) {
+            warehouses.add(warehouse)
+        }
+    }
+    return warehouses
 }
+

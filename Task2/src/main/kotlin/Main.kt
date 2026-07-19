@@ -1,17 +1,21 @@
-import parser.WarehouseParser
+import parser.parseWarehousesFile
+import java.io.File
+
+private const val WAREHOUSE_FILE_PATH = "src/main/resources/warehouses.csv"
 
 fun main() {
 
-    val filePath = "src/main/resources/warehouses.csv"
+    println("--- Starting Logistics Data Initialization ---")
 
-    println("Starting Warehouse Data Pipeline...")
-    val parsedWarehouses = WarehouseParser.parseWarehouses(filePath)
+    val warehouseCsvFile = File(WAREHOUSE_FILE_PATH)
+    val loadedWarehouses = parseWarehousesFile(warehouseCsvFile)
 
-    println("\n--- Verification Results ---")
-    println("Successfully parsed records count: ${parsedWarehouses.size}")
+    println("Successfully parsed ${loadedWarehouses.size} valid warehouse records.")
 
-    println("\nSample of Parsed Warehouses:")
-    parsedWarehouses.take(5).forEach { warehouse ->
-        println(warehouse)
+    println("--- Detailed Warehouse Records ---")
+
+    for (warehouse in loadedWarehouses) {
+        println("ID: ${warehouse.id} | Name: ${warehouse.name} | Location: ${warehouse.regionalZone}")
     }
+    println("--- Data Initialization Complete ---")
 }
