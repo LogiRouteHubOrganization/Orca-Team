@@ -10,6 +10,7 @@ fun main() {
 
   packages.forEach { logisticsPackage ->
     println(logisticsPackage)
+  }
  
   println("\n******************************************************\n")
   
@@ -23,6 +24,6 @@ fun main() {
 
     println("\nSample of Parsed Warehouses:")
     parsedWarehouses.take(5).forEach { warehouse ->
-        println(warehouse)
-   
+        println(warehouse) 
+}
 }
