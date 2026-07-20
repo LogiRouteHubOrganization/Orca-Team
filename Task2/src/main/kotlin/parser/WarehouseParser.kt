@@ -9,8 +9,8 @@ private const val COLUMN_INDEX_NAME = 1
 private const val COLUMN_INDEX_RegionalZone = 2
 private const val HEADER_LINE_COUNT = 1
 
-private fun isRowStructureInvalid(columns: List<String>): Boolean {
-    return columns.size < EXPECTED_COLUMN_COUNT
+private fun isColumnCountInvalid(columns: List<String>): Boolean {
+    return columns.size != EXPECTED_COLUMN_COUNT
 }
 
 private fun areFieldsEmpty(id: String, name: String, regionalZone: String): Boolean {
@@ -37,7 +37,7 @@ private fun parseWarehouseRow(row: String): Warehouse? {
     }
     val columns = trimmedRow.split(",")
 
-    if (isRowStructureInvalid(columns)) {
+    if (isColumnCountInvalid(columns)) {
         println("Diagnostic Warning: Skipping malformed row due to missing columns: '$row'")
         return null
     }
