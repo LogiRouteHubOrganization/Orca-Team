@@ -13,20 +13,20 @@ private fun isColumnCountInvalid(columns: List<String>): Boolean {
     return columns.size != EXPECTED_COLUMN_COUNT
 }
 
-private fun areFieldsEmpty(id: String, name: String, regionalZone: String): Boolean {
-    return id.isEmpty() || name.isEmpty() || regionalZone.isEmpty()
+private fun areFieldsEmpty(warehouseId: String, warehousename: String, regionalZone: String): Boolean {
+    return warehouseId.isEmpty() ||warehousename.isEmpty() || regionalZone.isEmpty()
 }
 
 private fun buildWarehouseFromColumns(columns: List<String>, originalRow: String): Warehouse? {
-    val id = columns[COLUMN_INDEX_ID].trim()
-    val name = columns[COLUMN_INDEX_NAME].trim()
+    val warehouseId = columns[COLUMN_INDEX_ID].trim()
+    val warehousename = columns[COLUMN_INDEX_NAME].trim()
     val regionalZone = columns[COLUMN_INDEX_RegionalZone].trim()
 
-    if (areFieldsEmpty(id, name, regionalZone)) {
+    if (areFieldsEmpty(warehouseId , warehousename, regionalZone)) {
         println("Diagnostic Warning: Skipping row with empty fields: '$originalRow'")
         return null
     }
-    return Warehouse(id = id, name = name, regionalZone = regionalZone)
+    return Warehouse(warehouseId = warehouseId , warehousename = warehousename, regionalZone = regionalZone)
 }
 
 private fun parseWarehouseRow(row: String): Warehouse? {

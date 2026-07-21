@@ -15,7 +15,7 @@ fun main() {
     println("--- Detailed Warehouse Records ---")
 
     for (warehouse in loadedWarehouses) {
-        println("ID: ${warehouse.id} | Name: ${warehouse.name} | Location: ${warehouse.regionalZone}")
+        println("ID: ${warehouse.warehouseId} | Name: ${warehouse.warehousename} | Location: ${warehouse.regionalZone}")
     }
     println("--- Data Initialization Complete ---")
 }
