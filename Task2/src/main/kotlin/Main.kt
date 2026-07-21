@@ -1,5 +1,6 @@
-import parser.parseWarehousesFile
 import java.io.File
+import parser.parseWarehousesFile
+import parser.parseRoute
 import parser.PackageParser
 fun main() {
 
@@ -27,5 +28,17 @@ for (warehouse in loadedWarehouses) {
         println("ID: ${warehouse.id} | Name: ${warehouse.name} | Location: ${warehouse.regionalZone}")
     }
     println("--- Data Initialization Complete ---")
+    
+    print("\n*************************************************************\n")
+
+    val routeFilePath = "src/main/resources/routes.csv"
+
+    val routes = parseRoute(routeFilePath)
+
+    for (route in routes) {
+        println(route)
+    }
+    
 
 }
+
