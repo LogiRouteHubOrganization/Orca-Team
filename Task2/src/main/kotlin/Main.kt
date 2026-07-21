@@ -30,10 +30,14 @@ fun main() {
 
 
     }
-    val routes =parseRoute("routes.csv")
 
-    routes.forEach {
-        println(it)
+print("..............................................")
+
+    val routeFilePath = "src/main/resources/routes.csv"
+
+    val routes = parseRoute(routeFilePath)
+
+    for (route in routes) {
+        println(route)
     }
-
-}
+    }
