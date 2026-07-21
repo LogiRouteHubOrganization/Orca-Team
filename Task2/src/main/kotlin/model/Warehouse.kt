@@ -1,6 +1,7 @@
 package model
 
-data class Warehouse(
+
+data class warehouseRow(
     val warehouseId: String,
     val warehousename: String,
     val regionalZone: String
