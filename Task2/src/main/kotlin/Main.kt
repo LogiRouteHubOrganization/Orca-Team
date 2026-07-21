@@ -1,37 +1,35 @@
-import parser.PackageParser
-import parser.WarehouseParser
+import java.io.File
+import parser.parseWarehousesFile
 import parser.parseRoute
+import parser.PackageParser
 fun main() {
-    val packageFilePath = "src/main/resources/packages.csv"
-    val packageParser = PackageParser()
 
-    val packages = packageParser.parse(packageFilePath)
+  val packageFilePath = "src/main/resources/packages.csv"
+  val packageParser = PackageParser()
 
-    packages.forEach { logisticsPackage ->
-        println(logisticsPackage)
+  val logisticsPackageRows =
+    packageParser.readLogisticsPackageRowsFromFile(packageFilePath)
 
-        println("\n******************************************************\n")
+  logisticsPackageRows.forEach { logisticsPackageRow ->
+    println(logisticsPackageRow)
+    
+}
+  println("\n******************************************************\n")
+  
+    val WAREHOUSE_FILE_PATH = "src/main/resources/warehouses.csv"
+    println("Starting Warehouse Data Pipeline...")
+    val warehouseCsvFile = File(WAREHOUSE_FILE_PATH)
+    val loadedWarehouses = parseWarehousesFile(warehouseCsvFile)
+    println("Successfully parsed ${loadedWarehouses.size} valid warehouse records.")
 
-        val warehouseFilePath = "src/main/resources/warehouses.csv"
+    println("--- Detailed Warehouse Records ---")
 
-        println("Starting Warehouse Data Pipeline...")
-        val parsedWarehouses = WarehouseParser.parseWarehouses(packageFilePath)
-
-        println("\n--- Verification Results ---")
-        println("Successfully parsed records count: ${parsedWarehouses.size}")
-
-        println("\nSample of Parsed Warehouses:")
-        parsedWarehouses.take(5).forEach { warehouse ->
-            println(warehouse)
-
-        }
-
-
-
-
+for (warehouse in loadedWarehouses) {
+        println("ID: ${warehouse.id} | Name: ${warehouse.name} | Location: ${warehouse.regionalZone}")
     }
-
-print("..............................................")
+    println("--- Data Initialization Complete ---")
+    
+    print("\n*************************************************************\n")
 
     val routeFilePath = "src/main/resources/routes.csv"
 
@@ -40,4 +38,7 @@ print("..............................................")
     for (route in routes) {
         println(route)
     }
-    }
+    
+
+}
+
