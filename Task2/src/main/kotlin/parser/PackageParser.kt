@@ -1,44 +1,44 @@
 package parser
 
-import model.LogisticsPackage
+import model.LogisticsPackageRow
 import java.io.File
 
 class PackageParser {
 
-    fun parse(filePath: String): List<LogisticsPackage> {
-        val packageLines = readPackageLines(filePath)
+    fun readLogisticsPackageRowsFromFile(filePath: String): List<LogisticsPackageRow> {
+        val packageCsvRows = readPackageCsvRows(filePath)
 
-        return packageLines
+        return packageCsvRows
             .drop(1)
-            .mapNotNull(::createPackage)
+            .mapNotNull { packageCsvRow ->
+                createLogisticsPackageRow(packageCsvRow)
+            }
     }
 
-    private fun readPackageLines(filePath: String): List<String> {
+    private fun readPackageCsvRows(filePath: String): List<String> {
         return File(filePath).readLines()
     }
 
-    private fun createPackage(line: String): LogisticsPackage? {
-        val columns = line.split(COLUMN_SEPARATOR)
+    private fun createLogisticsPackageRow(packageCsvRow: String): LogisticsPackageRow? {
+        val csvSeparator = ","
+        val expectedColumnCount = 4
+        val packageIdColumnIndex = 0
+        val weightColumnIndex = 1
+        val destinationHubIdColumnIndex = 2
+        val priorityColumnIndex = 3
 
-        if (columns.size != EXPECTED_COLUMN_COUNT) {
+        val packageColumns = packageCsvRow.split(csvSeparator )
+
+
+        if (packageColumns.size != expectedColumnCount) {
             return null
         }
 
-        return LogisticsPackage(
-            id = columns[ID_INDEX].trim(),
-            weight = columns[WEIGHT_INDEX].trim(),
-            destinationHubId = columns[DESTINATION_HUB_INDEX].trim(),
-            priority = columns[PRIORITY_INDEX].trim()
+        return LogisticsPackageRow(
+            id = packageColumns[packageIdColumnIndex].trim(),
+            weight = packageColumns[weightColumnIndex].trim(),
+            destinationHubId = packageColumns[destinationHubIdColumnIndex].trim(),
+            priority = packageColumns[priorityColumnIndex].trim()
         )
-    }
-
-    companion object {
-        private const val COLUMN_SEPARATOR = ","
-        private const val EXPECTED_COLUMN_COUNT = 4
-
-        private const val ID_INDEX = 0
-        private const val WEIGHT_INDEX = 1
-        private const val DESTINATION_HUB_INDEX = 2
-        private const val PRIORITY_INDEX = 3
     }
 }

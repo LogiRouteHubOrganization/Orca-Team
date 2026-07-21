@@ -1,6 +1,7 @@
 package model
 
-data class LogisticsPackage(
+
+data class LogisticsPackageRow(
     val id: String,
     val weight: String,
     val destinationHubId: String,
