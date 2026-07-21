@@ -9,7 +9,6 @@ fun main() {
   val packages = packageParser.parse( packageFilePath)
 
     println("--- Starting Logistics Data Initialization ---")
-    println("Successfully parsed ${loadedWarehouses.size} valid warehouse records.")
   packages.forEach { logisticsPackage ->
     println(logisticsPackage)
   }
