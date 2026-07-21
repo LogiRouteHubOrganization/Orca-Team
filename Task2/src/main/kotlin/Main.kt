@@ -1,18 +1,18 @@
 import parser.parseWarehousesFile
 import java.io.File
 import parser.PackageParser
-
 fun main() {
+
   val packageFilePath = "src/main/resources/packages.csv"
   val packageParser = PackageParser()
 
-  val packages = packageParser.parse( packageFilePath)
+  val logisticsPackageRows =
+    packageParser.readLogisticsPackageRowsFromFile(packageFilePath)
 
-    println("--- Starting Logistics Data Initialization ---")
-  packages.forEach { logisticsPackage ->
-    println(logisticsPackage)
-  }
- 
+  logisticsPackageRows.forEach { logisticsPackageRow ->
+    println(logisticsPackageRow)
+    
+}
   println("\n******************************************************\n")
   
     val WAREHOUSE_FILE_PATH = "src/main/resources/warehouses.csv"
