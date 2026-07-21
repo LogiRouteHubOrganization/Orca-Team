@@ -1,377 +1,409 @@
-# ORCA TEAM CHARTER
+# ORCA Team Charter
 
-## Member 1 - Workflow
+This charter defines how the ORCA team collaborates, writes code, manages the repository, reviews contributions, and protects project data.
 
-### Team Members
-- Shatha
-- Fatima
-- Abd alHadi
-- Saja
-- Raghad
+## Table of Contents
 
-### Branch Strategy
-Each team member works on their own branch.
+1. [Workflow](#1-workflow)
+2. [Clean Code Standards](#2-clean-code-standards)
+3. [Communication and SLAs](#3-communication-and-slas)
+4. [Project Architecture and Repository Rules](#4-project-architecture-and-repository-rules)
+5. [Continuous Improvement and Team Growth](#5-continuous-improvement-and-team-growth)
+6. [Security and Data Protection](#6-security-and-data-protection)
 
-- feature/charter-shatha
-- feature/charter-fatima
-- feature/charter-abd-al-hadi
-- feature/charter-saja
-- feature/charcter-raghad
+---
 
-The `main` branch is only for the final approved version.
+## 1. Workflow
 
-### Commit Rules
+**Prepared by:** Shatha
+
+### 1.1 Team Members
+
+| Member Number | Name        |
+|---------------|-------------|
+| Member 1      | Shatha      |
+| Member 2      | Raghad      |
+| Member 3      | Abd Al Hade |
+| Member 4      | Fatima      |
+| Member 5      | Saja        |
+
+### 1.2 Branch Strategy
+
+Each team member works on a separate branch:
+
+- `feature/charter-shatha`
+- `feature/charter-fatima`
+- `feature/charter-abd-al-hade`
+- `feature/charter-saja`
+- `feature/charter-raghad`
+
+The `main` branch contains only reviewed and approved work.
+
+### 1.3 Commit Rules
+
 - Write clear commit messages.
-- Each commit should describe one change.
+- Keep each commit focused on one logical change.
+- Use a suitable commit type when possible.
 
 Examples:
-- docs: add workflow section
-- docs: update clean standards
-- fix: correct typo
 
-### Pull Request Workflow
-1. Create a feature branch.
-2. Complete the assigned task.
-3. Commit the changes.
+```text
+docs: add workflow section
+docs: update clean code standards
+fix: correct typo
+```
+
+### 1.4 Pull Request Workflow
+
+1. Create a branch for the assigned task.
+2. Complete and review the changes locally.
+3. Commit the changes with a clear message.
 4. Push the branch to GitHub.
-5. Create a Pull Request.
-6. Wait for at least two approvals before merging into `main`.
+5. Open a Pull Request.
+6. Address review feedback.
+7. Obtain at least two approvals before merging into `main`.
 
-### Merge Rules
-- Do not push directly to the `main` branch.
-- Merge conflicts should be resolved together by the team.
+### 1.5 Merge Rules
 
+- Do not push directly to `main`.
+- Every change must go through a Pull Request.
+- Merge conflicts should be resolved carefully and discussed with the team when needed.
+- Pull Requests must not be merged before the required reviews and approvals.
 
-## Member 2 -  Clean Code Rules
-1.	Write readable code.
-2.	Use clear and meaningful names.
-3.	Make each function perform only one task.
-4.	Reduce duplication by reusing functions.
-5.	Keep the code simple and straightforward.
-6.	Break large functions and classes into smaller components.
-7.	Pay attention to formatting and proper error handling.
-8.	Make your code easy to maintain.
-9.	Write tests for your code.
-10.	Leave the code cleaner than you found it.
+---
 
-1) Write Readable Code
-Your code should not only be understandable to you, but also to anyone who reads it later.
+## 2. Clean Code Standards
 
-A reader should quickly understand:
-•	What does the code do? 
-•	Where does the logic start and end? 
-•	What is the purpose of each part? 
+**Prepared by:** Fatima
 
-Clean code should not force the reader to analyze every line. Instead, its purpose should be clear at first glance.
-Example
-X Unclear:
+The team follows these core rules:
+
+1. Write readable code.
+2. Use clear and meaningful names.
+3. Make each function perform one task.
+4. Reduce duplication by reusing functions.
+5. Keep solutions simple.
+6. Break large functions and classes into smaller parts.
+7. Use consistent formatting and clear error handling.
+8. Keep code easy to maintain.
+9. Write tests for important behavior.
+10. Leave the code cleaner than you found it.
+
+### 2.1 Write Readable Code
+
+Code should be understandable to someone reading it for the first time. Its purpose and flow should be clear without requiring unnecessary analysis.
+
+Unclear:
+
+```kotlin
 val x = 10
 val y = 5
 val z = x * y
-Better Clearer:
+```
+
+Clearer:
+
+```kotlin
 val itemPrice = 10
 val quantity = 5
 val totalPrice = itemPrice * quantity
-The variable names explain the purpose, making the code much easier to read.
+```
 
+### 2.2 Use Clear and Meaningful Names
 
-2) Use Clear and Meaningful Names
-Variable, function, and class names should clearly describe their purpose.
-Good names reduce the need for comments because readers immediately understand what the code does.
+Names should describe the purpose of variables, functions, and classes.
+
 Avoid vague names such as:
-•	x 
-•	temp 
-•	data 
-•	num 
-•	value 
-Instead, use descriptive names like:
-•	studentName 
-•	totalPrice 
-•	isLoggedIn 
-•	calculateAverage() 
-Example
-X
+
+- `x`
+- `temp`
+- `data`
+- `num`
+- `value`
+
+Prefer descriptive names such as:
+
+- `studentName`
+- `totalPrice`
+- `isLoggedIn`
+- `calculateAverage()`
+
+Unclear:
+
+```kotlin
 fun calc(a: Int, b: Int): Int {
     return a + b
 }
-Better
+```
+
+Clearer:
+
+```kotlin
 fun calculateSum(firstNumber: Int, secondNumber: Int): Int {
     return firstNumber + secondNumber
 }
-The second version is much clearer because the function and parameter names explain their purpose.
+```
 
+### 2.3 Make Each Function Do One Thing
 
-3) Make Each Function Do Only One Thing
-This is one of the most important principles of Clean Code.
-If a function reads data, performs calculations, prints results, and saves data to a database, it has too many responsibilities.
-Rule:
-Each function should have one single responsibility.
-Example
-X  A function doing multiple tasks:
-fun processStudent(student: Student) {
-    validateStudent(student)
-    val average = calculateAverage(student)
-    println(average)
-    saveStudent(student)
+A function should have one clear responsibility. Reading data, validating it, calculating results, printing output, and saving data should not all happen inside one large function.
+
+Prefer separating responsibilities:
+
+```kotlin
+data class Student(val grades: List<Double>)
+
+fun validateStudent(student: Student) {
+    require(student.grades.isNotEmpty()) { "Grades cannot be empty" }
 }
-This function:
-•	Validates the data 
-•	Calculates the average 
-•	Prints the result 
-•	Saves the student 
-That's four different responsibilities.
- Better:
-fun validateStudent(student: Student) { ... }
 
-fun calculateAverage(student: Student): Double { ... }
+fun calculateAverage(student: Student): Double {
+    return student.grades.average()
+}
 
-fun printAverage(average: Double) { ... }
+fun printAverage(average: Double) {
+    println(average)
+}
 
-fun saveStudent(student: Student) { ... }
-Now each function performs only one task, making the code easier to understand, test, and maintain.
+fun saveStudent(student: Student) {
+    println("Saving student with ${student.grades.size} grades")
+}
+```
 
+### 2.4 Reduce Duplication
 
-4) Reduce Duplication by Reusing Functions
-If you find yourself writing the same code repeatedly, it's usually a sign that something can be improved.
-Code duplication makes maintenance harder because every change must be applied in multiple places.
-Example
-X Repetition:
-val finalPrice1 = price1 - (price1 * 0.1)
-val finalPrice2 = price2 - (price2 * 0.1)
-val finalPrice3 = price3 - (price3 * 0.1)
+Repeated logic should be moved into a reusable function.
 
- Better:
+Instead of repeating the discount formula:
 
+```kotlin
 fun applyDiscount(price: Double): Double {
     return price - (price * 0.1)
 }
-Then use it like this:
-val finalPrice1 = applyDiscount(price1)
-val finalPrice2 = applyDiscount(price2)
-val finalPrice3 = applyDiscount(price3)
-If the discount formula changes, you only need to update it in one place.
+```
 
+The same function can then be reused wherever needed.
 
-5) Keep the Code Simple
-Clean code avoids unnecessary complexity.
-If there is a simpler way to express an idea, choose the simpler approach.
-Try to:
-•	Avoid overly complex conditions. 
-•	Avoid deeply nested if statements. 
-•	Avoid very long lines of code. 
-•	Avoid clever tricks that reduce readability. 
-Example
-X Complex:
-if ((age > 18 && hasId) || (isVip && !isBlocked && points > 100)) {
-    ...
+### 2.5 Keep the Code Simple
+
+Choose the clearest solution that meets the requirement.
+
+Avoid:
+
+- Deeply nested conditions.
+- Unnecessarily long functions.
+- Very long lines.
+- Clever shortcuts that reduce readability.
+
+For example:
+
+```kotlin
+fun isEligible(
+    age: Int,
+    hasId: Boolean,
+    isVip: Boolean,
+    isBlocked: Boolean,
+    points: Int
+): Boolean {
+    val isAdultWithId = age > 18 && hasId
+    val isEligibleVip = isVip && !isBlocked && points > 100
+
+    return isAdultWithId || isEligibleVip
 }
-Better  Clearer:
-val isAdultWithId = age > 18 && hasId
-val isEligibleVip = isVip && !isBlocked && points > 100
+```
 
-if (isAdultWithId || isEligibleVip) {
-    ...
+This is clearer than placing every condition directly inside one complex `if`.
+
+### 2.6 Break Large Components into Smaller Parts
+
+Large functions and classes should be divided into small, focused components.
+
+For example:
+
+```kotlin
+fun readStudentInput() {
+    TODO("Implementation goes here")
 }
-The logic is identical, but much easier to read.
 
-
-6) Break Large Functions and Classes into Smaller Parts
-Very long functions or large classes become difficult to understand and maintain.
-Instead:
-•	Keep functions short. 
-•	Give each class a single responsibility. 
-•	Divide code into small, logical components. 
-Example
-Instead of:
-fun handleStudent() {
-    readInput()
-    validateInput()
-    calculateResult()
-    printResult()
-    saveResult()
+fun validateStudentInput() {
+    TODO("Implementation goes here")
 }
-You can separate each task:
-fun readStudentInput() { ... }
 
-fun validateStudentInput() { ... }
-
-fun calculateStudentResult() { ... }
-
-fun printStudentResult() { ... }
-
-fun saveStudentResult() { ... }
-Each function now has a clear purpose and is easier to maintain and test.
-
-
-7) Pay Attention to Formatting and Error Handling
-Clean code is not only about correct logic—it should also be well organized.
-Good formatting improves readability, while proper error handling prevents runtime problems.
-Important practices include:
-•	Keep code neatly organized. 
-•	Use consistent spacing and indentation. 
-•	Follow a consistent brace style. 
-•	Write clear error messages. 
-•	Handle unexpected situations properly. 
-Example
-X fun divide(a: Int, b: Int): Int {
-    return a / b
+fun calculateStudentResult() {
+    TODO("Implementation goes here")
 }
-If b equals 0, the program will crash.
-Better
+
+fun printStudentResult() {
+    TODO("Implementation goes here")
+}
+
+fun saveStudentResult() {
+    TODO("Implementation goes here")
+}
+```
+
+### 2.7 Formatting and Error Handling
+
+- Use consistent indentation and spacing.
+- Follow one brace style.
+- Keep related code together.
+- Write clear error messages.
+- Handle invalid states predictably.
+
+Example:
+
+```kotlin
 fun divide(a: Int, b: Int): Int {
     require(b != 0) { "Divisor cannot be zero" }
     return a / b
 }
-Now the error is handled clearly and predictably.
+```
 
+### 2.8 Maintainability
 
-8) Make Your Code Easy to Maintain
-The goal isn't just to make your code work today—it should also be easy to modify in the future.
-Clean code allows you to add new features or fix bugs without affecting unrelated parts of the program.
+Code should be easy to change without affecting unrelated parts.
+
 To improve maintainability:
-•	Separate responsibilities. 
-•	Use descriptive names. 
-•	Reduce duplication. 
-•	Write small functions. 
-•	Avoid tightly coupling everything together. 
-When each function has a clear responsibility, modifying one part becomes much easier.
 
+- Separate responsibilities.
+- Use descriptive names.
+- Reduce duplication.
+- Keep functions small.
+- Avoid unnecessary coupling between components.
 
-9) Write Tests for Your Code
-Testing is an essential part of Clean Code.
-Tests verify that your code behaves as expected and protect it from future changes.
-Benefits of testing:
-•	Detects bugs quickly. 
-•	Increases confidence when making changes. 
-•	Prevents breaking existing functionality. 
-•	Helps explain what a function is supposed to do. 
-Example
+### 2.9 Testing
+
+Tests should verify important behavior and protect existing functionality from accidental changes.
+
+Example:
+
+```kotlin
 fun add(a: Int, b: Int): Int {
     return a + b
 }
-A simple test:
-assertEquals(5, add(2, 3))
-This confirms that the function works correctly.
 
+fun testAdd() {
+    check(add(2, 3) == 5)
+}
+```
 
-10) Leave the Code Cleaner Than You Found It
-This principle is known as the Boy Scout Rule.
-Whenever you modify a file or function, improve any small issues you notice instead of leaving them unchanged.
-Examples of small improvements:
-•	Rename a vague variable. 
-•	Remove duplicated code. 
-•	Split a long condition into meaningful variables. 
-•	Improve formatting. 
-•	Remove unused code. 
-You don't need to rewrite the entire project—small continuous improvements make the whole project cleaner over time.
+### 2.10 Leave the Code Cleaner
 
+Whenever a file is modified, improve small issues when it is safe and relevant.
 
-## Member 3 - Communication & SLAs
+Examples:
 
-1) Communication Channels
+- Rename a vague variable.
+- Remove duplicated or unused code.
+- Simplify a long condition.
+- Improve formatting.
+- Split an oversized function.
 
-- The team will use WhatsApp as the main communication channel for quick updates, questions, and coordination.
-- Trello may be used to organize tasks, track progress, and clarify who is responsible for each part.
-- Miro may be used for visual planning, such as mapping the Git workflow, organizing team responsibilities, and tracking task progress.
+Small, continuous improvements are preferred over unnecessary rewrites.
 
-2) Team Communication Rules
+---
 
-- All team communication should be clear, respectful, and focused on the assigned tasks.
-- Each team member is responsible for sharing progress updates, asking for clarification when needed, and informing the team about any blockers that may affect the workflow.
-- Major decisions, task changes, or updates that affect other team members should be discussed before being applied.
-- Team members should avoid editing another member's assigned section without prior discussion or approval.
+## 3. Communication and SLAs
 
-3) Standing Follow-up Times
+**Prepared by:** Abd Al Hade
 
-- The team should have regular follow-ups to keep the work organized and avoid delays.
-- Each team member should share completed work, pending tasks, and blockers during the follow-up.
-- The team may agree on a suitable follow-up time through WhatsApp based on members' availability.
-- Before the final submission, the team should review the full TEAM_CHARTER.md file together to make sure all sections are complete and consistent.
+### 3.1 Communication Channels
 
-4) Peer Review Rules
+- **WhatsApp:** Main channel for quick updates, questions, and coordination.
+- **Trello:** Optional tool for task organization, ownership, and progress tracking.
+- **Miro:** Optional tool for visual planning, workflows, and responsibility mapping.
 
-- All Pull Requests must be reviewed before being merged into the main branch.
-- Each Pull Request should include a clear title, a short description of the changes, and should be related to one specific task or section.
-- Reviewers should check clarity, formatting, naming, and whether the changes match the assigned responsibility.
-- Feedback should be respectful, specific, and focused on improving the work.
-- The Pull Request author should apply the required changes before requesting final approval.
-- At least two team members should approve the Pull Request before it is merged.
+### 3.2 Communication Rules
 
-5) Response Time and SLA Boundaries
+- Keep communication clear, respectful, and task-focused.
+- Share progress, blockers, and questions early.
+- Discuss changes that affect other members before applying them.
+- Do not edit another member's assigned section without prior agreement.
 
-- Team members should respond to normal messages within 24 hours whenever possible.
-- Urgent issues related to Pull Requests, merge conflicts, or blocked tasks should be handled as soon as possible.
-- Pull Requests should be reviewed within 24 hours when possible to avoid delaying the team workflow.
-- If a team member is unavailable or unable to complete a task on time, they should inform the team early.
-- No changes should be merged into the main branch without the required review and approval.
+### 3.3 Follow-up Meetings
 
-**4. Project Architecture & Repository Rules**
+During follow-ups, each member should share:
 
-## 4.1 Project Architecture Overview
+- Completed work.
+- Pending work.
+- Current blockers.
+- Support needed from the team.
 
-The project architecture is designed to maintain a clear separation of responsibilities, improve scalability, and make the system easier to understand, test, and maintain.
+The team may agree on suitable meeting times through WhatsApp. Before final submission, the full `TEAM_CHARTER.md` must be reviewed for completeness and consistency.
 
-The team will follow a modular architecture where each component has a specific responsibility and communicates with other components through well-defined interfaces.
+### 3.4 Peer Review Rules
 
-The main goals of this architecture are:
+- Every Pull Request must be reviewed before merging.
+- Each Pull Request should contain one focused task or section.
+- Titles and descriptions must clearly explain the change.
+- Reviewers should check correctness, clarity, formatting, naming, and scope.
+- Feedback must be respectful, specific, and actionable.
+- The author must address required changes before requesting final approval.
+- At least two team members must approve the Pull Request.
 
-- Maintain clean and organized project structure.
-- Reduce code dependency between components.
-- Improve scalability for future features.
+### 3.5 Response Time and SLA Boundaries
+
+| Item                                | Expected Response              |
+|-------------------------------------|--------------------------------|
+| Normal team messages                | Within 24 hours when possible  |
+| Pull Request reviews                | Within 24 hours when possible  |
+| Merge conflicts or blocked tasks    | As soon as possible            |
+| Expected delay or absence           | Inform the team early          |
+
+No change may be merged into `main` without the required review and approval.
+
+---
+
+## 4. Project Architecture and Repository Rules
+
+**Prepared by:** Raghad
+
+### 4.1 Architecture Overview
+
+The project follows a modular architecture. Each component has a clear responsibility and communicates with other components through defined boundaries.
+
+Main goals:
+
+- Maintain a clean and organized structure.
+- Reduce unnecessary dependencies.
+- Support future growth.
 - Make testing and debugging easier.
 
+### 4.2 Directory Structure
 
-## 4.2 Directory Structure
-
-The project will follow the following directory organization:
+```text
 src/
-│
 ├── main/
-│ │
-│ ├── controller/
-│ ├── service/
-│ ├── repository/
-│ ├── model/
-│ ├── utils/
-│ ├── config/
-│ └── resources/
-│
+│   ├── controller/
+│   ├── service/
+│   ├── repository/
+│   ├── model/
+│   ├── utils/
+│   ├── config/
+│   └── resources/
 └── test/
-├── unit/
-└── integration/
+    ├── unit/
+    └── integration/
+```
 
-### Directory Responsibilities:
+### 4.3 Directory Responsibilities
 
-### Controller Layer
-Responsible for handling user requests, receiving inputs, and communicating with the service layer.
+- **Controller:** Handles requests and inputs, then communicates with the service layer.
+- **Service:** Contains business logic and application rules.
+- **Repository:** Manages data access and external storage.
+- **Model:** Contains data objects and entities.
+- **Utils:** Contains reusable helper functions.
+- **Config:** Contains application configuration.
+- **Test:** Contains unit and integration tests.
 
-### Service Layer
-Contains the main business logic and application rules.
+### 4.4 Package Organization
 
-### Repository Layer
-Responsible for managing data access and communication with databases or external storage.
-
-### Model Layer
-Contains the main data objects and entities used throughout the application.
-
-### Utils Layer
-Contains reusable helper functions and common utilities.
-
-### Config Layer
-Contains application configuration files and environment settings.
-
-### Test Layer
-Contains automated tests to verify system functionality and reliability.
-
-
-
-## 4.3 Package Organization
-
-The project packages should follow a feature-based and responsibility-driven structure.
+Packages should be clear, lowercase, and grouped by responsibility.
 
 Example:
-com.projectname
 
+```text
+com.projectname
 ├── controller
 ├── service
 ├── repository
@@ -380,172 +412,170 @@ com.projectname
 ├── security
 ├── utils
 └── config
-**Package names should be:**
-- Clear and meaningful.
-- Written using lowercase letters.
-- Organized according to their responsibility.
+```
 
-## 4.4 Use Case Organization
+### 4.5 Use Case Organization
 
-The system functionality will be divided into independent use cases.
-
-Each use case should represent a specific user goal or business operation.
+Each use case should represent one user goal or business operation.
 
 Example:
+
+```text
 usecases/
-
 ├── authentication/
-│ ├── Login
-│ └── Register
-│
+│   ├── Login
+│   └── Register
 ├── userManagement/
-│ ├── CreateUser
-│ └── UpdateUser
-│
+│   ├── CreateUser
+│   └── UpdateUser
 └── reporting/
-├── GenerateReport
-└── ExportData
+    ├── GenerateReport
+    └── ExportData
+```
 
-**Benefits:**
-- Easier feature development.
+Benefits:
+
+- Clearer feature ownership.
 - Better separation of business logic.
-- Simpler testing process.
-- Easier future modifications.
+- Easier testing.
+- Safer future changes.
 
-## 4.5 Repository Management Rules
+### 4.6 Repository Management Rules
 
-To maintain a clean and professional repository:
-- Only required source files should be committed.
-- Temporary files and generated files must not be pushed.
-- Sensitive information such as passwords, API keys, and private credentials must never be stored in the repository.
-- Every contribution must follow the defined Git workflow.
-- All changes must be introduced through Pull Requests.
+- Commit only required source and configuration files.
+- Do not push temporary, generated, or machine-specific files.
+- Never store passwords, API keys, tokens, or private credentials in the repository.
+- Follow the agreed Git workflow.
+- Introduce all changes through Pull Requests.
 
-## 4.6 .gitignore Configuration
+### 4.7 `.gitignore` Configuration
 
-The `.gitignore` file is used to prevent unnecessary files from being uploaded to the repository.
+The `.gitignore` file keeps unnecessary and sensitive files out of the repository.
 
-## Purpose:
-Keep the repository clean.
-Avoid uploading machine-specific settings.
-Prevent sensitive data exposure.
-Reduce unnecessary repository size.
+Recommended entries:
 
-**The following files should be excluded:**
-
-**gitignore**
-
-1.IDE files
+```gitignore
+# IDE files
 .idea/
 .vscode/
 *.iml
 
-2.Build files
+# Build output
 build/
 target/
 out/
 
-3.Compiled files
+# Compiled files
 *.class
-*.jar
 
-4.Logs
+# Logs
 *.log
 
-5.Environment files
+# Environment files
 .env
-6.Operating system files
+
+# Operating system files
 .DS_Store
-Thumbs.db 
+Thumbs.db
+```
 
-## 4.7 Architecture Maintenance Guidelines
+> Note: Required project dependencies and build files should remain tracked when the project needs them.
 
-The architecture should evolve with the project while maintaining consistency.
+### 4.8 Architecture Maintenance
 
-Before introducing major structural changes:
+Before making a major structural change:
 
-Discuss the change with team members.
-Evaluate the impact on existing components.
-Update documentation if needed.
-Ensure the project build and tests remain successful.
+1. Discuss it with the team.
+2. Evaluate its effect on existing components.
+3. Update documentation when needed.
+4. Confirm that the project still builds successfully.
+5. Run relevant tests.
 
-5. Continuous Improvement & Team Growth
-  
-**"A team that learns together, leads together."**
+---
 
-**1. A Culture of Shared Learning**
-We are not just a team that builds — we are a team that grows. 
-Every late-night debugging session is an opportunity to sharpen our skills individually and collectively.
+## 5. Continuous Improvement and Team Growth
 
-Knowledge belongs to the team, not the individual. 
-We actively share what we learn — through quick technical walkthroughs, shared notes, and open discussions. If one of us discovers a better approach, the whole team adopts it.
-We lift each other up. No question is too basic, and no insight is too small to share. A teammate who asks is learning; a teammate who explains is reinforcing. Both win.
+**Prepared by:** Raghad
 
-**2. Feedback as a Tool for Excellence**
-We treat feedback not as criticism, but as a hints we give each other that will help us alot.
-When we review each other's work, we are not hunting for errors — we are raising the bar for the entire team. 
-Every comment is a chance to teach, learn, and align on quality standards.
-After every project delivery, we pause for a structured reflection: What went well? What slowed us down? What do we change next time? We celebrate progress and immediately act on lessons learned — no problem gets carried into the next phase unaddressed.
-**3. Innovation as a Team Responsibility**
-Continuous research and learning are not extras, they are essentials.
-We dig deeper, question assumptions, and pursue better ideas — because the best solution today might not be the best solution tomorrow.
+> A team that learns and grows together.
 
-We challenge "good enough." When a cleaner solution exists, we pursue it. When a modern tool can save hours of work, we evaluate it. We are not attached to the familiar if the unfamiliar is clearly better.
-Every team member owns the direction. Suggestions, experiments, and bold ideas are welcome from everyone — regardless of experience level. 
+### 5.1 Shared Learning
 
-Our measure of success is not just what we deliver — it is who we become by the time we deliver it.
-As **Robert C. Martin** reminds us in Clean Code:
+- Knowledge belongs to the team, not one individual.
+- Members should share useful discoveries through short walkthroughs, notes, or discussions.
+- Questions are welcome, regardless of experience level.
+- Explaining a concept helps both the learner and the person explaining it.
 
-"Honesty in small things is not a small thing."
+### 5.2 Feedback
 
-We commit to being honest with each other — in feedback, in code reviews to become a great team togather.
-That honesty is what turns a group of individuals into a team worth being part of.
+Feedback is a tool for improvement, not personal criticism.
 
+During reviews:
 
+- Focus on the work, not the person.
+- Explain the reason behind suggestions.
+- Keep comments respectful and actionable.
+- Use each review as an opportunity to align on quality standards.
 
-## 6. Security and Data Protection Guidelines
+After important deliveries, the team should reflect on:
+
+- What went well?
+- What caused delays?
+- What should change next time?
+- What actions should be carried into the next phase?
+
+### 5.3 Innovation
+
+Continuous learning and research are part of the team's responsibility.
+
+The team should:
+
+- Question assumptions when needed.
+- Consider cleaner solutions.
+- Evaluate tools that may save time or improve quality.
+- Welcome useful suggestions from every member.
+- Avoid changing tools or approaches without discussing their impact.
+
+The team values honesty, respectful feedback, shared responsibility, and continuous growth.
+
+---
+
+## 6. Security and Data Protection
+
+**Prepared by:** Saja
 
 ### 6.1 Secure Coding Practices
 
-The team should follow secure coding practices to reduce vulnerabilities and protect the system from potential threats.
-
-The following rules should be followed:
-
-- Never store passwords, API keys, or sensitive information directly in the source code.
-- Validate all user inputs before processing them.
-- Avoid exposing sensitive information in error messages or logs.
-- Keep dependencies and libraries updated to reduce security risks.
-- Follow the principle of least privilege when designing system components.
+- Never hard-code passwords, API keys, or sensitive information.
+- Validate user input before processing it.
+- Do not expose sensitive details in logs or error messages.
+- Keep dependencies updated when appropriate.
+- Follow the principle of least privilege.
 
 ### 6.2 Data Protection Rules
 
-The team must ensure that project data is handled responsibly.
+- Collect sensitive data only when necessary.
+- Limit data access to authorized components.
+- Do not share personal information outside the project environment.
+- Consider backup and recovery for important data.
 
-Guidelines:
+### 6.3 Security Review
 
-- Sensitive user data should only be collected when necessary.
-- Data access should be limited to authorized components.
-- Personal information should not be shared outside the project environment.
-- Backup and recovery procedures should be considered for important project data.
+Before merging major changes, reviewers should check for:
 
-### 6.3 Security Review Process
+- Exposed credentials or sensitive files.
+- Missing input validation.
+- Weak authentication or authorization logic.
+- Unnecessary access or permissions.
+- New risks introduced by the change.
 
-Before merging major changes, team members should consider possible security impacts.
+Security concerns must be reported to the team immediately.
 
-The review process includes:
+### 6.4 Shared Responsibility
 
-- Checking for exposed credentials or sensitive files.
-- Reviewing input validation and authentication logic.
-- Ensuring that new features do not introduce unnecessary risks.
-- Reporting security concerns immediately to the team.
+Every team member should:
 
-### 6.4 Responsibility and Awareness
-
-Security is a shared responsibility among all team members.
-
-Each member should:
-
-- Follow security guidelines during development.
-- Report discovered vulnerabilities or risks.
+- Follow the agreed security guidelines.
+- Report discovered risks.
 - Learn and apply secure development practices.
-- Consider security when designing, implementing, and reviewing features.
+- Consider security during design, implementation, and review.
