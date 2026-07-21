@@ -370,7 +370,7 @@ Main goals:
 - Make testing and debugging easier.
 
 ### 4.2 Directory Structure
-
+```
 src/
 ├── main/
 │───kotlin/
@@ -383,7 +383,7 @@ src/
     ├── unit/
     └── integration/
 
-
+```
 ### 4.3 Directory Responsibilities
 
 - **Controller:** Handles requests and inputs, then communicates with the service layer.
@@ -400,7 +400,7 @@ src/
 Each use case should represent one user goal or business operation.
 
 Example:
-
+```
 usecases/
 ├── authentication/
 │   ├── Login
@@ -411,7 +411,7 @@ usecases/
 └── reporting/
     ├── GenerateReport
     └── ExportData
-
+```
 Benefits:
 
 - Clearer feature ownership.
