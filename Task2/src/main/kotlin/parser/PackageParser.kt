@@ -36,7 +36,7 @@ class PackageParser {
 
         return LogisticsPackageRow(
             id = packageColumns[packageIdColumnIndex].trim(),
-            weight = packageColumns[weightColumnIndex].trim(),
+            packageWeight = packageColumns[weightColumnIndex].trim(),
             destinationHubId = packageColumns[destinationHubIdColumnIndex].trim(),
             priority = packageColumns[priorityColumnIndex].trim()
         )
