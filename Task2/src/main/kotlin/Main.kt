@@ -7,17 +7,14 @@ fun main() {
   val packageFilePath = "src/main/resources/packages.csv"
   val packageParser = PackageParser()
 
-  val logisticsPackageRows =
-    packageParser.readLogisticsPackageRowsFromFile(packageFilePath)
+  val logisticsPackageRows = packageParser.readLogisticsPackageRowsFromFile(packageFilePath)
 
   println()
   println("Successfully parsed packages: ${logisticsPackageRows.size}")
   println()
 
-  logisticsPackageRows.forEach { logisticsPackageRow ->
-    println(logisticsPackageRow)
+  logisticsPackageRows.forEach { logisticsPackageRow ->    println(logisticsPackageRow)
   }
-
   println()
   println("Package parsing completed.")
 }
