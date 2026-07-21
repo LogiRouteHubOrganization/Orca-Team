@@ -1,7 +1,7 @@
 package parser
 
 import java.io.File
-import model.Warehouse
+import model.warehouseRow
 
 private const val EXPECTED_COLUMN_COUNT = 3
 private const val COLUMN_INDEX_ID = 0
@@ -17,7 +17,7 @@ private fun areFieldsEmpty(warehouseId: String, warehousename: String, regionalZ
     return warehouseId.isEmpty() ||warehousename.isEmpty() || regionalZone.isEmpty()
 }
 
-private fun buildWarehouseFromColumns(columns: List<String>, originalRow: String): Warehouse? {
+private fun buildWarehouseFromColumns(columns: List<String>, originalRow: String): warehouseRow? {
     val warehouseId = columns[COLUMN_INDEX_ID].trim()
     val warehousename = columns[COLUMN_INDEX_NAME].trim()
     val regionalZone = columns[COLUMN_INDEX_RegionalZone].trim()
@@ -26,10 +26,10 @@ private fun buildWarehouseFromColumns(columns: List<String>, originalRow: String
         println("Diagnostic Warning: Skipping row with empty fields: '$originalRow'")
         return null
     }
-    return Warehouse(warehouseId = warehouseId , warehousename = warehousename, regionalZone = regionalZone)
+    return warehouseRow(warehouseId = warehouseId , warehousename = warehousename, regionalZone = regionalZone)
 }
 
-private fun parseWarehouseRow(row: String): Warehouse? {
+private fun parseWarehouseRow(row: String): warehouseRow? {
     val trimmedRow = row.trim()
 
     if (trimmedRow.isEmpty()) {
@@ -44,8 +44,8 @@ private fun parseWarehouseRow(row: String): Warehouse? {
     return buildWarehouseFromColumns(columns, row)
 }
 
-fun parseWarehousesFile(warehouseFile: File): List<Warehouse> {
-    val warehouses = mutableListOf<Warehouse>()
+fun parseWarehousesFile(warehouseFile: File): List<warehouseRow> {
+    val warehouses = mutableListOf<warehouseRow>()
 
     if (!warehouseFile.exists()) {
         println("Diagnostic Warning: File ${warehouseFile.name} does not exist.")
