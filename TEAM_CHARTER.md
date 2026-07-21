@@ -370,22 +370,20 @@ Main goals:
 - Make testing and debugging easier.
 
 ### 4.2 Directory Structure
-
-```text
+```
 src/
 ├── main/
-│   ├── controller/
-│   ├── service/
-│   ├── repository/
-│   ├── model/
-│   ├── utils/
-│   ├── config/
-│   └── resources/
+│───kotlin/
+│    ├── algorithms/
+│    ├── model/
+│    ├── parser/
+|    ├── Main.kt
+│─── resources/
 └── test/
     ├── unit/
     └── integration/
-```
 
+```
 ### 4.3 Directory Responsibilities
 
 - **Controller:** Handles requests and inputs, then communicates with the service layer.
@@ -396,31 +394,13 @@ src/
 - **Config:** Contains application configuration.
 - **Test:** Contains unit and integration tests.
 
-### 4.4 Package Organization
 
-Packages should be clear, lowercase, and grouped by responsibility.
-
-Example:
-
-```text
-com.projectname
-├── controller
-├── service
-├── repository
-├── model
-├── exception
-├── security
-├── utils
-└── config
-```
-
-### 4.5 Use Case Organization
+### 4.4 Use Case Organization
 
 Each use case should represent one user goal or business operation.
 
 Example:
-
-```text
+```
 usecases/
 ├── authentication/
 │   ├── Login
@@ -432,7 +412,6 @@ usecases/
     ├── GenerateReport
     └── ExportData
 ```
-
 Benefits:
 
 - Clearer feature ownership.
@@ -440,7 +419,7 @@ Benefits:
 - Easier testing.
 - Safer future changes.
 
-### 4.6 Repository Management Rules
+### 4.5 Repository Management Rules
 
 - Commit only required source and configuration files.
 - Do not push temporary, generated, or machine-specific files.
@@ -448,7 +427,7 @@ Benefits:
 - Follow the agreed Git workflow.
 - Introduce all changes through Pull Requests.
 
-### 4.7 `.gitignore` Configuration
+### 4.6 `.gitignore` Configuration
 
 The `.gitignore` file keeps unnecessary and sensitive files out of the repository.
 
@@ -481,7 +460,7 @@ Thumbs.db
 
 > Note: Required project dependencies and build files should remain tracked when the project needs them.
 
-### 4.8 Architecture Maintenance
+### 4.7 Architecture Maintenance
 
 Before making a major structural change:
 
