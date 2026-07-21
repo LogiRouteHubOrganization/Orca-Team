@@ -1,12 +1,10 @@
 
 import parser.PackageParser
-
 fun main() {
 
   println("=== Package Parser ===")
 
   val packageFilePath = "src/main/resources/packages.csv"
-
   val packageParser = PackageParser()
 
   val logisticsPackageRows =
