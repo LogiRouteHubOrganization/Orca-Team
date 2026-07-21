@@ -310,6 +310,7 @@ Small, continuous improvements are preferred over unnecessary rewrites.
 ### 3.1 Communication Channels
 
 - **WhatsApp:** Main channel for quick updates, questions, and coordination.
+- **Daily Meeting:** The team meets daily at 12:00 AM to review progress, discuss ongoing tasks, and resolve any issues.
 - **Trello:** Optional tool for task organization, ownership, and progress tracking.
 - **Miro:** Optional tool for visual planning, workflows, and responsibility mapping.
 
