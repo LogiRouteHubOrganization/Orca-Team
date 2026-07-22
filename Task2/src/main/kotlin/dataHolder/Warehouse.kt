@@ -1,7 +1,6 @@
-package model
+package dataHolder
 
-
-data class warehouseRow(
+data class warehouseRaw(
     val warehouseId: String,
     val warehousename: String,
     val regionalZone: String
