@@ -1,23 +1,33 @@
 package parser
 
-import model.LogisticsPackageRow
+import dataHolder.LogisticsPackageRaw
 import java.io.File
+
+private const val CSV_SEPARATOR = ","
+
+private const val HEADER_ROW_COUNT = 1
+private const val EXPECTED_COLUMN_COUNT = 4
+
+private const val PACKAGE_ID_COLUMN_INDEX = 0
+private const val PACKAGE_WEIGHT_COLUMN_INDEX = 1
+private const val DESTINATION_HUB_ID_COLUMN_INDEX = 2
+private const val PRIORITY_COLUMN_INDEX = 3
+
+private const val URGENT_PRIORITY = "URGENT"
+private const val STANDARD_PRIORITY = "STANDARD"
+private const val LOW_PRIORITY = "LOW"
 
 class PackageParser {
 
-    fun readLogisticsPackageRowsFromFile(filePath: String): List<LogisticsPackageRow> {
+    fun readLogisticsPackageRowsFromFile(filePath: String): List<LogisticsPackageRaw> {
 
         val packageCsvRows = readPackageCsvRows(filePath)
 
         return packageCsvRows
-            // Ignore the header because it does not represent package data.
-            .drop(1)
-
-            // Skip empty rows to avoid creating invalid package records.
+            .drop(HEADER_ROW_COUNT)
             .filter { packageCsvRow ->
                 packageCsvRow.isNotBlank()
             }
-
             .mapNotNull { packageCsvRow ->
                 createLogisticsPackageRow(packageCsvRow)
             }
@@ -27,62 +37,57 @@ class PackageParser {
         return File(filePath).readLines()
     }
 
-    private fun createLogisticsPackageRow(packageCsvRow: String): LogisticsPackageRow? {
+    private fun parsePackageWeightByKg(packageWeight: String, packageCsvRow: String): Double? {
 
-        val csvSeparator = ","
-        val expectedColumnCount = 4
+        val packageWeightByKg = packageWeight.trim().toDoubleOrNull()
 
-        val packageIdColumnIndex = 0
-        val weightColumnIndex = 1
-        val destinationHubIdColumnIndex = 2
-        val priorityColumnIndex = 3
-
-        val packageColumns = packageCsvRow.split(csvSeparator)
-
-        // Skip malformed rows instead of stopping the parser.
-        if (packageColumns.size != expectedColumnCount) {
-            println("Warning: Invalid package row -> $packageCsvRow")
-            return null
-        }
-
-        val packageId =
-            packageColumns[packageIdColumnIndex].trim()
-
-        val packageWeight =
-            packageColumns[weightColumnIndex]
-                .trim()
-                .toDoubleOrNull()
-
-        // Skip rows with invalid numeric values.
-        if (packageWeight == null) {
+        if (packageWeightByKg == null) {
             println("Warning: Invalid package weight -> $packageCsvRow")
             return null
         }
 
-        val destinationHubId =
-            packageColumns[destinationHubIdColumnIndex].trim()
+        return packageWeightByKg
+    }
 
-        val priority =
-            standardizePriority(
-                packageColumns[priorityColumnIndex]
-            )
+    private fun createLogisticsPackageRow(packageCsvRow: String): LogisticsPackageRaw? {
 
-        return LogisticsPackageRow(
-            id = packageId,
-            packageWeight = packageWeight,
+        val packageColumns = packageCsvRow.split(CSV_SEPARATOR)
+
+        if (packageColumns.size != EXPECTED_COLUMN_COUNT) {
+            println("Warning: Invalid package row -> $packageCsvRow")
+            return null
+        }
+        val packageId = packageColumns[PACKAGE_ID_COLUMN_INDEX].trim()
+        val packageWeightByKg = parsePackageWeightByKg(
+            packageColumns[PACKAGE_WEIGHT_COLUMN_INDEX],
+            packageCsvRow
+        )
+
+        if (packageWeightByKg == null) {
+            return null
+        }
+
+        val destinationHubId = packageColumns[DESTINATION_HUB_ID_COLUMN_INDEX].trim()
+
+        val packagePriority = standardizePriority(
+            packageColumns[PRIORITY_COLUMN_INDEX]
+        )
+
+        return LogisticsPackageRaw(
+            packageId = packageId,
+            packageWeightByKg = packageWeightByKg,
             destinationHubId = destinationHubId,
-            priority = priority
+            packagePriority = packagePriority
         )
     }
 
     private fun standardizePriority(priority: String): String {
 
-        // Keep priority values consistent regardless of input formatting.
         return when (priority.trim().uppercase()) {
-            "URGENT" -> "URGENT"
-            "STANDARD" -> "STANDARD"
-            "LOW" -> "LOW"
-            else -> "LOW"
+            URGENT_PRIORITY -> URGENT_PRIORITY
+            STANDARD_PRIORITY -> STANDARD_PRIORITY
+            LOW_PRIORITY -> LOW_PRIORITY
+            else -> LOW_PRIORITY
         }
     }
 }
