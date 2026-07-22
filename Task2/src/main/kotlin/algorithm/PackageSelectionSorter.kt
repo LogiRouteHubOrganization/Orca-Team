@@ -1,72 +1,123 @@
 package algorithm
 
-import model.LogisticsPackageRow
+import dataHolder.LogisticsPackageRaw
 
-class PackageSelectionSorter {
+private const val URGENT_PRIORITY = "URGENT"
+private const val STANDARD_PRIORITY = "STANDARD"
+private const val LOW_PRIORITY = "LOW"
 
-    fun sortPackagesByPriorityAndWeight(logisticsPackageRows: MutableList<LogisticsPackageRow>) {
+private const val URGENT_PRIORITY_LEVEL = 3
+private const val STANDARD_PRIORITY_LEVEL = 2
+private const val LOW_PRIORITY_LEVEL = 1
 
-        for (currentIndex in 0 until logisticsPackageRows.size - 1) {
+fun sortPackages(logisticsPackages: MutableList<LogisticsPackageRaw>) {
+    sortPackagesByWeight(logisticsPackages)
+    sortPackagesByPriority(logisticsPackages)
+}
 
-            val bestPackageIndex = findBestPackageIndex(logisticsPackageRows, currentIndex)
+private fun sortPackagesByWeight(logisticsPackages: MutableList<LogisticsPackageRaw>) {
+    for (currentSortingIndex in 0 until logisticsPackages.size - 1) {
+        val packageWithHighestWeightIndex = findPackageWithHighestWeightIndex(
+                logisticsPackages,
+                currentSortingIndex
+            )
 
-            movePackageToIndex(logisticsPackageRows, bestPackageIndex, currentIndex)
+        placePackageAtSortingIndex(
+            logisticsPackages,
+            packageWithHighestWeightIndex,
+            currentSortingIndex
+        )
+    }
+}
+
+private fun findPackageWithHighestWeightIndex(logisticsPackages: MutableList<LogisticsPackageRaw>, searchStartingIndex: Int): Int {
+    var packageWithHighestWeightIndex = searchStartingIndex
+    for (currentPackageIndex in searchStartingIndex + 1 until logisticsPackages.size) {
+        val currentPackage = logisticsPackages[currentPackageIndex]
+
+        val packageWithHighestWeight = logisticsPackages[packageWithHighestWeightIndex]
+
+        if (hasHigherWeight(currentPackage, packageWithHighestWeight)) {
+            packageWithHighestWeightIndex = currentPackageIndex
         }
     }
 
-    private fun findBestPackageIndex(logisticsPackageRows: List<LogisticsPackageRow>, startIndex: Int): Int {
+    return packageWithHighestWeightIndex
+}
 
-        var bestPackageIndex = startIndex
+private fun hasHigherWeight(currentPackage: LogisticsPackageRaw, packageWithHighestWeight: LogisticsPackageRaw): Boolean {
+    return currentPackage.packageWeightByKg >
+            packageWithHighestWeight.packageWeightByKg
+}
 
-        for (comparisonIndex in startIndex + 1 until logisticsPackageRows.size) {
+private fun sortPackagesByPriority(logisticsPackages: MutableList<LogisticsPackageRaw>) {
 
-            val comparisonPackage = logisticsPackageRows[comparisonIndex]
-
-            val bestPackage = logisticsPackageRows[bestPackageIndex]
-
-            if (shouldComeBefore(comparisonPackage, bestPackage)) {
-                bestPackageIndex = comparisonIndex
-            }
-        }
-
-        return bestPackageIndex
+    for (currentSortingIndex in 0 until logisticsPackages.size - 1) {
+        val packageWithHighestPriorityIndex = findPackageWithHighestPriorityIndex(
+                logisticsPackages,
+                currentSortingIndex
+            )
+        placePackageAtSortingIndex(
+            logisticsPackages,
+            packageWithHighestPriorityIndex,
+            currentSortingIndex
+        )
     }
+}
 
-    private fun shouldComeBefore(
-        comparisonPackage: LogisticsPackageRow,
-        bestPackage: LogisticsPackageRow
-    ): Boolean {
+private fun findPackageWithHighestPriorityIndex(logisticsPackages: MutableList<LogisticsPackageRaw>, searchStartingIndex: Int): Int {
+    var packageWithHighestPriorityIndex = searchStartingIndex
+    for (currentPackageIndex in searchStartingIndex + 1 until logisticsPackages.size) {
+        val currentPackage =
+            logisticsPackages[currentPackageIndex]
 
-        val comparisonPriorityValue =
-            getPriorityValue(comparisonPackage.priority)
+        val packageWithHighestPriority =
+            logisticsPackages[packageWithHighestPriorityIndex]
 
-        val bestPriorityValue =
-            getPriorityValue(bestPackage.priority)
-
-        if (comparisonPriorityValue > bestPriorityValue) {
-            return true
-        }
-
-        return comparisonPriorityValue == bestPriorityValue &&
-                comparisonPackage.packageWeight > bestPackage.packageWeight
-    }
-
-    private fun getPriorityValue(priority: String): Int {
-
-        return when (priority) {
-            "URGENT" -> 3
-            "STANDARD" -> 2
-            else -> 1
+        if (
+            hasHigherPriority(
+                currentPackage,
+                packageWithHighestPriority
+            )
+        ) {
+            packageWithHighestPriorityIndex =
+                currentPackageIndex
         }
     }
 
-    private fun movePackageToIndex(logisticsPackageRows: MutableList<LogisticsPackageRow>, packageIndex: Int, targetIndex: Int) {
-        if (packageIndex == targetIndex) {
-            return
-        }
-        // Moving instead of swapping keeps equal packages in their original order.
-        val selectedPackage = logisticsPackageRows.removeAt(packageIndex)
+    return packageWithHighestPriorityIndex
+}
 
-        logisticsPackageRows.add(targetIndex, selectedPackage)
+private fun hasHigherPriority(currentPackage: LogisticsPackageRaw, packageWithHighestPriority: LogisticsPackageRaw): Boolean {
+    val currentPackagePriorityLevel = getPriorityLevel(currentPackage.packagePriority)
+
+    val highestPackagePriorityLevel = getPriorityLevel(packageWithHighestPriority.packagePriority)
+
+    return currentPackagePriorityLevel > highestPackagePriorityLevel
+}
+
+private fun getPriorityLevel(priority: String): Int {
+    return when (priority.uppercase()) {
+        URGENT_PRIORITY -> URGENT_PRIORITY_LEVEL
+
+        STANDARD_PRIORITY -> STANDARD_PRIORITY_LEVEL
+
+        LOW_PRIORITY -> LOW_PRIORITY_LEVEL
+
+        else -> LOW_PRIORITY_LEVEL
     }
+}
+
+private fun placePackageAtSortingIndex(
+    logisticsPackages: MutableList<LogisticsPackageRaw>,
+    packageCurrentIndex: Int,
+    requiredSortingIndex: Int
+) {
+    if (packageCurrentIndex == requiredSortingIndex) {
+        return
+    }
+
+    val packageToPlace = logisticsPackages.removeAt(packageCurrentIndex)
+
+    logisticsPackages.add(requiredSortingIndex, packageToPlace)
 }

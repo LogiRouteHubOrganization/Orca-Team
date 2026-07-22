@@ -1,7 +1,7 @@
 import java.io.File
 import parser.parseWarehousesFile
 import parser.parseRoute
-import algorithm.PackageSelectionSorter
+import algorithm.sortPackages
 import parser.PackageParser
 import parser.FleetParser
 
@@ -12,15 +12,13 @@ fun main() {
   val packageFilePath = "src/main/resources/packages.csv"
 
   val packageParser = PackageParser()
-  val packageSelectionSorter = PackageSelectionSorter()
 
   val logisticsPackageRows =
     packageParser
       .readLogisticsPackageRowsFromFile(packageFilePath)
       .toMutableList()
 
-  packageSelectionSorter
-    .sortPackagesByPriorityAndWeight(logisticsPackageRows)
+  sortPackages(logisticsPackageRows)
 
   println()
   println("Successfully parsed packages: ${logisticsPackageRows.size}")
