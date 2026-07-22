@@ -17,8 +17,9 @@ fun main() {
     println()
 
     println("Top 3 priority packages:")
+    val topPackageCount = minOf(3, logisticsPackageRows.size)
 
-    for (packageIndex in 0 until 3) {
+    for (packageIndex in 0 until topPackageCount) {
         println("${packageIndex + 1}. ${logisticsPackageRows[packageIndex]}")
     }
 }
