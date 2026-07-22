@@ -33,10 +33,7 @@ fun main() {
 
   println()
   println("Package sorting completed.")
-
-  println("Package parsing completed.")
-
-    
+  
   println("\n******************************************************\n")
   
     val WAREHOUSE_FILE_PATH = "src/main/resources/warehouses.csv"
