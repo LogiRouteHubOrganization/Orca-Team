@@ -3,6 +3,7 @@ import parser.parseWarehousesFile
 import parser.parseRoute
 import algorithm.PackageSelectionSorter
 import parser.PackageParser
+import parser.FleetParser
 
 fun main() {
 
@@ -33,10 +34,7 @@ fun main() {
 
   println()
   println("Package sorting completed.")
-
-  println("Package parsing completed.")
-
-    
+  
   println("\n******************************************************\n")
   
     val WAREHOUSE_FILE_PATH = "src/main/resources/warehouses.csv"
@@ -61,7 +59,28 @@ fun main() {
     for (route in routes) {
         println(route)
     }
-    
+  println("\n******************************************************\n")
+
+  println("Starting Fleet Data ...")
+
+  val fleetFilePath = "src/main/resources/fleet.csv"
+
+  val fleetParser = FleetParser()
+
+  val fleets =
+    fleetParser.readFleetRowsFromFile(fleetFilePath)
+
+  println("Successfully parsed ${fleets.size} valid fleet records.")
+
+  println("--- Detailed Fleet Records ---")
+
+  for (fleet in fleets) {
+    println(
+      "Vehicle ID: ${fleet.vehicleId} | Hub: ${fleet.currentHubId} | Capacity: ${fleet.maxCapacityKg} | Cost/Km: ${fleet.costPerKm}"
+    )
+  }
+
+  println("--- Fleet Data Initialization Complete ---")
 
 }
 
