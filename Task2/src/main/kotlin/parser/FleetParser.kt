@@ -1,11 +1,11 @@
 package parser
 
-import model.FleetRow
+import dataHolder.FleetRaw
 import java.io.File
 
 class FleetParser {
 
-    fun readFleetRowsFromFile(filePath: String): List<FleetRow> {
+    fun readFleetRowsFromFile(filePath: String): List<FleetRaw> {
 
         val fleetCsvRows = readFleetCsvRows(filePath)
 
@@ -23,7 +23,7 @@ class FleetParser {
         return File(filePath).readLines()
     }
 
-    private fun createFleetRow(fleetCsvRow: String): FleetRow? {
+    private fun createFleetRow(fleetCsvRow: String): FleetRaw? {
 
         val expectedColumnCount = 4
 
@@ -39,7 +39,7 @@ class FleetParser {
             return null
         }
 
-        val vehicleId =
+        val vehicleIds =
             columns[vehicleIdIndex].trim()
 
         val currentHubId =
@@ -60,11 +60,10 @@ class FleetParser {
             return null
         }
 
-        return FleetRow(
-            vehicleId = vehicleId,
+        return FleetRaw(
+            vehicleIds = vehicleIds,
             currentHubId = currentHubId,
             maxCapacityKg = maxCapacityKg,
-            costPerKm = costPerKm
-        )
+            costPerKm = costPerKm)
     }
 }
