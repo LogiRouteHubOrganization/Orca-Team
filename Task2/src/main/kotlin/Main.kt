@@ -74,7 +74,7 @@ fun main() {
 
   for (fleet in fleets) {
     println(
-      "Vehicle ID: ${fleet.vehicleId} | Hub: ${fleet.currentHubId} | Capacity: ${fleet.maxCapacityKg} | Cost/Km: ${fleet.costPerKm}"
+      "Vehicle ID: ${fleet.vehicleIds} | Hub: ${fleet.currentHubId} | Capacity: ${fleet.maxCapacityKg} | Cost/Km: ${fleet.costPerKm}"
     )
   }
 
