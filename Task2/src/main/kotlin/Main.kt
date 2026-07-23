@@ -1,6 +1,6 @@
 import java.io.File
 import parser.parseWarehousesFile
-import parser.parseRoute
+import parser. parseRoutes
 import parser.PackageParser
 fun main() {
 
@@ -33,7 +33,7 @@ for (warehouse in loadedWarehouses) {
 
     val routeFilePath = "src/main/resources/routes.csv"
 
-    val routes = parseRoute(routeFilePath)
+    val routes =  parseRoutes(routeFilePath)
 
     for (route in routes) {
         println(route)
