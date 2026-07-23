@@ -1,7 +1,7 @@
 package parser
 
 import java.io.File
-import model.Warehouse
+import dataHolder.warehouseRaw
 
 private const val EXPECTED_COLUMN_COUNT = 3
 private const val COLUMN_INDEX_ID = 0
@@ -13,23 +13,23 @@ private fun isColumnCountInvalid(columns: List<String>): Boolean {
     return columns.size != EXPECTED_COLUMN_COUNT
 }
 
-private fun areFieldsEmpty(id: String, name: String, regionalZone: String): Boolean {
-    return id.isEmpty() || name.isEmpty() || regionalZone.isEmpty()
+private fun areFieldsEmpty(warehouseId: String, warehousename: String, regionalZone: String): Boolean {
+    return warehouseId.isEmpty() ||warehousename.isEmpty() || regionalZone.isEmpty()
 }
 
-private fun buildWarehouseFromColumns(columns: List<String>, originalRow: String): Warehouse? {
-    val id = columns[COLUMN_INDEX_ID].trim()
-    val name = columns[COLUMN_INDEX_NAME].trim()
+private fun buildWarehouseFromColumns(columns: List<String>, originalRow: String): warehouseRaw? {
+    val warehouseId = columns[COLUMN_INDEX_ID].trim()
+    val warehousename = columns[COLUMN_INDEX_NAME].trim()
     val regionalZone = columns[COLUMN_INDEX_RegionalZone].trim()
 
-    if (areFieldsEmpty(id, name, regionalZone)) {
+    if (areFieldsEmpty(warehouseId , warehousename, regionalZone)) {
         println("Diagnostic Warning: Skipping row with empty fields: '$originalRow'")
         return null
     }
-    return Warehouse(id = id, name = name, regionalZone = regionalZone)
+    return warehouseRaw(warehouseId = warehouseId , warehousename = warehousename, regionalZone = regionalZone)
 }
 
-private fun parseWarehouseRow(row: String): Warehouse? {
+private fun parseWarehouseRow(row: String): warehouseRaw? {
     val trimmedRow = row.trim()
 
     if (trimmedRow.isEmpty()) {
@@ -44,8 +44,8 @@ private fun parseWarehouseRow(row: String): Warehouse? {
     return buildWarehouseFromColumns(columns, row)
 }
 
-fun parseWarehousesFile(warehouseFile: File): List<Warehouse> {
-    val warehouses = mutableListOf<Warehouse>()
+fun parseWarehousesFile(warehouseFile: File): List<warehouseRaw> {
+    val warehouses = mutableListOf<warehouseRaw>()
 
     if (!warehouseFile.exists()) {
         println("Diagnostic Warning: File ${warehouseFile.name} does not exist.")
