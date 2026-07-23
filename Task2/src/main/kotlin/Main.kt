@@ -52,7 +52,7 @@ fun main() {
 
     val routeFilePath = "src/main/resources/routes.csv"
 
-    val routes = parseRoute(routeFilePath)
+    val routes =  parseRoutes(routeFilePath)
 
     for (route in routes) {
         println(route)
