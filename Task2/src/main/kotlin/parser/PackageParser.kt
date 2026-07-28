@@ -4,14 +4,15 @@ import dataHolder.LogisticsPackageRaw
 import java.io.File
 
 private const val CSV_SEPARATOR = ","
-
 private const val HEADER_ROW_COUNT = 1
-private const val EXPECTED_COLUMN_COUNT = 4
+
+private const val EXPECTED_COLUMN_COUNT = 5
 
 private const val PACKAGE_ID_COLUMN_INDEX = 0
 private const val PACKAGE_WEIGHT_COLUMN_INDEX = 1
-private const val DESTINATION_HUB_ID_COLUMN_INDEX = 2
-private const val PRIORITY_COLUMN_INDEX = 3
+private const val ORIGIN_HUB_ID_COLUMN_INDEX = 2
+private const val DESTINATION_HUB_ID_COLUMN_INDEX = 3
+private const val PRIORITY_COLUMN_INDEX = 4
 
 private const val URGENT_PRIORITY = "URGENT"
 private const val STANDARD_PRIORITY = "STANDARD"
@@ -37,7 +38,10 @@ class PackageParser {
         return File(filePath).readLines()
     }
 
-    private fun parsePackageWeightByKg(packageWeight: String, packageCsvRow: String): Double? {
+    private fun parsePackageWeightByKg(
+        packageWeight: String,
+        packageCsvRow: String
+    ): Double? {
 
         val packageWeightByKg = packageWeight.trim().toDoubleOrNull()
 
@@ -49,7 +53,9 @@ class PackageParser {
         return packageWeightByKg
     }
 
-    private fun createLogisticsPackageRow(packageCsvRow: String): LogisticsPackageRaw? {
+    private fun createLogisticsPackageRow(
+        packageCsvRow: String
+    ): LogisticsPackageRaw? {
 
         val packageColumns = packageCsvRow.split(CSV_SEPARATOR)
 
@@ -57,7 +63,9 @@ class PackageParser {
             println("Warning: Invalid package row -> $packageCsvRow")
             return null
         }
+
         val packageId = packageColumns[PACKAGE_ID_COLUMN_INDEX].trim()
+
         val packageWeightByKg = parsePackageWeightByKg(
             packageColumns[PACKAGE_WEIGHT_COLUMN_INDEX],
             packageCsvRow
@@ -67,7 +75,11 @@ class PackageParser {
             return null
         }
 
-        val destinationHubId = packageColumns[DESTINATION_HUB_ID_COLUMN_INDEX].trim()
+        val originHubId =
+            packageColumns[ORIGIN_HUB_ID_COLUMN_INDEX].trim()
+
+        val destinationHubId =
+            packageColumns[DESTINATION_HUB_ID_COLUMN_INDEX].trim()
 
         val packagePriority = standardizePriority(
             packageColumns[PRIORITY_COLUMN_INDEX]
@@ -76,6 +88,7 @@ class PackageParser {
         return LogisticsPackageRaw(
             packageId = packageId,
             packageWeightByKg = packageWeightByKg,
+            originHubId = originHubId,
             destinationHubId = destinationHubId,
             packagePriority = packagePriority
         )
