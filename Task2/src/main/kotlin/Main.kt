@@ -33,7 +33,7 @@ fun main() {
   println()
   println("Package sorting completed.")
   
-  println("\n******************************************************\n")
+  println("\n*****************************************************************\n")
   
     val WAREHOUSE_FILE_PATH = "src/main/resources/warehouses.csv"
     println("Starting Warehouse Data Pipeline...")
@@ -47,8 +47,8 @@ fun main() {
         println("ID: ${warehouse.warehouseId} | Name: ${warehouse.warehousename} | Location: ${warehouse.regionalZone}")
     }
     println("--- Data Initialization Complete ---")
-    
-    print("\n*************************************************************\n")
+
+    println("\n*****************************************************************\n")
 
     val routeFilePath = "src/main/resources/routes.csv"
 
@@ -57,28 +57,23 @@ fun main() {
     for (route in routes) {
         println(route)
     }
-  println("\n******************************************************\n")
+    println("\n*****************************************************************\n")
 
-  println("Starting Fleet Data ...")
+    println("===== Fleet Parser =====")
 
   val fleetFilePath = "src/main/resources/fleet.csv"
 
   val fleetParser = FleetParser()
 
-  val fleets =
-    fleetParser.readFleetRowsFromFile(fleetFilePath)
+  val fleets = fleetParser.readFleetRowsFromFile(fleetFilePath)
 
   println("Successfully parsed ${fleets.size} valid fleet records.")
 
   println("--- Detailed Fleet Records ---")
 
   for (fleet in fleets) {
-    println(
-      "Vehicle ID: ${fleet.vehicleIds} | Hub: ${fleet.currentHubId} | Capacity: ${fleet.maxCapacityKg} | Cost/Km: ${fleet.costPerKm}"
-    )
-  }
-
-  println("--- Fleet Data Initialization Complete ---")
+      println("Vehicle ID: ( ${fleet.vehicleId} , Hub: ${fleet.currentHubId} , Capacity: ${fleet.maxCapacityKg} , Cost/Km: ${fleet.costPerKm})") }
+     println("--- Fleet Data Initialization Complete ---")
 
 }
 
