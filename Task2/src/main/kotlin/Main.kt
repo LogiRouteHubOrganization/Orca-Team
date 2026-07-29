@@ -6,7 +6,7 @@ import parser.PackageParser
 import parser.FleetParser
 
 fun main() {
-
+/*
   println("=== Package Parser ===")
 
   val packageFilePath = "src/main/resources/packages.csv"
@@ -49,7 +49,7 @@ fun main() {
     println("--- Data Initialization Complete ---")
     
     print("\n*************************************************************\n")
-
+*/
     val routeFilePath = "src/main/resources/routes.csv"
 
     val routes =  parseRoutes(routeFilePath)
