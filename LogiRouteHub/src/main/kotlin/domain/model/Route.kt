@@ -1,3 +1,5 @@
+package domain.model
+
 data class Route(
     val routeId: String,
     val originWarehouse: Warehouse,
