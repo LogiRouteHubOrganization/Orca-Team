@@ -21,8 +21,17 @@ jobs:
           java-version: '21'
           cache: 'gradle'
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-
-      - name: Build and Test with Gradle
-        run: gradle test
+      - name: Find and Build Gradle Project
+        run: |
+          PROJECT_DIR=$(find . -maxdepth 2 -name "build.gradle.kts" -exec dirname {} \;)
+          if [ -n "$PROJECT_DIR" ]; then
+            cd "$PROJECT_DIR"
+            chmod +x gradlew 2>/dev/null || true
+            if [ -f "./gradlew" ]; then
+              ./gradlew test
+            else
+              gradle test
+            fi
+          else
+            exit 1
+          fi
