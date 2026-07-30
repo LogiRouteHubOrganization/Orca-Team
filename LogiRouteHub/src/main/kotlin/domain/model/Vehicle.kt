@@ -4,4 +4,5 @@ data class Vehicle(
     val vehicleId: String,
     val maxCapacityKg: Double,
     val costPerKm: Double,
-    var currentHub: Warehouse )
+    val currentWarehouse: Warehouse
+)
