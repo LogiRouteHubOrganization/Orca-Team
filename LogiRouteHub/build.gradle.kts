@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm") version "2.1.10"
+    id("io.gitlab.arturbosch.detekt") version "1.23.5"
 }
 
 group = "org.bytebloom"

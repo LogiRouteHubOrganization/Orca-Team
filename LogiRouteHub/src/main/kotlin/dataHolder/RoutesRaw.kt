@@ -4,4 +4,5 @@ data class RoutesRaw(
     val originHubId: String,
     val destinationHubId: String,
     val distanceKm: String,
-    val typicalDelayMin: String)
+    val typicalDelayMin: String
+)
