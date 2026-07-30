@@ -1,10 +1,10 @@
 package domain.model
 
-class Warehouse(val id: String,
-                val name: String,
-                val regionalZone: String)
-
-{
+class Warehouse(
+    val warehouseId: String,
+    val warehouseName: String,
+    val regionalZone: String
+){
     private val cargoQueueList = mutableListOf<Package>()
     private val outgoingRoutesList = mutableListOf<Route>()
     private val stationedVehiclesList = mutableListOf<Vehicle>()
