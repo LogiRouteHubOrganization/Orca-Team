@@ -11,6 +11,23 @@ import domain.model.Route
 
 class DomainGraphBuilder {
 
+    fun buildGraph(
+        rawWarehouses: List<warehouseRaw>,
+        rawPackages: List<LogisticsPackageRaw>,
+        rawVehicles: List<FleetRaw>,
+        rawRoutes: List<RoutesRaw>
+    ): Map<String, Warehouse> {
+
+        val warehouses = createWarehouses(rawWarehouses)
+        val warehouseIndex = createWarehouseIndex(warehouses)
+
+        createPackages(rawPackages, warehouseIndex)
+        createVehicles(rawVehicles, warehouseIndex)
+        createRoutes(rawRoutes, warehouseIndex)
+
+        return warehouseIndex
+    }
+
     fun createWarehouses(rawWarehouses: List<warehouseRaw>): List<Warehouse> {
 
         val warehouses = mutableListOf<Warehouse>()

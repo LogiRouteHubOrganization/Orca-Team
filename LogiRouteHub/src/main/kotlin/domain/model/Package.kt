@@ -6,3 +6,13 @@ data class Package(
     val originWarehouse: Warehouse,
     val destinationWarehouse: Warehouse
 )
+{
+    override fun toString(): String {
+        return "Package(" +
+                "PackageId='$packageId', " +
+                "PackageWeightByKg=$packageWeightByKg, " +
+                "destinationWarehouse='$destinationWarehouse', " +
+                "warehouseId='${originWarehouse.warehouseId}'" +
+                ")"
+    }
+}
