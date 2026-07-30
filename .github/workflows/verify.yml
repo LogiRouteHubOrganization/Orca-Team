@@ -21,6 +21,14 @@ jobs:
           java-version: '21'
           cache: 'gradle'
 
+      - name: Run Detekt Static Analysis
+        run: ./gradlew detekt
+        working-directory: LogiRouteHub
+
+      - name: Build and Test with Gradle
+        run: ./gradlew check
+        working-directory: LogiRouteHub
+
       - name: Find and Build Gradle Project
         run: |
           PROJECT_DIR=$(find . -maxdepth 2 -name "build.gradle.kts" -exec dirname {} \;)
