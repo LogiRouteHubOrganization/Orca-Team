@@ -5,4 +5,17 @@ data class Vehicle(
     val maxCapacityKg: Double,
     val costPerKm: Double,
     val currentWarehouse: Warehouse
+
 )
+{
+    override fun toString(): String {
+        return "Vehicle(" +
+                "VehicleId='$vehicleId', " +
+                "MaxCapacityKg=$maxCapacityKg, " +
+                "CurrentWarehouseId='${currentWarehouse.warehouseId}'" +
+                ")"
+    }
+}
+
+
+
