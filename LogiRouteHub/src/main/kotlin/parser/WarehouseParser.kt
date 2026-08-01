@@ -1,35 +1,35 @@
 package parser
 
-import dataHolder.warehouseRaw
+import dataHolder.WarehouseRaw
 import java.io.File
 
+private const val CSV_SEPARATOR = ","
 private const val EXPECTED_COLUMN_COUNT = 5
-
-private const val COLUMN_INDEX_ID = 0
-private const val COLUMN_INDEX_NAME = 1
-private const val COLUMN_INDEX_REGIONAL_ZONE = 2
-private const val COLUMN_INDEX_LATITUDE = 3
-private const val COLUMN_INDEX_LONGITUDE = 4
-
 private const val HEADER_LINE_COUNT = 1
 
-private fun isColumnCountInvalid(
+private const val WAREHOUSE_ID_COLUMN_INDEX = 0
+private const val WAREHOUSE_NAME_COLUMN_INDEX = 1
+private const val REGIONAL_ZONE_COLUMN_INDEX = 2
+private const val LATITUDE_COLUMN_INDEX = 3
+private const val LONGITUDE_COLUMN_INDEX = 4
+
+private fun hasInvalidColumnCount(
     columns: List<String>
 ): Boolean {
 
     return columns.size != EXPECTED_COLUMN_COUNT
 }
 
-private fun areFieldsEmpty(
+private fun hasEmptyWarehouseField(
     warehouseId: String,
-    warehousename: String,
+    warehouseName: String,
     regionalZone: String,
     latitude: String,
     longitude: String
 ): Boolean {
 
     return warehouseId.isEmpty() ||
-            warehousename.isEmpty() ||
+            warehouseName.isEmpty() ||
             regionalZone.isEmpty() ||
             latitude.isEmpty() ||
             longitude.isEmpty()
@@ -41,11 +41,13 @@ private fun parseCoordinate(
     originalRow: String
 ): Double? {
 
-    val coordinateValue = coordinate.trim().toDoubleOrNull()
+    val coordinateValue =
+        coordinate.trim().toDoubleOrNull()
 
     if (coordinateValue == null) {
         println(
-            "Diagnostic Warning: Invalid $coordinateName: '$originalRow'"
+            "Diagnostic Warning: " +
+                    "Invalid $coordinateName -> '$originalRow'"
         )
 
         return null
@@ -57,34 +59,39 @@ private fun parseCoordinate(
 private fun buildWarehouseFromColumns(
     columns: List<String>,
     originalRow: String
-): warehouseRaw? {
+): WarehouseRaw? {
 
     val warehouseId =
-        columns[COLUMN_INDEX_ID].trim()
+        normalizeIdentifier(
+            columns[WAREHOUSE_ID_COLUMN_INDEX]
+        )
 
-    val warehousename =
-        columns[COLUMN_INDEX_NAME].trim()
+    val warehouseName =
+        columns[WAREHOUSE_NAME_COLUMN_INDEX].trim()
 
     val regionalZone =
-        columns[COLUMN_INDEX_REGIONAL_ZONE].trim()
+        columns[REGIONAL_ZONE_COLUMN_INDEX]
+            .trim()
+            .uppercase()
 
     val latitudeText =
-        columns[COLUMN_INDEX_LATITUDE].trim()
+        columns[LATITUDE_COLUMN_INDEX].trim()
 
     val longitudeText =
-        columns[COLUMN_INDEX_LONGITUDE].trim()
+        columns[LONGITUDE_COLUMN_INDEX].trim()
 
     if (
-        areFieldsEmpty(
+        hasEmptyWarehouseField(
             warehouseId,
-            warehousename,
+            warehouseName,
             regionalZone,
             latitudeText,
             longitudeText
         )
     ) {
         println(
-            "Diagnostic Warning: Skipping row with empty fields: '$originalRow'"
+            "Diagnostic Warning: " +
+                    "Skipping row with empty fields -> '$originalRow'"
         )
 
         return null
@@ -110,9 +117,9 @@ private fun buildWarehouseFromColumns(
         return null
     }
 
-    return warehouseRaw(
+    return WarehouseRaw(
         warehouseId = warehouseId,
-        warehousename = warehousename,
+        warehouseName = warehouseName,
         regionalZone = regionalZone,
         latitude = latitude,
         longitude = longitude
@@ -121,7 +128,7 @@ private fun buildWarehouseFromColumns(
 
 private fun parseWarehouseRow(
     row: String
-): warehouseRaw? {
+): WarehouseRaw? {
 
     val trimmedRow = row.trim()
 
@@ -129,11 +136,13 @@ private fun parseWarehouseRow(
         return null
     }
 
-    val columns = trimmedRow.split(",")
+    val columns =
+        trimmedRow.split(CSV_SEPARATOR)
 
-    if (isColumnCountInvalid(columns)) {
+    if (hasInvalidColumnCount(columns)) {
         println(
-            "Diagnostic Warning: Skipping malformed row due to invalid column count: '$row'"
+            "Diagnostic Warning: " +
+                    "Invalid warehouse column count -> '$row'"
         )
 
         return null
@@ -145,21 +154,30 @@ private fun parseWarehouseRow(
     )
 }
 
+private fun normalizeIdentifier(
+    identifier: String
+): String {
+
+    return identifier.trim().uppercase()
+}
+
 fun parseWarehousesFile(
     warehouseFile: File
-): List<warehouseRaw> {
+): List<WarehouseRaw> {
 
-    val warehouses = mutableListOf<warehouseRaw>()
+    val warehouses = mutableListOf<WarehouseRaw>()
 
     if (!warehouseFile.exists()) {
         println(
-            "Diagnostic Warning: File ${warehouseFile.name} does not exist."
+            "Diagnostic Warning: " +
+                    "File ${warehouseFile.name} does not exist."
         )
 
         return warehouses
     }
 
-    val warehouseRows = warehouseFile.readLines()
+    val warehouseRows =
+        warehouseFile.readLines()
 
     val dataRows =
         warehouseRows.drop(HEADER_LINE_COUNT)
