@@ -3,14 +3,26 @@ package parser
 import dataHolder.FleetRaw
 import java.io.File
 
+private const val CSV_SEPARATOR = ","
+private const val HEADER_ROW_COUNT = 1
+private const val EXPECTED_COLUMN_COUNT = 4
+
+private const val VEHICLE_ID_COLUMN_INDEX = 0
+private const val CURRENT_HUB_ID_COLUMN_INDEX = 1
+private const val MAX_CAPACITY_COLUMN_INDEX = 2
+private const val COST_PER_KM_COLUMN_INDEX = 3
+
 class FleetParser {
 
-    fun readFleetRowsFromFile(filePath: String): List<FleetRaw> {
+    fun readFleetRowsFromFile(
+        filePath: String
+    ): List<FleetRaw> {
 
-        val fleetCsvRows = readFleetCsvRows(filePath)
+        val fleetCsvRows =
+            readFleetCsvRows(filePath)
 
         return fleetCsvRows
-            .drop(1)
+            .drop(HEADER_ROW_COUNT)
             .filter { fleetCsvRow ->
                 fleetCsvRow.isNotBlank()
             }
@@ -19,51 +31,153 @@ class FleetParser {
             }
     }
 
-    private fun readFleetCsvRows(filePath: String): List<String> {
+    private fun readFleetCsvRows(
+        filePath: String
+    ): List<String> {
+
         return File(filePath).readLines()
     }
 
-    private fun createFleetRow(fleetCsvRow: String): FleetRaw? {
+    private fun createFleetRow(
+        fleetCsvRow: String
+    ): FleetRaw? {
 
-        val expectedColumnCount = 4
+        val columns =
+            fleetCsvRow.split(CSV_SEPARATOR)
 
-        val vehicleIdIndex = 0
-        val currentHubIdIndex = 1
-        val maxCapacityIndex = 2
-        val costPerKmIndex = 3
-
-        val columns = fleetCsvRow.split(",")
-
-        if (columns.size != expectedColumnCount) {
-            println("Warning: Invalid fleet row -> $fleetCsvRow")
+        if (hasInvalidColumnCount(columns)) {
+            printInvalidFleetRowWarning(fleetCsvRow)
             return null
         }
 
-        val vehicleIds =
-            columns[vehicleIdIndex].trim()
+        val vehicleId =
+            normalizeIdentifier(
+                columns[VEHICLE_ID_COLUMN_INDEX]
+            )
 
         val currentHubId =
-            columns[currentHubIdIndex].trim()
+            normalizeIdentifier(
+                columns[CURRENT_HUB_ID_COLUMN_INDEX]
+            )
+
+        if (
+            hasEmptyRequiredField(
+                vehicleId,
+                currentHubId
+            )
+        ) {
+            printEmptyFleetFieldWarning(fleetCsvRow)
+            return null
+        }
 
         val maxCapacityKg =
-            columns[maxCapacityIndex]
-                .trim()
-                .toDoubleOrNull()
+            parseMaxCapacityKg(
+                columns[MAX_CAPACITY_COLUMN_INDEX],
+                fleetCsvRow
+            )
+
+        if (maxCapacityKg == null) {
+            return null
+        }
 
         val costPerKm =
-            columns[costPerKmIndex]
-                .trim()
-                .toDoubleOrNull()
+            parseCostPerKm(
+                columns[COST_PER_KM_COLUMN_INDEX],
+                fleetCsvRow
+            )
 
-        if (maxCapacityKg == null || costPerKm == null) {
-            println("Warning: Invalid numeric value -> $fleetCsvRow")
+        if (costPerKm == null) {
             return null
         }
 
         return FleetRaw(
-            vehicleIds = vehicleIds,
+            vehicleId = vehicleId,
             currentHubId = currentHubId,
             maxCapacityKg = maxCapacityKg,
-            costPerKm = costPerKm)
+            costPerKm = costPerKm
+        )
+    }
+
+    private fun hasInvalidColumnCount(
+        columns: List<String>
+    ): Boolean {
+
+        return columns.size != EXPECTED_COLUMN_COUNT
+    }
+
+    private fun hasEmptyRequiredField(
+        vehicleId: String,
+        currentHubId: String
+    ): Boolean {
+
+        return vehicleId.isEmpty() ||
+                currentHubId.isEmpty()
+    }
+
+    private fun parseMaxCapacityKg(
+        capacity: String,
+        fleetCsvRow: String
+    ): Double? {
+
+        val maxCapacityKg =
+            capacity.trim().toDoubleOrNull()
+
+        if (
+            maxCapacityKg == null ||
+            maxCapacityKg <= 0
+        ) {
+            println(
+                "Warning: Invalid vehicle capacity -> $fleetCsvRow"
+            )
+
+            return null
+        }
+
+        return maxCapacityKg
+    }
+
+    private fun parseCostPerKm(
+        cost: String,
+        fleetCsvRow: String
+    ): Double? {
+
+        val costPerKm =
+            cost.trim().toDoubleOrNull()
+
+        if (
+            costPerKm == null ||
+            costPerKm < 0
+        ) {
+            println(
+                "Warning: Invalid vehicle cost -> $fleetCsvRow"
+            )
+
+            return null
+        }
+
+        return costPerKm
+    }
+
+    private fun normalizeIdentifier(
+        identifier: String
+    ): String {
+
+        return identifier.trim().uppercase()
+    }
+
+    private fun printInvalidFleetRowWarning(
+        fleetCsvRow: String
+    ) {
+        println(
+            "Warning: Invalid fleet row -> $fleetCsvRow"
+        )
+    }
+
+    private fun printEmptyFleetFieldWarning(
+        fleetCsvRow: String
+    ) {
+        println(
+            "Warning: Empty required fleet field -> $fleetCsvRow"
+        )
     }
 }
