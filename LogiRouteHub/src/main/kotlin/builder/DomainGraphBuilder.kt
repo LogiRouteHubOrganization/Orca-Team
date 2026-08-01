@@ -19,25 +19,20 @@ class DomainGraphBuilder {
     ): Map<String, Warehouse> {
 
         val warehouses = createWarehouses(rawWarehouses)
+        val warehousesById = createWarehouseIndex(warehouses)
 
-        val warehousesById =
-            createWarehouseIndex(warehouses)
-
-        createPackages(
+        buildPackages(
             rawPackages,
             warehousesById
         )
-
-        createVehicles(
+        buildVehicles(
             rawVehicles,
             warehousesById
         )
-
-        createRoutes(
+        buildRoutes(
             rawRoutes,
             warehousesById
         )
-
         return warehousesById
     }
 
@@ -46,18 +41,17 @@ class DomainGraphBuilder {
     ): List<Warehouse> {
 
         val warehouses = mutableListOf<Warehouse>()
-
         for (rawWarehouse in rawWarehouses) {
 
             val warehouse = Warehouse(
                 warehouseId = rawWarehouse.warehouseId,
                 warehouseName = rawWarehouse.warehouseName,
-                regionalZone = rawWarehouse.regionalZone
+                regionalZone = rawWarehouse.regionalZone,
+                latitude = rawWarehouse.latitude,
+                longitude = rawWarehouse.longitude
             )
-
             warehouses.add(warehouse)
         }
-
         return warehouses
     }
 
@@ -69,188 +63,121 @@ class DomainGraphBuilder {
             warehouse.warehouseId
         }
     }
-
     private fun getWarehouseById(
         warehouseId: String,
         warehousesById: Map<String, Warehouse>
     ): Warehouse? {
 
-        val warehouse =
-            warehousesById[warehouseId]
+        val warehouse = warehousesById[warehouseId]
 
         if (warehouse == null) {
-            println(
-                "Warning: Warehouse not found -> $warehouseId"
-            )
+            println("Warning: Warehouse not found -> $warehouseId")
         }
-
         return warehouse
     }
 
-    private fun createPackages(
+    private fun buildPackages(
         rawPackages: List<LogisticsPackageRaw>,
         warehousesById: Map<String, Warehouse>
-    ): List<Package> {
-
-        val packages = mutableListOf<Package>()
-
+    ) {
         for (rawPackage in rawPackages) {
 
-            val originWarehouse =
-                getWarehouseById(
+            val originWarehouse = getWarehouseById(
                     rawPackage.originHubId,
                     warehousesById
                 )
-
-            val destinationWarehouse =
-                getWarehouseById(
+            val destinationWarehouse = getWarehouseById(
                     rawPackage.destinationHubId,
                     warehousesById
                 )
-
-            if (
-                originWarehouse != null &&
-                destinationWarehouse != null
-            ) {
-
-                val logisticsPackage =
-                    createPackage(
+            if (originWarehouse != null && destinationWarehouse != null) {
+                val logisticsPackage = createPackageFromRawData(
                         rawPackage,
                         originWarehouse,
                         destinationWarehouse
                     )
-
-                originWarehouse.addPackage(
-                    logisticsPackage
-                )
-
-                packages.add(logisticsPackage)
+                originWarehouse.addPackage(logisticsPackage)
             }
         }
-
-        return packages
     }
 
-    private fun createPackage(
+    private fun createPackageFromRawData(
         rawPackage: LogisticsPackageRaw,
         originWarehouse: Warehouse,
         destinationWarehouse: Warehouse
     ): Package {
-
         return Package(
             packageId = rawPackage.packageId,
-            packageWeightByKg =
-                rawPackage.packageWeightByKg,
-            packagePriority =
-                rawPackage.packagePriority,
+            packageWeightByKg = rawPackage.packageWeightByKg,
+            packagePriority = rawPackage.packagePriority,
             originWarehouse = originWarehouse,
-            destinationWarehouse =
-                destinationWarehouse
+            destinationWarehouse = destinationWarehouse
         )
     }
 
-    private fun createVehicles(
+    private fun buildVehicles(
         rawVehicles: List<FleetRaw>,
-        warehousesById: Map<String, Warehouse>
-    ): List<Vehicle> {
-
-        val vehicles = mutableListOf<Vehicle>()
-
+        warehousesById: Map<String, Warehouse>) {
         for (rawVehicle in rawVehicles) {
-
-            val currentWarehouse =
-                getWarehouseById(
+            val currentWarehouse = getWarehouseById(
                     rawVehicle.currentHubId,
                     warehousesById
                 )
-
             if (currentWarehouse != null) {
-
-                val vehicle =
-                    createVehicle(
+                val vehicle = createVehicleFromRawData(
                         rawVehicle,
                         currentWarehouse
                     )
-
                 currentWarehouse.addVehicle(vehicle)
-
-                vehicles.add(vehicle)
             }
         }
-
-        return vehicles
     }
 
-    private fun createVehicle(
+    private fun createVehicleFromRawData(
         rawVehicle: FleetRaw,
         currentWarehouse: Warehouse
     ): Vehicle {
-
         return Vehicle(
             vehicleId = rawVehicle.vehicleId,
-            maxCapacityKg =
-                rawVehicle.maxCapacityKg,
+            maxCapacityKg = rawVehicle.maxCapacityKg,
             costPerKm = rawVehicle.costPerKm,
             currentWarehouse = currentWarehouse
         )
     }
 
-    private fun createRoutes(
-        rawRoutes: List<RouteRaw>,
-        warehousesById: Map<String, Warehouse>
-    ): List<Route> {
-
-        val routes = mutableListOf<Route>()
-
+    private fun buildRoutes(rawRoutes: List<RouteRaw>, warehousesById: Map<String, Warehouse>) {
         for (rawRoute in rawRoutes) {
-
-            val originWarehouse =
-                getWarehouseById(
+            val originWarehouse = getWarehouseById(
                     rawRoute.originHubId,
                     warehousesById
                 )
-
-            val destinationWarehouse =
-                getWarehouseById(
+            val destinationWarehouse = getWarehouseById(
                     rawRoute.destinationHubId,
                     warehousesById
                 )
-
-            if (
-                originWarehouse != null &&
-                destinationWarehouse != null
-            ) {
-
+            if (originWarehouse != null && destinationWarehouse != null) {
                 val route =
-                    createRoute(
+                    createRouteFromRawData(
                         rawRoute,
                         originWarehouse,
                         destinationWarehouse
                     )
-
                 originWarehouse.addRoute(route)
-
-                routes.add(route)
             }
         }
-
-        return routes
     }
 
-    private fun createRoute(
+    private fun createRouteFromRawData(
         rawRoute: RouteRaw,
         originWarehouse: Warehouse,
         destinationWarehouse: Warehouse
     ): Route {
-
         return Route(
             routeId = rawRoute.routeId,
             originWarehouse = originWarehouse,
-            destinationWarehouse =
-                destinationWarehouse,
+            destinationWarehouse = destinationWarehouse,
             distanceKm = rawRoute.distanceKm,
-            typicalDelayMin =
-                rawRoute.typicalDelayMin
+            typicalDelayMin = rawRoute.typicalDelayMin
         )
     }
 }

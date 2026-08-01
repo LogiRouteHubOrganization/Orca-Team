@@ -9,10 +9,11 @@ data class Package(
 {
     override fun toString(): String {
         return "Package(" +
-                "PackageId='$packageId', " +
-                "PackageWeightByKg=$packageWeightByKg, " +
-                "destinationWarehouse='$destinationWarehouse', " +
-                "warehouseId='${originWarehouse.warehouseId}'" +
+                "packageId='$packageId', " +
+                "packageWeightByKg=$packageWeightByKg, " +
+                "packagePriority='$packagePriority', " +
+                "originWarehouseId='${originWarehouse.warehouseId}', " +
+                "destinationWarehouseId='${destinationWarehouse.warehouseId}'" +
                 ")"
     }
 }

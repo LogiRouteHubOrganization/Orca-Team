@@ -3,6 +3,9 @@ import parser.FleetParser
 import parser.PackageParser
 import parser.parseRoutes
 import parser.parseWarehousesFile
+import validation.validateDomainGraph
+import builder.DomainGraphBuilder
+import validation.validatePricingStrategies
 import java.io.File
 
 fun main() {
@@ -121,4 +124,20 @@ fun main() {
   }
 
   println("--- Fleet Data Initialization Complete ---")
+
+  // Verify that packages, vehicles, and routes reference the same warehouse objects.
+
+  val domainGraphBuilder = DomainGraphBuilder()
+  val warehousesById =
+    domainGraphBuilder.buildGraph(
+      rawWarehouses = rawWarehouses,
+      rawPackages = rawPackages,
+      rawVehicles = rawVehicles,
+      rawRoutes = rawRoutes
+    )
+
+  validateDomainGraph(warehousesById)
+
+  // Validate pricing calculations using the generated domain graph.
+  validatePricingStrategies(warehousesById)
 }
