@@ -4,10 +4,10 @@ import domain.model.Package
 import domain.model.Route
 import domain.model.Vehicle
 
-private const val BASE_COST = 5.0
-private const val WEIGHT_MULTIPLIER = 0.8
-private const val DISTANCE_MULTIPLIER = 1.0
-private const val PRIORITY_MULTIPLIER = 0.8
+private const val BASE_COST = 8.0
+private const val WEIGHT_MULTIPLIER = 0.6
+private const val DISTANCE_MULTIPLIER = 0.9
+private const val STRATEGY_MULTIPLIER = 0.95
 
 class EcoStrategy : DispatchStrategy {
 
@@ -17,25 +17,16 @@ class EcoStrategy : DispatchStrategy {
         assignedVehicle: Vehicle
     ): Double {
 
-        val weightCost =
-            logisticsPackage.packageWeightByKg *
-                    WEIGHT_MULTIPLIER
+        val weightCost = logisticsPackage.packageWeightByKg * WEIGHT_MULTIPLIER
 
-        val transportationCost =
-            selectedRoute.distanceKm *
-                    assignedVehicle.costPerKm *
-                    DISTANCE_MULTIPLIER
+        val transportationCost = selectedRoute.distanceKm * assignedVehicle.costPerKm * DISTANCE_MULTIPLIER
 
-        val costBeforePriority =
-            BASE_COST +
-                    weightCost +
-                    transportationCost
+        val costBeforeStrategyMultiplier = BASE_COST + weightCost + transportationCost
 
-        return costBeforePriority *
-                getPriorityMultiplier()
+        return costBeforeStrategyMultiplier * getStrategyMultiplier()
     }
 
-    override fun getPriorityMultiplier(): Double {
-        return PRIORITY_MULTIPLIER
+    override fun getStrategyMultiplier(): Double {
+        return STRATEGY_MULTIPLIER
     }
 }

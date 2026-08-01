@@ -8,7 +8,7 @@ private const val BASE_COST = 10.0
 private const val SAFETY_FEE = 50.0
 private const val WEIGHT_MULTIPLIER = 1.2
 private const val DISTANCE_MULTIPLIER = 1.3
-private const val PRIORITY_MULTIPLIER = 1.2
+private const val STRATEGY_MULTIPLIER = 1.2
 
 class FragileStrategy : DispatchStrategy {
 
@@ -18,26 +18,16 @@ class FragileStrategy : DispatchStrategy {
         assignedVehicle: Vehicle
     ): Double {
 
-        val weightCost =
-            logisticsPackage.packageWeightByKg *
-                    WEIGHT_MULTIPLIER
+        val weightCost = logisticsPackage.packageWeightByKg * WEIGHT_MULTIPLIER
 
-        val transportationCost =
-            selectedRoute.distanceKm *
-                    assignedVehicle.costPerKm *
-                    DISTANCE_MULTIPLIER
+        val transportationCost = selectedRoute.distanceKm * assignedVehicle.costPerKm * DISTANCE_MULTIPLIER
 
-        val costBeforePriority =
-            BASE_COST +
-                    SAFETY_FEE +
-                    weightCost +
-                    transportationCost
+        val costBeforeStrategyMultiplier = BASE_COST + SAFETY_FEE + weightCost + transportationCost
 
-        return costBeforePriority *
-                getPriorityMultiplier()
+        return costBeforeStrategyMultiplier * getStrategyMultiplier()
     }
 
-    override fun getPriorityMultiplier(): Double {
-        return PRIORITY_MULTIPLIER
+    override fun getStrategyMultiplier(): Double {
+        return STRATEGY_MULTIPLIER
     }
 }

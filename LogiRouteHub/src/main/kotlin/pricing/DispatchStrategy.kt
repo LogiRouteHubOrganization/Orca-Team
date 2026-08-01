@@ -12,5 +12,5 @@ interface DispatchStrategy {
         assignedVehicle: Vehicle
     ): Double
 
-    fun getPriorityMultiplier(): Double
+    fun getStrategyMultiplier(): Double
 }

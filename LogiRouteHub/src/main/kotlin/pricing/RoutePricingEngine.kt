@@ -13,16 +13,13 @@ class RoutePricingEngine(
     fun updateDispatchStrategy(
         newDispatchStrategy: DispatchStrategy
     ) {
-
         currentDispatchStrategy = newDispatchStrategy
     }
-
     fun calculatePackageTransitCost(
         logisticsPackage: Package,
         selectedRoute: Route,
         assignedVehicle: Vehicle
     ): Double {
-
         return currentDispatchStrategy.calculateTransitCost(
             logisticsPackage,
             selectedRoute,
