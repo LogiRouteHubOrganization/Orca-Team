@@ -1,80 +1,93 @@
 package builder
 
-import dataHolder.LogisticsPackageRaw
-import dataHolder.warehouseRaw
-import domain.model.Package
-import domain.model.Warehouse
 import dataHolder.FleetRaw
-import domain.model.Vehicle
-import dataHolder.RoutesRaw
+import dataHolder.LogisticsPackageRaw
+import dataHolder.RouteRaw
+import dataHolder.WarehouseRaw
+import domain.model.Package
 import domain.model.Route
+import domain.model.Vehicle
+import domain.model.Warehouse
 
 class DomainGraphBuilder {
 
     fun buildGraph(
-        rawWarehouses: List<warehouseRaw>,
+        rawWarehouses: List<WarehouseRaw>,
         rawPackages: List<LogisticsPackageRaw>,
         rawVehicles: List<FleetRaw>,
-        rawRoutes: List<RoutesRaw>
+        rawRoutes: List<RouteRaw>
     ): Map<String, Warehouse> {
 
         val warehouses = createWarehouses(rawWarehouses)
-        val warehouseIndex = createWarehouseIndex(warehouses)
 
-        createPackages(rawPackages, warehouseIndex)
-        createVehicles(rawVehicles, warehouseIndex)
-        createRoutes(rawRoutes, warehouseIndex)
+        val warehousesById =
+            createWarehouseIndex(warehouses)
 
-        return warehouseIndex
+        createPackages(
+            rawPackages,
+            warehousesById
+        )
+
+        createVehicles(
+            rawVehicles,
+            warehousesById
+        )
+
+        createRoutes(
+            rawRoutes,
+            warehousesById
+        )
+
+        return warehousesById
     }
 
-    fun createWarehouses(rawWarehouses: List<warehouseRaw>): List<Warehouse> {
+    private fun createWarehouses(
+        rawWarehouses: List<WarehouseRaw>
+    ): List<Warehouse> {
 
         val warehouses = mutableListOf<Warehouse>()
+
         for (rawWarehouse in rawWarehouses) {
+
             val warehouse = Warehouse(
                 warehouseId = rawWarehouse.warehouseId,
-                warehouseName = rawWarehouse.warehousename,
+                warehouseName = rawWarehouse.warehouseName,
                 regionalZone = rawWarehouse.regionalZone
             )
+
             warehouses.add(warehouse)
         }
+
         return warehouses
     }
-    fun createWarehouseIndex(warehouses: List<Warehouse>): Map<String, Warehouse> {
+
+    private fun createWarehouseIndex(
+        warehouses: List<Warehouse>
+    ): Map<String, Warehouse> {
+
         return warehouses.associateBy { warehouse ->
             warehouse.warehouseId
         }
     }
 
-    fun getRequiredWarehouse(warehouseId: String, warehousesById: Map<String, Warehouse>): Warehouse? {
-        val warehouse = warehousesById[warehouseId]
+    private fun getWarehouseById(
+        warehouseId: String,
+        warehousesById: Map<String, Warehouse>
+    ): Warehouse? {
+
+        val warehouse =
+            warehousesById[warehouseId]
+
         if (warehouse == null) {
-            println("Warehouse not found: $warehouseId")
+            println(
+                "Warning: Warehouse not found -> $warehouseId"
+            )
         }
+
         return warehouse
     }
-    fun createPackageFromRawData(
-        rawPackage: LogisticsPackageRaw,
-        originWarehouse: Warehouse,
-        destinationWarehouse: Warehouse): Package {
-        return Package(
-            packageId = rawPackage.packageId,
-            packageWeightByKg = rawPackage.packageWeightByKg,
-            packagePriority = rawPackage.packagePriority,
-            originWarehouse = originWarehouse,
-            destinationWarehouse = destinationWarehouse
-        )
-    }
 
-    fun linkPackageToOriginWarehouse(
-        logisticsPackage: Package,
-        originWarehouse: Warehouse
-    ) {
-        originWarehouse.addPackage(logisticsPackage)
-    }
-
-    fun createPackages(
+    private fun createPackages(
         rawPackages: List<LogisticsPackageRaw>,
         warehousesById: Map<String, Warehouse>
     ): List<Package> {
@@ -83,27 +96,33 @@ class DomainGraphBuilder {
 
         for (rawPackage in rawPackages) {
 
-            val originWarehouse = getRequiredWarehouse(
-                rawPackage.originHubId,
-                warehousesById
-            )
-            val destinationWarehouse = getRequiredWarehouse(
-                rawPackage.destinationHubId,
-                warehousesById
-            )
+            val originWarehouse =
+                getWarehouseById(
+                    rawPackage.originHubId,
+                    warehousesById
+                )
+
+            val destinationWarehouse =
+                getWarehouseById(
+                    rawPackage.destinationHubId,
+                    warehousesById
+                )
 
             if (
                 originWarehouse != null &&
                 destinationWarehouse != null
             ) {
 
-                val logisticsPackage = createPackageFromRawData(
-                    rawPackage,
-                    originWarehouse,
-                    destinationWarehouse
-                )
+                val logisticsPackage =
+                    createPackage(
+                        rawPackage,
+                        originWarehouse,
+                        destinationWarehouse
+                    )
 
-                linkPackageToOriginWarehouse(logisticsPackage, originWarehouse)
+                originWarehouse.addPackage(
+                    logisticsPackage
+                )
 
                 packages.add(logisticsPackage)
             }
@@ -111,25 +130,26 @@ class DomainGraphBuilder {
 
         return packages
     }
-    fun createVehicleFromRawData(
-        rawVehicle: FleetRaw,
-        currentWarehouse: Warehouse
-    ): Vehicle {
 
-        return Vehicle(
-            vehicleId = rawVehicle.vehicleIds,
-            maxCapacityKg = rawVehicle.maxCapacityKg,
-            costPerKm = rawVehicle.costPerKm,
-            currentWarehouse = currentWarehouse
+    private fun createPackage(
+        rawPackage: LogisticsPackageRaw,
+        originWarehouse: Warehouse,
+        destinationWarehouse: Warehouse
+    ): Package {
+
+        return Package(
+            packageId = rawPackage.packageId,
+            packageWeightByKg =
+                rawPackage.packageWeightByKg,
+            packagePriority =
+                rawPackage.packagePriority,
+            originWarehouse = originWarehouse,
+            destinationWarehouse =
+                destinationWarehouse
         )
     }
-    fun linkVehicleToCurrentWarehouse(
-        vehicle: Vehicle,
-        currentWarehouse: Warehouse
-    ) {
-        currentWarehouse.addVehicle(vehicle)
-    }
-    fun createVehicles(
+
+    private fun createVehicles(
         rawVehicles: List<FleetRaw>,
         warehousesById: Map<String, Warehouse>
     ): List<Vehicle> {
@@ -138,49 +158,45 @@ class DomainGraphBuilder {
 
         for (rawVehicle in rawVehicles) {
 
-            val currentWarehouse = getRequiredWarehouse(
-                rawVehicle.currentHubId,
-                warehousesById
-            )
+            val currentWarehouse =
+                getWarehouseById(
+                    rawVehicle.currentHubId,
+                    warehousesById
+                )
+
             if (currentWarehouse != null) {
-                val vehicle = createVehicleFromRawData(
-                    rawVehicle,
-                    currentWarehouse
-                )
-                linkVehicleToCurrentWarehouse(
-                    vehicle,
-                    currentWarehouse
-                )
+
+                val vehicle =
+                    createVehicle(
+                        rawVehicle,
+                        currentWarehouse
+                    )
+
+                currentWarehouse.addVehicle(vehicle)
+
                 vehicles.add(vehicle)
             }
         }
+
         return vehicles
     }
-    fun createRouteFromRawData(
-        rawRoute: RoutesRaw,
-        originWarehouse: Warehouse,
-        destinationWarehouse: Warehouse
-    ): Route {
 
-        val distanceKm = rawRoute.distanceKm.toDouble()
-        val typicalDelayMin = rawRoute.typicalDelayMin.toInt()
+    private fun createVehicle(
+        rawVehicle: FleetRaw,
+        currentWarehouse: Warehouse
+    ): Vehicle {
 
-        return Route(
-            routeId = rawRoute.routeId,
-            originWarehouse = originWarehouse,
-            destinationWarehouse = destinationWarehouse,
-            distanceKm = distanceKm,
-            typicalDelayMin = typicalDelayMin
+        return Vehicle(
+            vehicleId = rawVehicle.vehicleId,
+            maxCapacityKg =
+                rawVehicle.maxCapacityKg,
+            costPerKm = rawVehicle.costPerKm,
+            currentWarehouse = currentWarehouse
         )
     }
-    fun linkRouteToOriginWarehouse(
-        route: Route,
-        originWarehouse: Warehouse
-    ) {
-        originWarehouse.addRoute(route)
-    }
-    fun createRoutes(
-        rawRoutes: List<RoutesRaw>,
+
+    private fun createRoutes(
+        rawRoutes: List<RouteRaw>,
         warehousesById: Map<String, Warehouse>
     ): List<Route> {
 
@@ -188,36 +204,53 @@ class DomainGraphBuilder {
 
         for (rawRoute in rawRoutes) {
 
-            val originWarehouse = getRequiredWarehouse(
-                rawRoute.originHubId,
-                warehousesById
-            )
+            val originWarehouse =
+                getWarehouseById(
+                    rawRoute.originHubId,
+                    warehousesById
+                )
 
-            val destinationWarehouse = getRequiredWarehouse(
-                rawRoute.destinationHubId,
-                warehousesById
-            )
+            val destinationWarehouse =
+                getWarehouseById(
+                    rawRoute.destinationHubId,
+                    warehousesById
+                )
+
             if (
                 originWarehouse != null &&
                 destinationWarehouse != null
             ) {
 
-                val route = createRouteFromRawData(
-                    rawRoute,
-                    originWarehouse,
-                    destinationWarehouse
-                )
+                val route =
+                    createRoute(
+                        rawRoute,
+                        originWarehouse,
+                        destinationWarehouse
+                    )
 
-                linkRouteToOriginWarehouse(
-                    route,
-                    originWarehouse
-                )
+                originWarehouse.addRoute(route)
 
                 routes.add(route)
             }
         }
+
         return routes
     }
 
+    private fun createRoute(
+        rawRoute: RouteRaw,
+        originWarehouse: Warehouse,
+        destinationWarehouse: Warehouse
+    ): Route {
 
+        return Route(
+            routeId = rawRoute.routeId,
+            originWarehouse = originWarehouse,
+            destinationWarehouse =
+                destinationWarehouse,
+            distanceKm = rawRoute.distanceKm,
+            typicalDelayMin =
+                rawRoute.typicalDelayMin
+        )
+    }
 }
