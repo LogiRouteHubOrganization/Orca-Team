@@ -10,10 +10,11 @@ data class Route(
 {
     override fun toString(): String {
         return "Route(" +
-                "RouteId='$routeId', " +
-                "DistanceKm=$distanceKm, " +
-                "OriginWarehouseId='${originWarehouse.warehouseId}', " +
-                "DestinationWarehouseId='${destinationWarehouse.warehouseId}', " +
+                "routeId='$routeId', " +
+                "originWarehouseId='${originWarehouse.warehouseId}', " +
+                "destinationWarehouseId='${destinationWarehouse.warehouseId}', " +
+                "distanceKm=$distanceKm, " +
+                "typicalDelayMin=$typicalDelayMin" +
                 ")"
     }
 }
