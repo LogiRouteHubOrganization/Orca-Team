@@ -6,6 +6,7 @@ import parser.parseWarehousesFile
 import validation.validateDomainGraph
 import builder.DomainGraphBuilder
 import validation.validatePricingStrategies
+import algorithm.PackageQuickSorter
 import java.io.File
 
 fun main() {
@@ -138,6 +139,33 @@ fun main() {
 
   validateDomainGraph(warehousesById)
 
+  val packageQuickSorter = PackageQuickSorter()
+
+  packageQuickSorter.sortAllCargoQueuesByDescendingWeight(
+    warehousesById
+  )
+  println()
+  println("=== QuickSort Validation ===")
+
+  val firstWarehouse =
+    warehousesById.values.first()
+
+  println(
+    "Warehouse: ${firstWarehouse.warehouseId}"
+  )
+
+  println()
+
+  println("Cargo Queue After Sorting:")
+
+  for (logisticsPackage in firstWarehouse.cargoQueue) {
+
+    println(
+      "${logisticsPackage.packageId} | " +
+              "${logisticsPackage.packageWeightByKg} kg"
+    )
+  }
   // Validate pricing calculations using the generated domain graph.
+
   validatePricingStrategies(warehousesById)
 }
