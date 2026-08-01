@@ -8,10 +8,9 @@ interface DispatchStrategy {
 
     fun calculateTransitCost(
         logisticsPackage: Package,
-        route: Route,
-        vehicle: Vehicle
+        selectedRoute: Route,
+        assignedVehicle: Vehicle
     ): Double
 
     fun getPriorityMultiplier(): Double
-
 }
