@@ -1,5 +1,5 @@
 package builder
-
+import java.io.File
 import dataHolder.LogisticsPackageRaw
 import dataHolder.warehouseRaw
 import domain.model.Package
@@ -8,6 +8,11 @@ import dataHolder.FleetRaw
 import domain.model.Vehicle
 import dataHolder.RoutesRaw
 import domain.model.Route
+import parser.FleetParser
+import parser.parseRoutes
+import parser.parseWarehousesFile
+import parser.PackageParser
+
 
 class DomainGraphBuilder {
 
@@ -220,4 +225,64 @@ class DomainGraphBuilder {
     }
 
 
+}
+
+
+val packageParser = PackageParser()
+
+val packages = packageParser.readLogisticsPackageRowsFromFile(
+    "src/main/resources/packages.csv"
+)
+fun buildGraphData() : Map<String, Warehouse> {
+
+    val packageParser = PackageParser()
+    val fleetParser = FleetParser()
+
+
+
+            return DomainGraphBuilder().buildGraph(
+                parseWarehousesFile(File("src/main/resources/warehouses.csv")),
+                packageParser.readLogisticsPackageRowsFromFile("src/main/resources/packages.csv"),
+                fleetParser.readFleetRowsFromFile("src/main/resources/fleet.csv"),
+                parseRoutes("src/main/resources/routes.csv")
+            )
+}
+fun checkMemoryReference() {
+    val graph = buildGraphData()
+    val warehouse = graph.values.first()
+
+    check(warehouse === graph[warehouse.warehouseId])
+    println("Memory Reference Test: PASSED")
+}
+
+fun checkWarehousePrint() {
+    val warehouse = buildGraphData().values.first()
+
+    println(warehouse)
+    println("Print Test: PASSED")
+}
+
+fun checkGraphBuild() {
+    val graph = buildGraphData()
+
+    check(graph.isNotEmpty())
+    println("Graph Build Test: PASSED")
+}
+
+fun checkGraphPerformance() {
+    val start = System.currentTimeMillis()
+
+    val graph = buildGraphData()
+
+    println("Build Time: ${System.currentTimeMillis() - start} ms")
+
+    check(graph.isNotEmpty())
+    println("Performance Test: PASSED")
+}
+
+fun main() {
+    checkMemoryReference()
+    checkWarehousePrint()
+    checkGraphBuild()
+    checkGraphPerformance()
 }
