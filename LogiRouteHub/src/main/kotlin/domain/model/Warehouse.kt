@@ -31,4 +31,17 @@ class Warehouse(
     fun addVehicle(vehicle: Vehicle) {
         stationedVehiclesList.add(vehicle)
     }
+    fun movePackageWithinCargoQueue(
+        currentIndex: Int,
+        newIndex: Int
+    ) {
+        val packageToMove = cargoQueueList[currentIndex]
+
+        for (index in currentIndex downTo newIndex + 1) {
+
+            cargoQueueList[index] = cargoQueueList[index - 1]
+        }
+
+        cargoQueueList[newIndex] = packageToMove
+    }
 }
