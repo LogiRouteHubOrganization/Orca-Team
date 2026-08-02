@@ -1,4 +1,4 @@
-package pricing
+package domain.pricing
 
 import domain.model.Package
 import domain.model.Route
@@ -18,7 +18,7 @@ class FragileStrategy : DispatchStrategy {
         assignedVehicle: Vehicle
     ): Double {
 
-        val weightCost = logisticsPackage.packageWeightByKg * WEIGHT_MULTIPLIER
+        val weightCost = logisticsPackage.weightByKg * WEIGHT_MULTIPLIER
 
         val transportationCost = selectedRoute.distanceKm * assignedVehicle.costPerKm * DISTANCE_MULTIPLIER
 

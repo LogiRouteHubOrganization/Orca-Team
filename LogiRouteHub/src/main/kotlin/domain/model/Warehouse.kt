@@ -1,8 +1,8 @@
 package domain.model
 
 class Warehouse(
-    val warehouseId: String,
-    val warehouseName: String,
+    val id: String,
+    val name: String,
     val regionalZone: String,
     val latitude: Double,
     val longitude: Double
@@ -31,17 +31,12 @@ class Warehouse(
     fun addVehicle(vehicle: Vehicle) {
         stationedVehiclesList.add(vehicle)
     }
-    fun movePackageWithinCargoQueue(
-        currentIndex: Int,
-        newIndex: Int
+
+    fun updatePackageAtIndex(
+        packageIndex: Int,
+        logisticsPackage: Package
     ) {
-        val packageToMove = cargoQueueList[currentIndex]
-
-        for (index in currentIndex downTo newIndex + 1) {
-
-            cargoQueueList[index] = cargoQueueList[index - 1]
-        }
-
-        cargoQueueList[newIndex] = packageToMove
+        cargoQueueList[packageIndex] =
+            logisticsPackage
     }
 }
