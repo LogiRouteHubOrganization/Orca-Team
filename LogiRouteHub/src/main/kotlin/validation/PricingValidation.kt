@@ -5,6 +5,7 @@ import pricing.EcoStrategy
 import pricing.ExpressStrategy
 import pricing.FragileStrategy
 import pricing.RoutePricingEngine
+import java.util.Locale
 
 fun validatePricingStrategies(
     warehousesById: Map<String, Warehouse>
@@ -33,24 +34,29 @@ fun validatePricingStrategies(
     println()
     println("Warehouse: ${warehouseForPricing.warehouseId}")
 
+    println()
+    println("Using EcoStrategy...")
     val ecoCost = pricingEngine.calculatePackageTransitCost(
             logisticsPackage,
             selectedRoute,
             assignedVehicle
         )
+    println("Eco Strategy Cost: " + String.format(Locale.US, "%.2f", ecoCost))
 
-    println("Eco Strategy Cost: $ecoCost")
+    println()
+    println("Switching to ExpressStrategy...")
 
     pricingEngine.updateDispatchStrategy(ExpressStrategy())
-
     val expressCost = pricingEngine.calculatePackageTransitCost(
             logisticsPackage,
             selectedRoute,
             assignedVehicle
         )
 
-    println("Express Strategy Cost: $expressCost")
+    println("Express Strategy Cost: " + String.format(Locale.US, "%.2f", expressCost))
 
+    println()
+    println("Switching to FragileStrategy...")
     pricingEngine.updateDispatchStrategy(FragileStrategy())
 
     val fragileCost = pricingEngine.calculatePackageTransitCost(
@@ -59,8 +65,7 @@ fun validatePricingStrategies(
             assignedVehicle
         )
 
-    println("Fragile Strategy Cost: $fragileCost")
-
+    println("Fragile Strategy Cost: " + String.format(Locale.US, "%.2f", fragileCost))
     println()
     println("Pricing validation completed.")
 }
