@@ -156,6 +156,16 @@ fun main() {
   )
 
   println()
+  println("Cargo Queue Before Sorting:")
+
+    for (logisticsPackage in firstWarehouse.cargoQueue) {
+        println(
+            "${logisticsPackage.packageId} | " +
+                    String.format(Locale.US, "%.2f",
+                        logisticsPackage.packageWeightByKg) +
+                    " kg"
+        )
+    }
 
   println("Cargo Queue After Sorting:")
 
