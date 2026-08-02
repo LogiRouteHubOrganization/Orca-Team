@@ -1,6 +1,11 @@
 package algorithm
 
+import domain.model.Package
 import domain.model.Warehouse
+
+private const val FIRST_CARGO_QUEUE_INDEX = 0
+private const val MINIMUM_PACKAGE_COUNT_REQUIRED_FOR_SORTING = 2
+private const val SINGLE_INDEX_STEP = 1
 
 class PackageQuickSorter {
 
@@ -13,69 +18,119 @@ class PackageQuickSorter {
             )
         }
     }
-    private fun sortWarehouseCargoQueueByDescendingWeight(warehouse: Warehouse) {
-        if (warehouse.cargoQueue.size < 2) {
+
+    private fun sortWarehouseCargoQueueByDescendingWeight(
+        warehouse: Warehouse
+    ) {
+        if (!doesCargoQueueRequireSorting(warehouse)) {
             return
         }
+
         quickSortCargoQueueSection(
             warehouse = warehouse,
-            startIndex = 0,
-            endIndex = warehouse.cargoQueue.lastIndex
+            sectionStartIndex = FIRST_CARGO_QUEUE_INDEX,
+            sectionEndIndex = warehouse.cargoQueue.lastIndex
         )
     }
 
     private fun quickSortCargoQueueSection(
         warehouse: Warehouse,
-        startIndex: Int,
-        endIndex: Int
+        sectionStartIndex: Int,
+        sectionEndIndex: Int
     ) {
-        if (startIndex >= endIndex) {
+        if (isSectionAlreadySorted(sectionStartIndex, sectionEndIndex)) {
             return
         }
-
-        val pivotIndex = dividePackagesAroundPivot(
-                warehouse = warehouse,
-                startIndex = startIndex,
-                endIndex = endIndex
-            )
-
-        quickSortCargoQueueSection(
+        val finalPivotIndex = dividePackagesAroundPivot(
             warehouse = warehouse,
-            startIndex = startIndex,
-            endIndex = pivotIndex - 1
+            sectionStartIndex = sectionStartIndex,
+            sectionEndIndex = sectionEndIndex
         )
+        val leftSectionEndIndex = finalPivotIndex - SINGLE_INDEX_STEP
+
+        val rightSectionStartIndex = finalPivotIndex + SINGLE_INDEX_STEP
 
         quickSortCargoQueueSection(
             warehouse = warehouse,
-            startIndex = pivotIndex + 1,
-            endIndex = endIndex
+            sectionStartIndex = sectionStartIndex,
+            sectionEndIndex = leftSectionEndIndex
+        )
+        quickSortCargoQueueSection(
+            warehouse = warehouse,
+            sectionStartIndex = rightSectionStartIndex,
+            sectionEndIndex = sectionEndIndex
         )
     }
 
     private fun dividePackagesAroundPivot(
         warehouse: Warehouse,
-        startIndex: Int,
-        endIndex: Int
+        sectionStartIndex: Int,
+        sectionEndIndex: Int
     ): Int {
+        val cargoQueue = warehouse.cargoQueue
 
-        val pivotWeight = warehouse.cargoQueue[startIndex].packageWeightByKg
+        val pivotWeight =
+            cargoQueue[sectionStartIndex].extractPackageWeight()
 
-        var pivotIndex = startIndex
+        var pivotIndex = sectionStartIndex
 
-        for (currentIndex in startIndex + 1..endIndex) {
+        val firstComparisonIndex = sectionStartIndex + SINGLE_INDEX_STEP
 
-            val currentPackageWeight = warehouse.cargoQueue[currentIndex].packageWeightByKg
+        for (comparedPackageIndex in firstComparisonIndex..sectionEndIndex) {
+            val comparedPackageWeight = cargoQueue[comparedPackageIndex].extractPackageWeight()
 
-            if (currentPackageWeight > pivotWeight) {
+            val isComparedPackageHeavierThanPivot = comparedPackageWeight > pivotWeight
 
-                warehouse.movePackageWithinCargoQueue(
-                    currentIndex = currentIndex,
-                    newIndex = pivotIndex
+            if (isComparedPackageHeavierThanPivot) {
+                movePackageBeforePivot(
+                    warehouse = warehouse,
+                    sourcePackageIndex = comparedPackageIndex,
+                    pivotIndex = pivotIndex
                 )
-                pivotIndex++
+                pivotIndex += SINGLE_INDEX_STEP
             }
         }
-
         return pivotIndex
     }
+
+    private fun doesCargoQueueRequireSorting(warehouse: Warehouse): Boolean {
+        return warehouse.cargoQueue.size >= MINIMUM_PACKAGE_COUNT_REQUIRED_FOR_SORTING
+    }
+
+    private fun isSectionAlreadySorted(
+        sectionStartIndex: Int,
+        sectionEndIndex: Int
+    ): Boolean {
+        return sectionStartIndex >= sectionEndIndex
+    }
+
+    private fun movePackageBeforePivot(
+        warehouse: Warehouse,
+        sourcePackageIndex: Int,
+        pivotIndex: Int
+    ) {
+        val cargoQueue = warehouse.cargoQueue
+
+        val packageToMove = cargoQueue[sourcePackageIndex]
+
+        val firstIndexToShift = pivotIndex + SINGLE_INDEX_STEP
+
+        for (indexToShift in sourcePackageIndex downTo firstIndexToShift) {
+            val previousPackageIndex = indexToShift - SINGLE_INDEX_STEP
+            val previousPackage = cargoQueue[previousPackageIndex]
+            warehouse.updatePackageAtIndex(
+                packageIndex = indexToShift,
+                logisticsPackage = previousPackage
+            )
+        }
+        warehouse.updatePackageAtIndex(
+            packageIndex = pivotIndex,
+            logisticsPackage = packageToMove
+        )
+    }
+
+    private fun Package.extractPackageWeight(): Double {
+        return this.weightByKg
+    }
 }
+

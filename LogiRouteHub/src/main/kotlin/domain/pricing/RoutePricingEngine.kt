@@ -1,4 +1,4 @@
-package pricing
+package domain.pricing
 
 import domain.model.Package
 import domain.model.Route

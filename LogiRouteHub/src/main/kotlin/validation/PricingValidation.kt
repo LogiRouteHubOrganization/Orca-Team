@@ -1,11 +1,11 @@
 package validation
 
 import domain.model.Warehouse
-import pricing.EcoStrategy
-import pricing.ExpressStrategy
-import pricing.FragileStrategy
-import pricing.RoutePricingEngine
-import java.util.Locale
+import domain.pricing.EcoStrategy
+import domain.pricing.ExpressStrategy
+import domain.pricing.FragileStrategy
+import domain.pricing.RoutePricingEngine
+import java.util.*
 
 fun validatePricingStrategies(
     warehousesById: Map<String, Warehouse>
@@ -15,8 +15,8 @@ fun validatePricingStrategies(
     println("=== Pricing Validation ===")
 
     val warehouseForPricing = findWarehouseForPricingValidation(
-            warehousesById
-        )
+        warehousesById
+    )
 
     if (warehouseForPricing == null) {
 
@@ -32,15 +32,15 @@ fun validatePricingStrategies(
     val pricingEngine = RoutePricingEngine(EcoStrategy())
 
     println()
-    println("Warehouse: ${warehouseForPricing.warehouseId}")
+    println("Warehouse: ${warehouseForPricing.id}")
 
     println()
     println("Using EcoStrategy...")
     val ecoCost = pricingEngine.calculatePackageTransitCost(
-            logisticsPackage,
-            selectedRoute,
-            assignedVehicle
-        )
+        logisticsPackage,
+        selectedRoute,
+        assignedVehicle
+    )
     println("Eco Strategy Cost: " + String.format(Locale.US, "%.2f", ecoCost))
 
     println()
@@ -48,10 +48,10 @@ fun validatePricingStrategies(
 
     pricingEngine.updateDispatchStrategy(ExpressStrategy())
     val expressCost = pricingEngine.calculatePackageTransitCost(
-            logisticsPackage,
-            selectedRoute,
-            assignedVehicle
-        )
+        logisticsPackage,
+        selectedRoute,
+        assignedVehicle
+    )
 
     println("Express Strategy Cost: " + String.format(Locale.US, "%.2f", expressCost))
 
@@ -60,10 +60,10 @@ fun validatePricingStrategies(
     pricingEngine.updateDispatchStrategy(FragileStrategy())
 
     val fragileCost = pricingEngine.calculatePackageTransitCost(
-            logisticsPackage,
-            selectedRoute,
-            assignedVehicle
-        )
+        logisticsPackage,
+        selectedRoute,
+        assignedVehicle
+    )
 
     println("Fragile Strategy Cost: " + String.format(Locale.US, "%.2f", fragileCost))
     println()

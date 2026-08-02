@@ -16,7 +16,7 @@ fun validateDomainGraph(
     for (warehouse in warehousesById.values) {
 
         println()
-        println("Warehouse: ${warehouse.warehouseId}")
+        println("Warehouse: ${warehouse.id}")
 
         validatePackageReferences(warehouse)
         validateVehicleReferences(warehouse)
@@ -25,6 +25,7 @@ fun validateDomainGraph(
     println()
     println("Domain graph validation completed.")
 }
+
 private fun validatePackageReferences(
     warehouse: Warehouse
 ) {
@@ -32,7 +33,7 @@ private fun validatePackageReferences(
 
         val hasCorrectOriginWarehouseReference = logisticsPackage.originWarehouse === warehouse
 
-        println("Package ${logisticsPackage.packageId} linked correctly: " + hasCorrectOriginWarehouseReference)
+        println("Package ${logisticsPackage.id} linked correctly: " + hasCorrectOriginWarehouseReference)
     }
 }
 
@@ -43,7 +44,7 @@ private fun validateVehicleReferences(
 
         val hasCorrectCurrentWarehouseReference = vehicle.currentWarehouse === warehouse
 
-        println("Vehicle ${vehicle.vehicleId} linked correctly: " + hasCorrectCurrentWarehouseReference)
+        println("Vehicle ${vehicle.id} linked correctly: " + hasCorrectCurrentWarehouseReference)
     }
 }
 
@@ -55,7 +56,7 @@ private fun validateRouteReferences(
         val hasCorrectOriginWarehouseReference = route.originWarehouse === warehouse
 
         println(
-            "Route ${route.routeId} linked correctly: " + hasCorrectOriginWarehouseReference
+            "Route ${route.id} linked correctly: " + hasCorrectOriginWarehouseReference
         )
     }
 }

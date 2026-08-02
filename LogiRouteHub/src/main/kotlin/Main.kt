@@ -1,187 +1,233 @@
+import algorithm.PackageQuickSorter
 import algorithm.sortPackages
+import dataHolder.FleetRaw
+import dataHolder.LogisticsPackageRaw
+import dataHolder.RouteRaw
+import dataHolder.WarehouseRaw
+import domain.builder.DomainGraphBuilder
+import domain.builder.GraphBuilderInput
+import domain.model.Warehouse
 import parser.FleetParser
 import parser.PackageParser
 import parser.parseRoutes
 import parser.parseWarehousesFile
 import validation.validateDomainGraph
-import builder.DomainGraphBuilder
 import validation.validatePricingStrategies
-import algorithm.PackageQuickSorter
 import java.io.File
-import java.util.Locale
+import java.util.*
+
+private const val PACKAGES_FILE_PATH =
+    "src/main/resources/packages.csv"
+
+private const val WAREHOUSES_FILE_PATH =
+    "src/main/resources/warehouses.csv"
+
+private const val ROUTES_FILE_PATH =
+    "src/main/resources/routes.csv"
+
+private const val FLEET_FILE_PATH =
+    "src/main/resources/fleet.csv"
+
+private const val TOP_PACKAGE_COUNT = 3
+private const val DISPLAY_POSITION_OFFSET = 1
+private const val WEIGHT_DECIMAL_FORMAT = "%.2f"
+
+private const val OUTPUT_SEPARATOR =
+    "******************************************************"
 
 fun main() {
 
-  println("=== Package Parser ===")
+    val rawPackages = loadAndSortPackages()
 
-  val packageFilePath =
-    "src/main/resources/packages.csv"
+    val rawWarehouses = loadWarehouses()
 
-  val packageParser = PackageParser()
+    val rawRoutes = loadRoutes()
 
-  val rawPackages =
-    packageParser
-      .readLogisticsPackageRowsFromFile(packageFilePath)
-      .toMutableList()
+    val rawVehicles = loadVehicles()
 
-  sortPackages(rawPackages)
-
-  println()
-  println("Successfully parsed packages: ${rawPackages.size}")
-  println()
-  println("Sorted packages:")
-
-  for (rawPackage in rawPackages) {
-    println(rawPackage)
-  }
-
-  println()
-  println("Package sorting completed.")
-
-  println("\n******************************************************\n")
-
-  println("Starting Warehouse Data Pipeline...")
-
-  val warehouseFilePath =
-    "src/main/resources/warehouses.csv"
-
-  val warehouseCsvFile =
-    File(warehouseFilePath)
-
-  val rawWarehouses =
-    parseWarehousesFile(warehouseCsvFile)
-
-  println(
-    "Successfully parsed ${rawWarehouses.size} " +
-            "valid warehouse records."
-  )
-
-  println("--- Detailed Warehouse Records ---")
-
-  for (rawWarehouse in rawWarehouses) {
-    println(
-      "ID: ${rawWarehouse.warehouseId}" +
-              " | Name: ${rawWarehouse.warehouseName}" +
-              " | Zone: ${rawWarehouse.regionalZone}" +
-              " | Latitude: ${rawWarehouse.latitude}" +
-              " | Longitude: ${rawWarehouse.longitude}"
+    val warehouseIndex = buildDomainGraph(
+        rawPackages = rawPackages,
+        rawWarehouses = rawWarehouses,
+        rawRoutes = rawRoutes,
+        rawVehicles = rawVehicles
     )
-  }
 
-  println("--- Warehouse Data Initialization Complete ---")
+    validateDomainGraph(warehouseIndex)
 
-  println("\n******************************************************\n")
+    validateQuickSort(warehouseIndex)
 
-  println("Starting Route Data Pipeline...")
+    validatePricingStrategies(warehouseIndex)
+}
 
-  val routeFilePath =
-    "src/main/resources/routes.csv"
+private fun loadAndSortPackages(): MutableList<LogisticsPackageRaw> {
 
-  val rawRoutes =
-    parseRoutes(routeFilePath)
+    val packages = PackageParser().readLogisticsPackageRowsFromFile(
+        PACKAGES_FILE_PATH
+    ).toMutableList()
 
-  println(
-    "Successfully parsed ${rawRoutes.size} valid route records."
-  )
+    sortPackages(packages)
 
-  println("--- Detailed Route Records ---")
+    println("=== Package Parser ===")
 
-  for (rawRoute in rawRoutes) {
-    println(
-      "Route ID: ${rawRoute.routeId}" +
-              " | Origin Hub: ${rawRoute.originHubId}" +
-              " | Destination Hub: ${rawRoute.destinationHubId}" +
-              " | Distance: ${rawRoute.distanceKm} km" +
-              " | Typical Delay: ${rawRoute.typicalDelayMin} min"
+    println("Successfully parsed packages: " + packages.size)
+
+    println()
+    println("Top $TOP_PACKAGE_COUNT priority packages:")
+
+    val displayedPackageCount = minOf(TOP_PACKAGE_COUNT, packages.size)
+
+    for (packageIndex in packages.indices.take(displayedPackageCount)) {
+
+        val packagePosition = packageIndex + DISPLAY_POSITION_OFFSET
+
+        val logisticsPackage = packages[packageIndex]
+
+        println(
+            "$packagePosition. " + "ID: ${logisticsPackage.packageId}" + " | Weight: " +
+                    "${formatWeight(logisticsPackage.packageWeightByKg)} kg" +
+                    " | Priority: ${logisticsPackage.packagePriority}"
+        )
+    }
+    printSeparator()
+    return packages
+}
+
+private fun loadWarehouses(): List<WarehouseRaw> {
+
+    println("Starting Warehouse Data Pipeline...")
+
+    val warehouseFile = File(WAREHOUSES_FILE_PATH)
+
+    val warehouses = parseWarehousesFile(warehouseFile)
+
+    println("Successfully parsed ${warehouses.size} " + "valid warehouse records.")
+
+    println("--- Detailed Warehouse Records ---")
+
+    for (warehouse in warehouses) {
+        println(
+            "ID: ${warehouse.warehouseId}" +
+                    " | Name: ${warehouse.warehouseName}" +
+                    " | Zone: ${warehouse.regionalZone}" +
+                    " | Latitude: ${warehouse.latitude}" +
+                    " | Longitude: ${warehouse.longitude}"
+        )
+    }
+    println("--- Warehouse Data Initialization Complete ---")
+    printSeparator()
+
+    return warehouses
+}
+
+private fun loadRoutes(): List<RouteRaw> {
+
+    println("Starting Route Data Pipeline...")
+
+    val routes = parseRoutes(ROUTES_FILE_PATH)
+
+    println("Successfully parsed ${routes.size} " + "valid route records.")
+
+    println("--- Detailed Route Records ---")
+
+    for (route in routes) {
+        println(
+            "Route ID: ${route.routeId}" +
+                    " | Origin Hub: ${route.originHubId}" +
+                    " | Destination Hub: ${route.destinationHubId}" +
+                    " | Distance: ${route.distanceKm} km" +
+                    " | Typical Delay: ${route.typicalDelayMin} min"
+        )
+    }
+
+    println("--- Route Data Initialization Complete ---")
+    printSeparator()
+    return routes
+}
+
+private fun loadVehicles(): List<FleetRaw> {
+    println("Starting Fleet Data Pipeline...")
+
+    val vehicles = FleetParser().readFleetRowsFromFile(FLEET_FILE_PATH)
+
+    println("Successfully parsed ${vehicles.size} " + "valid fleet records.")
+
+    println("--- Detailed Fleet Records ---")
+
+    for (vehicle in vehicles) {
+        println(
+            "Vehicle ID: ${vehicle.vehicleId}" +
+                    " | Current Hub: ${vehicle.currentHubId}" +
+                    " | Capacity: ${vehicle.maxCapacityKg} kg" +
+                    " | Cost/Km: ${vehicle.costPerKm}"
+        )
+    }
+    println("--- Fleet Data Initialization Complete ---")
+    printSeparator()
+    return vehicles
+}
+
+private fun buildDomainGraph(
+    rawPackages: List<LogisticsPackageRaw>,
+    rawWarehouses: List<WarehouseRaw>,
+    rawRoutes: List<RouteRaw>,
+    rawVehicles: List<FleetRaw>
+): Map<String, Warehouse> {
+
+    val graphBuilderInput = GraphBuilderInput(
+        warehouses = rawWarehouses,
+        packages = rawPackages,
+        vehicles = rawVehicles,
+        routes = rawRoutes
     )
-  }
-
-  println("--- Route Data Initialization Complete ---")
-
-  println("\n******************************************************\n")
-
-  println("Starting Fleet Data Pipeline...")
-
-  val fleetFilePath =
-    "src/main/resources/fleet.csv"
-
-  val fleetParser = FleetParser()
-
-  val rawVehicles =
-    fleetParser.readFleetRowsFromFile(fleetFilePath)
-
-  println(
-    "Successfully parsed ${rawVehicles.size} valid fleet records."
-  )
-
-  println("--- Detailed Fleet Records ---")
-
-  for (rawVehicle in rawVehicles) {
-    println(
-      "Vehicle ID: ${rawVehicle.vehicleId}" +
-              " | Current Hub: ${rawVehicle.currentHubId}" +
-              " | Capacity: ${rawVehicle.maxCapacityKg} kg" +
-              " | Cost/Km: ${rawVehicle.costPerKm}"
-    )
-  }
-
-  println("--- Fleet Data Initialization Complete ---")
-
-  // Verify that packages, vehicles, and routes reference the same warehouse objects.
-
     val domainGraphBuilder = DomainGraphBuilder()
 
-    val warehousesById =
-        domainGraphBuilder.buildGraph(
-            rawWarehouses = rawWarehouses,
-            rawPackages = rawPackages,
-            rawVehicles = rawVehicles,
-            rawRoutes = rawRoutes
-        )
+    return domainGraphBuilder.buildGraph(graphBuilderInput)
+}
 
-    validateDomainGraph(warehousesById)
-
+private fun validateQuickSort(warehouseIndex: Map<String, Warehouse>) {
     println()
     println("=== QuickSort Validation ===")
 
-    val firstWarehouse =
-        warehousesById.values.first()
+    val firstWarehouse = warehouseIndex.values.firstOrNull()
 
-    println("Warehouse: ${firstWarehouse.warehouseId}")
-
+    if (firstWarehouse == null) {
+        println("QuickSort validation skipped: " + "No warehouses were built.")
+        printSeparator()
+        return
+    }
+    println("Warehouse: ${firstWarehouse.id}")
     println()
     println("Cargo Queue Before Sorting:")
 
-    for (logisticsPackage in firstWarehouse.cargoQueue) {
-        println(
-            "${logisticsPackage.packageId} | " +
-                    String.format(
-                        Locale.US,
-                        "%.2f",
-                        logisticsPackage.packageWeightByKg
-                    ) + " kg"
-        )
-    }
-
+    printCargoQueue(firstWarehouse)
     val packageQuickSorter = PackageQuickSorter()
 
-    packageQuickSorter.sortAllCargoQueuesByDescendingWeight(
-        warehousesById
-    )
-
+    packageQuickSorter.sortAllCargoQueuesByDescendingWeight(warehouseIndex)
     println()
     println("Cargo Queue After Sorting:")
 
-    for (logisticsPackage in firstWarehouse.cargoQueue) {
-        println(
-            "${logisticsPackage.packageId} | " +
-                    String.format(
-                        Locale.US,
-                        "%.2f",
-                        logisticsPackage.packageWeightByKg
-                    ) + " kg"
-        )
-    }
+    printCargoQueue(firstWarehouse)
+    printSeparator()
+}
 
-    validatePricingStrategies(warehousesById)
+private fun printCargoQueue(warehouse: Warehouse) {
+
+    if (warehouse.cargoQueue.isEmpty()) {
+        println("No packages are available in this warehouse.")
+        return
+    }
+    for (logisticsPackage in warehouse.cargoQueue) {
+        println("${logisticsPackage.id}" + " | ${formatWeight(logisticsPackage.weightByKg)} kg")
+    }
+}
+
+private fun formatWeight(weightByKg: Double): String {
+
+    return String.format(Locale.US, WEIGHT_DECIMAL_FORMAT, weightByKg)
+}
+
+private fun printSeparator() {
+    println()
+    println(OUTPUT_SEPARATOR)
+    println()
 }
