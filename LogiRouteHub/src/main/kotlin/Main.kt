@@ -129,56 +129,59 @@ fun main() {
 
   // Verify that packages, vehicles, and routes reference the same warehouse objects.
 
-  val domainGraphBuilder = DomainGraphBuilder()
-  val warehousesById =
-    domainGraphBuilder.buildGraph(
-      rawWarehouses = rawWarehouses,
-      rawPackages = rawPackages,
-      rawVehicles = rawVehicles,
-      rawRoutes = rawRoutes
-    )
+    val domainGraphBuilder = DomainGraphBuilder()
 
-  validateDomainGraph(warehousesById)
+    val warehousesById =
+        domainGraphBuilder.buildGraph(
+            rawWarehouses = rawWarehouses,
+            rawPackages = rawPackages,
+            rawVehicles = rawVehicles,
+            rawRoutes = rawRoutes
+        )
 
-  val packageQuickSorter = PackageQuickSorter()
+    validateDomainGraph(warehousesById)
 
-  packageQuickSorter.sortAllCargoQueuesByDescendingWeight(
-    warehousesById
-  )
-  println()
-  println("=== QuickSort Validation ===")
+    println()
+    println("=== QuickSort Validation ===")
 
-  val firstWarehouse =
-    warehousesById.values.first()
+    val firstWarehouse =
+        warehousesById.values.first()
 
-  println(
-    "Warehouse: ${firstWarehouse.warehouseId}"
-  )
+    println("Warehouse: ${firstWarehouse.warehouseId}")
 
-  println()
-  println("Cargo Queue Before Sorting:")
+    println()
+    println("Cargo Queue Before Sorting:")
 
     for (logisticsPackage in firstWarehouse.cargoQueue) {
         println(
             "${logisticsPackage.packageId} | " +
-                    String.format(Locale.US, "%.2f",
-                        logisticsPackage.packageWeightByKg) +
-                    " kg"
+                    String.format(
+                        Locale.US,
+                        "%.2f",
+                        logisticsPackage.packageWeightByKg
+                    ) + " kg"
         )
     }
 
-  println("Cargo Queue After Sorting:")
+    val packageQuickSorter = PackageQuickSorter()
 
-  for (logisticsPackage in firstWarehouse.cargoQueue) {
-
-    println(
-      "${logisticsPackage.packageId} | " + String.format(Locale.US, "%.2f",
-                logisticsPackage.packageWeightByKg
-              ) +
-              " kg"
+    packageQuickSorter.sortAllCargoQueuesByDescendingWeight(
+        warehousesById
     )
-  }
 
-  // Validate pricing calculations using the generated domain graph.
-  validatePricingStrategies(warehousesById)
+    println()
+    println("Cargo Queue After Sorting:")
+
+    for (logisticsPackage in firstWarehouse.cargoQueue) {
+        println(
+            "${logisticsPackage.packageId} | " +
+                    String.format(
+                        Locale.US,
+                        "%.2f",
+                        logisticsPackage.packageWeightByKg
+                    ) + " kg"
+        )
+    }
+
+    validatePricingStrategies(warehousesById)
 }
