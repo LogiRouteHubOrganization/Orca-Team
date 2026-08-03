@@ -9,7 +9,7 @@ import domain.builder.GraphBuilderInput
 import domain.model.Warehouse
 import parser.FleetParser
 import parser.PackageParser
-import parser.parseRoutes
+import parser.RouteParser
 import parser.parseWarehousesFile
 import validation.validateDomainGraph
 import validation.validatePricingStrategies
@@ -123,7 +123,7 @@ private fun loadRoutes(): List<RouteRaw> {
 
     println("Starting Route Data Pipeline...")
 
-    val routes = parseRoutes(ROUTES_FILE_PATH)
+    val routes = RouteParser(ROUTES_FILE_PATH)
 
     println("Successfully parsed ${routes.size} " + "valid route records.")
 
