@@ -13,7 +13,7 @@ private const val DESTINATION_HUB_ID_COLUMN_INDEX = 2
 private const val DISTANCE_COLUMN_INDEX = 3
 private const val DELAY_COLUMN_INDEX = 4
 
-fun parseRoutes(
+fun RouteParser(
     filePath: String
 ): List<RouteRaw> {
 
