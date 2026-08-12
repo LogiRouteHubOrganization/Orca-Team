@@ -39,12 +39,16 @@ private const val OUTPUT_SEPARATOR =
 
 fun main() {
 
-    val rawPackages = loadAndSortPackages()
+    val packageParser = PackageParser()
+    val packageRepository: PackageRepository = CsvPackageRepository(
+        packageFile = File(PACKAGES_FILE_PATH),
+        packageParser = packageParser
+    )
 
+
+    val rawPackages = loadAndSortPackages(packageRepository)
     val rawWarehouses = loadWarehouses()
-
     val rawRoutes = loadRoutes()
-
     val rawVehicles = loadVehicles()
 
     val warehouseIndex = buildDomainGraph(
@@ -55,24 +59,21 @@ fun main() {
     )
 
     validateDomainGraph(warehouseIndex)
-
     validateQuickSort(warehouseIndex)
-
     validatePricingStrategies(warehouseIndex)
 
-    testPackageRepository()
 }
 
-private fun loadAndSortPackages(): MutableList<LogisticsPackageRaw> {
+private fun loadAndSortPackages(
+    packageRepository: PackageRepository
+): MutableList<LogisticsPackageRaw> {
 
-    val packages = PackageParser().readLogisticsPackageRowsFromFile(
-        PACKAGES_FILE_PATH
-    ).toMutableList()
+
+    val packages = packageRepository.loadPackages().toMutableList()
 
     sortPackages(packages)
 
-    println("=== Package Parser ===")
-
+    println("=== Package Repository ===")
     println("Successfully parsed packages: " + packages.size)
 
     println()
@@ -83,7 +84,6 @@ private fun loadAndSortPackages(): MutableList<LogisticsPackageRaw> {
     for (packageIndex in packages.indices.take(displayedPackageCount)) {
 
         val packagePosition = packageIndex + DISPLAY_POSITION_OFFSET
-
         val logisticsPackage = packages[packageIndex]
 
         println(
@@ -169,31 +169,7 @@ private fun loadVehicles(): List<FleetRaw> {
     printSeparator()
     return vehicles
 }
-private fun testPackageRepository() {
-    println("=== Package Repository Test ===")
 
-    val packageRepository: PackageRepository = CsvPackageRepository(
-        packageCsvFilePath = PACKAGES_FILE_PATH
-    )
-
-    val allPackages = packageRepository.fetchAllPackages()
-    println("Successfully fetched ${allPackages.size} packages via PackageRepository.")
-
-    val samplePackageId = allPackages.firstOrNull()?.id ?: "PKG-101"
-    val foundPackage = packageRepository.findPackageById(samplePackageId)
-
-    if (foundPackage != null) {
-        println("Find by ID Success -> ID: ${foundPackage.id} | Weight: ${foundPackage.weightByKg} kg | Priority: ${foundPackage.priority}")
-    } else {
-        println("Find by ID Failed for ID: $samplePackageId")
-    }
-
-    val fakeId = "PK-00"
-    val notFoundPackage = packageRepository.findPackageById(fakeId)
-    println("Searching for non-existing ID ($fakeId) returned: ${notFoundPackage == null} (Expected: true)")
-
-    printSeparator()
-}
 
 private fun buildDomainGraph(
     rawPackages: List<LogisticsPackageRaw>,

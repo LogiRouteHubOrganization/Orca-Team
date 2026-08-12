@@ -3,44 +3,32 @@ package repository.csv
 import dataHolder.LogisticsPackageRaw
 import parser.PackageParser
 import repository.PackageRepository
-import domain.model.Package
-import domain.model.Warehouse
+import java.io.File
+
+private const val HEADER_LINE_COUNT = 1
 
 class CsvPackageRepository(
-    private val packageCsvFilePath: String,
-    private val packageParser: PackageParser = PackageParser()
+    private val packageFile: File,
+    private val packageParser: PackageParser
 ) : PackageRepository {
 
-    override fun fetchAllPackages(): List<Package> {
-        val rawPackages: List<LogisticsPackageRaw> =
-            packageParser.readLogisticsPackageRowsFromFile(packageCsvFilePath)
-
-        return rawPackages.map { rawPackage ->
-            Package(
-                id = rawPackage.packageId,
-                weightByKg = rawPackage.packageWeightByKg,
-                priority = rawPackage.packagePriority,
-                originWarehouse = createTemporaryWarehouse(rawPackage.originHubId),
-                destinationWarehouse = createTemporaryWarehouse(rawPackage.destinationHubId)
-            )
+    override fun loadPackages(): List<LogisticsPackageRaw> {
+        if (!packageFile.exists()) {
+            println("Diagnostic Warning: File ${packageFile.name} does not exist.")
+            return emptyList()
         }
-    }
 
-    override fun findPackageById(targetPackageId: String): Package? {
-        val normalizedSearchId = targetPackageId.trim()
+        val packageRows = packageFile.readLines()
+        val dataRows = packageRows.drop(HEADER_LINE_COUNT)
+        val validPackages = mutableListOf<LogisticsPackageRaw>()
 
-        return fetchAllPackages().find { packageItem ->
-            packageItem.id.equals(normalizedSearchId, ignoreCase = true)
+        for (packageRow in dataRows) {
+            val parsedPackage = packageParser.parsePackageRow(packageRow)
+            if (parsedPackage != null) {
+                validPackages.add(parsedPackage)
+            }
         }
-    }
 
-    private fun createTemporaryWarehouse(warehouseId: String): Warehouse {
-        return Warehouse(
-            id = warehouseId,
-            name = "Temp Warehouse $warehouseId",
-            regionalZone = "UNKNOWN",
-            latitude = 0.0,
-            longitude = 0.0          
-        )
+        return validPackages
     }
 }
