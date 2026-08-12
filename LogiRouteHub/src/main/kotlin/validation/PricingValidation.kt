@@ -1,11 +1,15 @@
 package validation
 
+import domain.model.Package
+import domain.model.Route
+import domain.model.Vehicle
 import domain.model.Warehouse
+import domain.pricing.DispatchStrategy
 import domain.pricing.EcoStrategy
 import domain.pricing.ExpressStrategy
 import domain.pricing.FragileStrategy
 import domain.pricing.RoutePricingEngine
-import java.util.*
+import java.util.Locale
 
 fun validatePricingStrategies(
     warehousesById: Map<String, Warehouse>
@@ -14,73 +18,89 @@ fun validatePricingStrategies(
     println()
     println("=== Pricing Validation ===")
 
-    val warehouseForPricing = findWarehouseForPricingValidation(
-        warehousesById
-    )
+    val warehouse = findWarehouseForPricingValidation(warehousesById)
 
-    if (warehouseForPricing == null) {
-
-        println("Pricing validation skipped: " + "No warehouse contains a package, route, and vehicle.")
+    if (warehouse == null) {
+        println(
+            "Pricing validation skipped: " +
+                    "No warehouse contains a package, route, and vehicle."
+        )
         return
     }
-    val logisticsPackage = warehouseForPricing.cargoQueue.first()
 
-    val selectedRoute = warehouseForPricing.outgoingRoutes.first()
+    val logisticsPackage = warehouse.cargoQueue.firstOrNull()
+    val route = warehouse.outgoingRoutes.firstOrNull()
+    val vehicle = warehouse.stationedVehicles.firstOrNull()
 
-    val assignedVehicle = warehouseForPricing.stationedVehicles.first()
+    if (
+        logisticsPackage == null ||
+        route == null ||
+        vehicle == null
+    ) {
+        println("Pricing validation failed: Missing required data.")
+        return
+    }
+
+    println()
+    println("Warehouse: ${warehouse.id}")
 
     val pricingEngine = RoutePricingEngine(EcoStrategy())
 
-    println()
-    println("Warehouse: ${warehouseForPricing.id}")
-
-    println()
-    println("Using EcoStrategy...")
-    val ecoCost = pricingEngine.calculatePackageTransitCost(
-        logisticsPackage,
-        selectedRoute,
-        assignedVehicle
-    )
-    println("Eco Strategy Cost: " + String.format(Locale.US, "%.2f", ecoCost))
-
-    println()
-    println("Switching to ExpressStrategy...")
-
-    pricingEngine.updateDispatchStrategy(ExpressStrategy())
-    val expressCost = pricingEngine.calculatePackageTransitCost(
-        logisticsPackage,
-        selectedRoute,
-        assignedVehicle
+    val strategies = listOf(
+        Pair("EcoStrategy", EcoStrategy()),
+        Pair("ExpressStrategy", ExpressStrategy()),
+        Pair("FragileStrategy", FragileStrategy())
     )
 
-    println("Express Strategy Cost: " + String.format(Locale.US, "%.2f", expressCost))
+    for ((strategyName, strategy) in strategies) {
+        validateStrategy(
+            pricingEngine,
+            strategyName,
+            strategy,
+            logisticsPackage,
+            route,
+            vehicle
+        )
+    }
 
-    println()
-    println("Switching to FragileStrategy...")
-    pricingEngine.updateDispatchStrategy(FragileStrategy())
-
-    val fragileCost = pricingEngine.calculatePackageTransitCost(
-        logisticsPackage,
-        selectedRoute,
-        assignedVehicle
-    )
-
-    println("Fragile Strategy Cost: " + String.format(Locale.US, "%.2f", fragileCost))
     println()
     println("Pricing validation completed.")
+}
+
+private fun validateStrategy(
+    pricingEngine: RoutePricingEngine,
+    strategyName: String,
+    strategy: DispatchStrategy,
+    logisticsPackage: Package,
+    route: Route,
+    vehicle: Vehicle
+) {
+
+    println()
+    println("Using $strategyName...")
+
+    pricingEngine.updateDispatchStrategy(strategy)
+
+    val cost = pricingEngine.calculatePackageTransitCost(
+        logisticsPackage,
+        route,
+        vehicle
+    )
+
+    println(
+        "$strategyName Cost: " +
+                String.format(Locale.US, "%.2f", cost)
+    )
 }
 
 private fun findWarehouseForPricingValidation(
     warehousesById: Map<String, Warehouse>
 ): Warehouse? {
-    for (warehouse in warehousesById.values) {
-        if (
-            warehouse.cargoQueue.isNotEmpty() &&
-            warehouse.stationedVehicles.isNotEmpty() &&
-            warehouse.outgoingRoutes.isNotEmpty()
-        ) {
-            return warehouse
-        }
+
+    return warehousesById.values.firstOrNull { warehouse ->
+
+        warehouse.cargoQueue.isNotEmpty() &&
+                warehouse.outgoingRoutes.isNotEmpty() &&
+                warehouse.stationedVehicles.isNotEmpty()
     }
-    return null
 }
