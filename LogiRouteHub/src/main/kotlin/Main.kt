@@ -13,6 +13,8 @@ import parser.parseRoutes
 import parser.parseWarehousesFile
 import validation.validateDomainGraph
 import validation.validatePricingStrategies
+import repository.PackageRepository
+import repository.csv.CsvPackageRepository
 import java.io.File
 import java.util.*
 
@@ -57,6 +59,8 @@ fun main() {
     validateQuickSort(warehouseIndex)
 
     validatePricingStrategies(warehouseIndex)
+
+    testPackageRepository()
 }
 
 private fun loadAndSortPackages(): MutableList<LogisticsPackageRaw> {
@@ -164,6 +168,31 @@ private fun loadVehicles(): List<FleetRaw> {
     println("--- Fleet Data Initialization Complete ---")
     printSeparator()
     return vehicles
+}
+private fun testPackageRepository() {
+    println("=== Package Repository Test ===")
+
+    val packageRepository: PackageRepository = CsvPackageRepository(
+        packageCsvFilePath = PACKAGES_FILE_PATH
+    )
+
+    val allPackages = packageRepository.fetchAllPackages()
+    println("Successfully fetched ${allPackages.size} packages via PackageRepository.")
+
+    val samplePackageId = allPackages.firstOrNull()?.id ?: "PKG-101"
+    val foundPackage = packageRepository.findPackageById(samplePackageId)
+
+    if (foundPackage != null) {
+        println("Find by ID Success -> ID: ${foundPackage.id} | Weight: ${foundPackage.weightByKg} kg | Priority: ${foundPackage.priority}")
+    } else {
+        println("Find by ID Failed for ID: $samplePackageId")
+    }
+
+    val fakeId = "PK-00"
+    val notFoundPackage = packageRepository.findPackageById(fakeId)
+    println("Searching for non-existing ID ($fakeId) returned: ${notFoundPackage == null} (Expected: true)")
+
+    printSeparator()
 }
 
 private fun buildDomainGraph(
