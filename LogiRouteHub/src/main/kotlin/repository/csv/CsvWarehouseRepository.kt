@@ -1,0 +1,38 @@
+package repository.csv
+
+import dataHolder.WarehouseRaw
+import parser.WarehouseParser
+import repository.WarehouseRepository
+import java.io.File
+
+private const val HEADER_LINE_COUNT = 1
+
+class CsvWarehouseRepository(
+    private val warehouseFile: File,
+    private val warehouseParser: WarehouseParser
+) : WarehouseRepository {
+
+    override fun loadWarehouses(): List<WarehouseRaw> {
+
+        if (!warehouseFile.exists()) {
+            println("Diagnostic Warning: " + "File ${warehouseFile.name} does not exist.")
+            return emptyList()
+        }
+
+        val warehouseRows = warehouseFile.readLines()
+
+        val dataRows = warehouseRows.drop(HEADER_LINE_COUNT)
+
+        val validWarehouses = mutableListOf<WarehouseRaw>()
+
+        for (warehouseRow in dataRows) {
+
+            val parsedWarehouse = warehouseParser.parseWarehouseRow(warehouseRow)
+
+            if (parsedWarehouse != null) {
+                validWarehouses.add(parsedWarehouse)
+            }
+        }
+        return validWarehouses
+    }
+}
