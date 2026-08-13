@@ -9,13 +9,12 @@ class CsvRouteRepository(
     private val filePath: String
 ) : RouteRepository {
 
-    override fun getAll(): List<RouteRaw> {
+    override fun loadRoutes(): List<RouteRaw> {
 
         if (!File(filePath).exists()) {
             println("Diagnostic Warning: File $filePath does not exist.")
             return emptyList()
         }
-
 
         return RouteParser(filePath)
     }
