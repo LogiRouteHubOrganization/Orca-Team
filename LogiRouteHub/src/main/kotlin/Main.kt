@@ -13,8 +13,10 @@ import parser.RouteParser
 import parser.WarehouseParser
 import repository.PackageRepository
 import repository.WarehouseRepository
+import repository.VehicleRepository
 import repository.csv.CsvPackageRepository
 import repository.csv.CsvWarehouseRepository
+import repository.csv.CsvVehicleRepository
 import validation.validateDomainGraph
 import validation.validatePricingStrategies
 import java.io.File
@@ -55,6 +57,13 @@ fun main() {
     sortAndDisplayPackages(
         rawPackages
     )
+    val fleetParser = FleetParser()
+
+    val vehicleRepository: VehicleRepository =
+        CsvVehicleRepository(
+            filePath = FLEET_FILE_PATH,
+            fleetParser = fleetParser
+        )
     val rawWarehouses = loadWarehouses(warehouseRepository)
 
     val rawRoutes = loadRoutes()
@@ -232,6 +241,13 @@ private fun buildDomainGraph(
         vehicles = rawVehicles,
         routes = rawRoutes
     )
+    val fleetParser = FleetParser()
+
+    val vehicleRepository: VehicleRepository =
+        CsvVehicleRepository(
+            filePath = FLEET_FILE_PATH,
+            fleetParser = fleetParser
+        )
 
     val domainGraphBuilder = DomainGraphBuilder()
 
