@@ -12,8 +12,8 @@ import parser.PackageParser
 import parser.RouteParser
 import parser.WarehouseParser
 import repository.PackageRepository
-import repository.csv.CsvPackageRepository
 import repository.WarehouseRepository
+import repository.csv.CsvPackageRepository
 import repository.csv.CsvWarehouseRepository
 import validation.validateDomainGraph
 import validation.validatePricingStrategies
@@ -47,8 +47,14 @@ fun main() {
         warehouseParser = warehouseParser
     )
 
-    val rawPackages = loadAndSortPackages(packageRepository)
+    val rawPackages =
+        loadPackages(
+            packageRepository
+        )
 
+    sortAndDisplayPackages(
+        rawPackages
+    )
     val rawWarehouses = loadWarehouses(warehouseRepository)
 
     val rawRoutes = loadRoutes()
@@ -69,33 +75,64 @@ fun main() {
     validatePricingStrategies(warehouseIndex)
 }
 
-private fun loadAndSortPackages(
+private fun loadPackages(
     packageRepository: PackageRepository
 ): MutableList<LogisticsPackageRaw> {
+
     println("Starting Package Data Pipeline...")
 
-    val packages = packageRepository.loadPackages().toMutableList()
+    val packages =
+        packageRepository
+            .loadPackages()
+            .toMutableList()
+
+    println(
+        "Successfully loaded ${packages.size} " +
+                "valid package records."
+    )
+
+    return packages
+}
+
+private fun sortAndDisplayPackages(
+    packages: MutableList<LogisticsPackageRaw>
+) {
 
     sortPackages(packages)
 
-    println("Successfully loaded ${packages.size} valid package records.")
     println()
-    println("Top $TOP_PACKAGE_COUNT priority packages:")
+    println(
+        "Top $TOP_PACKAGE_COUNT priority packages:"
+    )
 
-    val displayedPackageCount = minOf(TOP_PACKAGE_COUNT, packages.size)
-    for (packageIndex in packages.indices.take(displayedPackageCount)) {
-        val packagePosition = packageIndex + DISPLAY_POSITION_OFFSET
-        val logisticsPackage = packages[packageIndex]
+    val displayedPackageCount =
+        minOf(
+            TOP_PACKAGE_COUNT,
+            packages.size
+        )
+
+    for (
+    packageIndex in
+    packages.indices.take(
+        displayedPackageCount
+    )
+    ) {
+        val packagePosition =
+            packageIndex + DISPLAY_POSITION_OFFSET
+
+        val logisticsPackage =
+            packages[packageIndex]
+
         println(
             "$packagePosition. " +
                     "ID: ${logisticsPackage.packageId}" +
-                    " | Weight: ${formatWeight(logisticsPackage.packageWeightByKg)} kg" +
+                    " | Weight: " +
+                    "${formatWeight(logisticsPackage.packageWeightByKg)} kg" +
                     " | Priority: ${logisticsPackage.packagePriority}"
         )
     }
 
     printSeparator()
-    return packages
 }
 
 private fun loadWarehouses(
