@@ -4,5 +4,5 @@ import dataHolder.FleetRaw
 
 interface VehicleRepository {
 
-    fun getAll(): List<FleetRaw>
+    fun loadVehicles(): List<FleetRaw>
 }
