@@ -11,6 +11,8 @@ import parser.FleetParser
 import parser.PackageParser
 import parser.RouteParser
 import parser.WarehouseParser
+import repository.PackageRepository
+import repository.csv.CsvPackageRepository
 import repository.WarehouseRepository
 import repository.csv.CsvWarehouseRepository
 import validation.validateDomainGraph
@@ -31,6 +33,12 @@ private const val OUTPUT_SEPARATOR = "******************************************
 
 fun main() {
 
+    val packageParser = PackageParser()
+    val packageRepository: PackageRepository = CsvPackageRepository(
+        packageFile = File(PACKAGES_FILE_PATH),
+        packageParser = packageParser
+    )
+
     val warehouseParser =
         WarehouseParser()
 
@@ -39,7 +47,7 @@ fun main() {
         warehouseParser = warehouseParser
     )
 
-    val rawPackages = loadAndSortPackages()
+    val rawPackages = loadAndSortPackages(packageRepository)
 
     val rawWarehouses = loadWarehouses(warehouseRepository)
 
@@ -61,36 +69,31 @@ fun main() {
     validatePricingStrategies(warehouseIndex)
 }
 
-private fun loadAndSortPackages(): MutableList<LogisticsPackageRaw> {
+private fun loadAndSortPackages(
+    packageRepository: PackageRepository
+): MutableList<LogisticsPackageRaw> {
+    println("Starting Package Data Pipeline...")
 
-    val packages = PackageParser().readLogisticsPackageRowsFromFile(PACKAGES_FILE_PATH).toMutableList()
+    val packages = packageRepository.loadPackages().toMutableList()
 
     sortPackages(packages)
 
-    println("=== Package Parser ===")
-
-    println("Successfully parsed packages: " + packages.size)
-
+    println("Successfully loaded ${packages.size} valid package records.")
     println()
-
     println("Top $TOP_PACKAGE_COUNT priority packages:")
 
     val displayedPackageCount = minOf(TOP_PACKAGE_COUNT, packages.size)
-
     for (packageIndex in packages.indices.take(displayedPackageCount)) {
-
         val packagePosition = packageIndex + DISPLAY_POSITION_OFFSET
-
         val logisticsPackage = packages[packageIndex]
-
         println(
             "$packagePosition. " +
                     "ID: ${logisticsPackage.packageId}" +
-                    " | Weight: " +
-                    "${formatWeight(logisticsPackage.packageWeightByKg)} kg" +
+                    " | Weight: ${formatWeight(logisticsPackage.packageWeightByKg)} kg" +
                     " | Priority: ${logisticsPackage.packagePriority}"
         )
     }
+
     printSeparator()
     return packages
 }
