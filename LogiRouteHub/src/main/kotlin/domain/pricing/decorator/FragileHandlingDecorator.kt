@@ -4,7 +4,7 @@ import domain.model.Route
 import domain.model.Vehicle
 import domain.pricing.DispatchStrategy
 
-private const val PROTECTIVE_FEE = 50.0
+private const val PROTECTIVE_FEE = 70.0
 
 class FragileHandlingDecorator(
     wrappedComponent: PackageComponent
