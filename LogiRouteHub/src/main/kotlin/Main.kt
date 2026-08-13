@@ -12,9 +12,11 @@ import parser.PackageParser
 import parser.RouteParser
 import parser.WarehouseParser
 import repository.PackageRepository
+import repository.RouteRepository
 import repository.WarehouseRepository
-import repository.csv.CsvPackageRepository
 import repository.csv.CsvWarehouseRepository
+import repository.csv.CsvRouteRepository
+import repository.csv.CsvPackageRepository
 import validation.validateDomainGraph
 import validation.validatePricingStrategies
 import java.io.File
@@ -47,6 +49,13 @@ fun main() {
         warehouseParser = warehouseParser
     )
 
+    val routeParser = RouteParser()
+
+    val routeRepository: RouteRepository = CsvRouteRepository(
+        routeFile = File(ROUTES_FILE_PATH),
+        routeParser = routeParser
+    )
+
     val rawPackages =
         loadPackages(
             packageRepository
@@ -55,11 +64,19 @@ fun main() {
     sortAndDisplayPackages(
         rawPackages
     )
-    val rawWarehouses = loadWarehouses(warehouseRepository)
 
-    val rawRoutes = loadRoutes()
+    val rawWarehouses =
+        loadWarehouses(
+            warehouseRepository
+        )
 
-    val rawVehicles = loadVehicles()
+    val rawRoutes =
+        loadRoutes(
+            routeRepository
+        )
+
+    val rawVehicles =
+        loadVehicles()
 
     val warehouseIndex = buildDomainGraph(
         rawPackages = rawPackages,
@@ -143,7 +160,10 @@ private fun loadWarehouses(
 
     val warehouses = warehouseRepository.loadWarehouses()
 
-    println("Successfully loaded ${warehouses.size} " + "valid warehouse records.")
+    println(
+        "Successfully loaded ${warehouses.size} " +
+                "valid warehouse records."
+    )
 
     println("--- Detailed Warehouse Records ---")
 
@@ -159,16 +179,22 @@ private fun loadWarehouses(
 
     println("--- Warehouse Data Initialization Complete ---")
     printSeparator()
+
     return warehouses
 }
 
-private fun loadRoutes(): List<RouteRaw> {
+private fun loadRoutes(
+    routeRepository: RouteRepository
+): List<RouteRaw> {
 
     println("Starting Route Data Pipeline...")
 
-    val routes = RouteParser(ROUTES_FILE_PATH)
+    val routes = routeRepository.loadRoutes()
 
-    println("Successfully parsed ${routes.size} " + "valid route records.")
+    println(
+        "Successfully loaded ${routes.size} " +
+                "valid route records."
+    )
 
     println("--- Detailed Route Records ---")
 
@@ -193,13 +219,17 @@ private fun loadVehicles(): List<FleetRaw> {
 
     println("Starting Fleet Data Pipeline...")
 
-    val vehicles = FleetParser().readFleetRowsFromFile(FLEET_FILE_PATH)
-
-    println("Successfully parsed ${vehicles.size} " + "valid fleet records.")
+    val vehicles =
+        FleetParser().readFleetRowsFromFile(
+            FLEET_FILE_PATH
+        )
 
     println(
-        "--- Detailed Fleet Records ---"
+        "Successfully parsed ${vehicles.size} " +
+                "valid fleet records."
     )
+
+    println("--- Detailed Fleet Records ---")
 
     for (vehicle in vehicles) {
         println(
@@ -210,9 +240,7 @@ private fun loadVehicles(): List<FleetRaw> {
         )
     }
 
-    println(
-        "--- Fleet Data Initialization Complete ---"
-    )
+    println("--- Fleet Data Initialization Complete ---")
 
     printSeparator()
 
@@ -233,9 +261,12 @@ private fun buildDomainGraph(
         routes = rawRoutes
     )
 
-    val domainGraphBuilder = DomainGraphBuilder()
+    val domainGraphBuilder =
+        DomainGraphBuilder()
 
-    return domainGraphBuilder.buildGraph(graphBuilderInput)
+    return domainGraphBuilder.buildGraph(
+        graphBuilderInput
+    )
 }
 
 private fun validateQuickSort(
@@ -246,10 +277,15 @@ private fun validateQuickSort(
     println(
         "=== QuickSort Validation ==="
     )
-    val firstWarehouse = warehouseIndex.values.firstOrNull()
+
+    val firstWarehouse =
+        warehouseIndex.values.firstOrNull()
 
     if (firstWarehouse == null) {
-        println("QuickSort validation skipped: " + "No warehouses were built.")
+        println(
+            "QuickSort validation skipped: " +
+                    "No warehouses were built."
+        )
 
         printSeparator()
 
@@ -263,9 +299,12 @@ private fun validateQuickSort(
 
     printCargoQueue(firstWarehouse)
 
-    val packageQuickSorter = PackageQuickSorter()
+    val packageQuickSorter =
+        PackageQuickSorter()
 
-    packageQuickSorter.sortAllCargoQueuesByDescendingWeight(warehouseIndex)
+    packageQuickSorter.sortAllCargoQueuesByDescendingWeight(
+        warehouseIndex
+    )
 
     println()
 
@@ -280,7 +319,9 @@ private fun printCargoQueue(
     warehouse: Warehouse
 ) {
     if (warehouse.cargoQueue.isEmpty()) {
-        println("No packages are available in this warehouse.")
+        println(
+            "No packages are available in this warehouse."
+        )
         return
     }
 
