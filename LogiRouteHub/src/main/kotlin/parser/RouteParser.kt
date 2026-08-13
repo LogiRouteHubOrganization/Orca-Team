@@ -1,10 +1,8 @@
 package parser
 
 import dataHolder.RouteRaw
-import java.io.File
 
 private const val CSV_SEPARATOR = ","
-private const val HEADER_ROW_COUNT = 1
 private const val EXPECTED_COLUMN_COUNT = 5
 
 private const val ROUTE_ID_COLUMN_INDEX = 0
@@ -13,185 +11,170 @@ private const val DESTINATION_HUB_ID_COLUMN_INDEX = 2
 private const val DISTANCE_COLUMN_INDEX = 3
 private const val DELAY_COLUMN_INDEX = 4
 
-fun RouteParser(
-    filePath: String
-): List<RouteRaw> {
+class RouteParser {
 
-    val routes = mutableListOf<RouteRaw>()
-    val lines = File(filePath).readLines()
+    fun parseRouteRow(
+        row: String,
+        rowNumber: Int
+    ): RouteRaw? {
 
-    for ((rowNumber, line) in lines.withIndex()) {
-
-        if (shouldSkipLine(rowNumber, line)) {
-            continue
+        if (row.isBlank()) {
+            return null
         }
 
-        val values = getRouteValues(line)
+        val values = getRouteValues(row)
 
         if (!hasValidColumnCount(values, rowNumber)) {
-            continue
+            return null
         }
 
         if (!hasNoEmptyValues(values, rowNumber)) {
-            continue
+            return null
         }
 
-        val route = createRouteRaw(
+        return createRouteRaw(
             values,
             rowNumber
         )
+    }
 
-        if (route != null) {
-            routes.add(route)
+    private fun getRouteValues(
+        line: String
+    ): List<String> {
+
+        return line
+            .split(CSV_SEPARATOR)
+            .map { value ->
+                value.trim()
+            }
+    }
+
+    private fun hasValidColumnCount(
+        values: List<String>,
+        rowNumber: Int
+    ): Boolean {
+
+        if (values.size != EXPECTED_COLUMN_COUNT) {
+            println(
+                "Warning: Row ${rowNumber + 1} " +
+                        "has wrong number of columns"
+            )
+
+            return false
         }
+
+        return true
     }
 
-    return routes
-}
+    private fun hasNoEmptyValues(
+        values: List<String>,
+        rowNumber: Int
+    ): Boolean {
 
-private fun shouldSkipLine(
-    rowNumber: Int,
-    line: String
-): Boolean {
+        if (values.any { value -> value.isEmpty() }) {
+            println(
+                "Warning: Row ${rowNumber + 1} " +
+                        "contains an empty value"
+            )
 
-    return rowNumber < HEADER_ROW_COUNT ||
-            line.isBlank()
-}
-
-private fun getRouteValues(
-    line: String
-): List<String> {
-
-    return line
-        .split(CSV_SEPARATOR)
-        .map { value ->
-            value.trim()
+            return false
         }
-}
 
-private fun hasValidColumnCount(
-    values: List<String>,
-    rowNumber: Int
-): Boolean {
-
-    if (values.size != EXPECTED_COLUMN_COUNT) {
-        println(
-            "Warning: Row ${rowNumber + 1} " +
-                    "has wrong number of columns"
-        )
-
-        return false
+        return true
     }
 
-    return true
-}
+    private fun createRouteRaw(
+        values: List<String>,
+        rowNumber: Int
+    ): RouteRaw? {
 
-private fun hasNoEmptyValues(
-    values: List<String>,
-    rowNumber: Int
-): Boolean {
+        val distanceKm =
+            parseDistanceKm(
+                values[DISTANCE_COLUMN_INDEX],
+                rowNumber
+            )
 
-    if (values.any { value -> value.isEmpty() }) {
-        println(
-            "Warning: Row ${rowNumber + 1} " +
-                    "contains an empty value"
+        if (distanceKm == null) {
+            return null
+        }
+
+        val typicalDelayMin =
+            parseTypicalDelayMin(
+                values[DELAY_COLUMN_INDEX],
+                rowNumber
+            )
+
+        if (typicalDelayMin == null) {
+            return null
+        }
+
+        return RouteRaw(
+            routeId = normalizeIdentifier(
+                values[ROUTE_ID_COLUMN_INDEX]
+            ),
+            originHubId = normalizeIdentifier(
+                values[ORIGIN_HUB_ID_COLUMN_INDEX]
+            ),
+            destinationHubId = normalizeIdentifier(
+                values[DESTINATION_HUB_ID_COLUMN_INDEX]
+            ),
+            distanceKm = distanceKm,
+            typicalDelayMin = typicalDelayMin
         )
-
-        return false
     }
 
-    return true
-}
+    private fun parseDistanceKm(
+        distance: String,
+        rowNumber: Int
+    ): Double? {
 
-private fun createRouteRaw(
-    values: List<String>,
-    rowNumber: Int
-): RouteRaw? {
+        val distanceKm =
+            distance.toDoubleOrNull()
 
-    val distanceKm =
-        parseDistanceKm(
-            values[DISTANCE_COLUMN_INDEX],
-            rowNumber
-        )
+        if (
+            distanceKm == null ||
+            distanceKm <= 0
+        ) {
+            println(
+                "Warning: Row ${rowNumber + 1} " +
+                        "has invalid distance"
+            )
 
-    if (distanceKm == null) {
-        return null
+            return null
+        }
+
+        return distanceKm
     }
 
-    val typicalDelayMin =
-        parseTypicalDelayMin(
-            values[DELAY_COLUMN_INDEX],
-            rowNumber
-        )
+    private fun parseTypicalDelayMin(
+        delay: String,
+        rowNumber: Int
+    ): Int? {
 
-    if (typicalDelayMin == null) {
-        return null
+        val typicalDelayMin =
+            delay.toIntOrNull()
+
+        if (
+            typicalDelayMin == null ||
+            typicalDelayMin < 0
+        ) {
+            println(
+                "Warning: Row ${rowNumber + 1} " +
+                        "has invalid delay"
+            )
+
+            return null
+        }
+
+        return typicalDelayMin
     }
 
-    return RouteRaw(
-        routeId = normalizeIdentifier(
-            values[ROUTE_ID_COLUMN_INDEX]
-        ),
-        originHubId = normalizeIdentifier(
-            values[ORIGIN_HUB_ID_COLUMN_INDEX]
-        ),
-        destinationHubId = normalizeIdentifier(
-            values[DESTINATION_HUB_ID_COLUMN_INDEX]
-        ),
-        distanceKm = distanceKm,
-        typicalDelayMin = typicalDelayMin
-    )
-}
+    private fun normalizeIdentifier(
+        identifier: String
+    ): String {
 
-private fun parseDistanceKm(
-    distance: String,
-    rowNumber: Int
-): Double? {
-
-    val distanceKm =
-        distance.toDoubleOrNull()
-
-    if (
-        distanceKm == null ||
-        distanceKm <= 0
-    ) {
-        println(
-            "Warning: Row ${rowNumber + 1} " +
-                    "has invalid distance"
-        )
-
-        return null
+        return identifier
+            .trim()
+            .uppercase()
     }
-
-    return distanceKm
-}
-
-private fun parseTypicalDelayMin(
-    delay: String,
-    rowNumber: Int
-): Int? {
-
-    val typicalDelayMin =
-        delay.toIntOrNull()
-
-    if (
-        typicalDelayMin == null ||
-        typicalDelayMin < 0
-    ) {
-        println(
-            "Warning: Row ${rowNumber + 1} " +
-                    "has invalid delay"
-        )
-
-        return null
-    }
-
-    return typicalDelayMin
-}
-
-private fun normalizeIdentifier(
-    identifier: String
-): String {
-
-    return identifier.trim().uppercase()
 }
