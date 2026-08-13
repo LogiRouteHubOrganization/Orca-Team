@@ -4,12 +4,10 @@ import domain.model.Package
 import domain.model.Route
 import domain.model.Vehicle
 import domain.model.Warehouse
-import domain.pricing.DispatchStrategy
-import domain.pricing.EcoStrategy
-import domain.pricing.ExpressStrategy
-import domain.pricing.FragileStrategy
-import domain.pricing.RoutePricingEngine
-import java.util.Locale
+import domain.pricing.*
+import domain.pricing.decorator.PackageComponent
+import domain.pricing.decorator.PackageDecorator
+import java.util.*
 
 fun validatePricingStrategies(
     warehousesById: Map<String, Warehouse>
@@ -51,7 +49,45 @@ fun validatePricingStrategies(
         Pair("ExpressStrategy", ExpressStrategy()),
         Pair("FragileStrategy", FragileStrategy())
     )
+    val basePackageComponent: PackageComponent =
+        logisticsPackage
 
+    val baseTransitRate =
+        basePackageComponent.calculateTransitRate(
+            selectedRoute = route,
+            assignedVehicle = vehicle,
+            dispatchStrategy = EcoStrategy()
+        )
+
+    println()
+    println(
+        "Base Package Transit Rate: " +
+                String.format(
+                    Locale.US,
+                    "%.2f",
+                    baseTransitRate
+                )
+    )
+    val baseDecorator =
+        object : PackageDecorator(
+            wrappedComponent = basePackageComponent
+        ) {}
+
+    val decoratedBaseTransitRate =
+        baseDecorator.calculateTransitRate(
+            selectedRoute = route,
+            assignedVehicle = vehicle,
+            dispatchStrategy = EcoStrategy()
+        )
+
+    println(
+        "Base Decorator Transit Rate: " +
+                String.format(
+                    Locale.US,
+                    "%.2f",
+                    decoratedBaseTransitRate
+                )
+    )
     for ((strategyName, strategy) in strategies) {
         validateStrategy(
             pricingEngine,
