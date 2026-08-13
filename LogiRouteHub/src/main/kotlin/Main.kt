@@ -14,9 +14,11 @@ import parser.WarehouseParser
 import repository.PackageRepository
 import repository.RouteRepository
 import repository.WarehouseRepository
-import repository.csv.CsvPackageRepository
-import repository.csv.CsvRouteRepository
+import repository.VehicleRepository
 import repository.csv.CsvWarehouseRepository
+import repository.csv.CsvRouteRepository
+import repository.csv.CsvPackageRepository
+import repository.csv.CsvVehicleRepository
 import validation.validateDomainGraph
 import validation.validatePricingStrategies
 import java.io.File
@@ -55,16 +57,34 @@ fun main() {
         routeFile = File(ROUTES_FILE_PATH),
         routeParser = routeParser
     )
+    val fleetParser = FleetParser()
 
-    val rawPackages = loadPackages(packageRepository)
+    val vehicleRepository: VehicleRepository = CsvVehicleRepository(
+        vehicleFile = File(FLEET_FILE_PATH),
+        fleetParser = fleetParser
+    )
 
-    sortAndDisplayPackages(rawPackages)
+    val rawPackages =
+        loadPackages(
+            packageRepository
+        )
 
-    val rawWarehouses = loadWarehouses(warehouseRepository)
+    sortAndDisplayPackages(
+        rawPackages
+    )
 
-    val rawRoutes = loadRoutes(routeRepository)
+    val rawWarehouses =
+        loadWarehouses(
+            warehouseRepository
+        )
 
-    val rawVehicles = loadVehicles()
+    val rawRoutes =
+        loadRoutes(
+            routeRepository
+        )
+
+    val rawVehicles =
+        loadVehicles(vehicleRepository)
 
     val warehouseIndex = buildDomainGraph(
         rawPackages = rawPackages,
@@ -86,7 +106,10 @@ private fun loadPackages(
 
     println("Starting Package Data Pipeline...")
 
-    val packages = packageRepository.loadPackages().toMutableList()
+    val packages =
+        packageRepository
+            .loadPackages()
+            .toMutableList()
 
     println(
         "Successfully loaded ${packages.size} " +
@@ -113,7 +136,11 @@ private fun sortAndDisplayPackages(
             packages.size
         )
 
-    for (packageIndex in packages.indices.take(displayedPackageCount)
+    for (
+    packageIndex in
+    packages.indices.take(
+        displayedPackageCount
+    )
     ) {
         val packagePosition =
             packageIndex + DISPLAY_POSITION_OFFSET
@@ -196,32 +223,31 @@ private fun loadRoutes(
     return routes
 }
 
-private fun loadVehicles(): List<FleetRaw> {
+private fun loadVehicles(
+    vehicleRepository: VehicleRepository
+): List<FleetRaw> {
 
-    println("Starting Fleet Data Pipeline...")
+    println("Starting Vehicle Data Pipeline...")
 
-    val vehicles =
-        FleetParser().readFleetRowsFromFile(
-            FLEET_FILE_PATH
-        )
+    val vehicles = vehicleRepository.loadVehicles()
 
     println(
-        "Successfully parsed ${vehicles.size} " +
-                "valid fleet records."
+        "Successfully loaded ${vehicles.size} " +
+                "valid vehicle records."
     )
 
-    println("--- Detailed Fleet Records ---")
+    println("--- Detailed Vehicle Records ---")
 
     for (vehicle in vehicles) {
         println(
             "Vehicle ID: ${vehicle.vehicleId}" +
                     " | Current Hub: ${vehicle.currentHubId}" +
-                    " | Capacity: ${vehicle.maxCapacityKg} kg" +
-                    " | Cost/Km: ${vehicle.costPerKm}"
+                    " | Max Capacity: ${vehicle.maxCapacityKg} kg" +
+                    " | Cost Per Km: $${vehicle.costPerKm}"
         )
     }
 
-    println("--- Fleet Data Initialization Complete ---")
+    println("--- Vehicle Data Initialization Complete ---")
 
     printSeparator()
 
