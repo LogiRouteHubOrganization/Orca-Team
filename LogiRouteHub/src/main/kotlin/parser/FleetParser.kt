@@ -15,11 +15,11 @@ private const val COST_PER_KM_COLUMN_INDEX = 3
 class FleetParser {
 
     fun readFleetRowsFromFile(
-        filePath: String
+        vehicleFile: File
     ): List<FleetRaw> {
 
         val fleetCsvRows =
-            readFleetCsvRows(filePath)
+            readFleetCsvRows(vehicleFile)
 
         return fleetCsvRows
             .drop(HEADER_ROW_COUNT)
@@ -32,13 +32,13 @@ class FleetParser {
     }
 
     private fun readFleetCsvRows(
-        filePath: String
+        vehicleFile: File
     ): List<String> {
 
-        return File(filePath).readLines()
+        return vehicleFile.readLines()
     }
 
-    private fun createFleetRow(
+    fun createFleetRow(
         fleetCsvRow: String
     ): FleetRaw? {
 
@@ -168,6 +168,7 @@ class FleetParser {
     private fun printInvalidFleetRowWarning(
         fleetCsvRow: String
     ) {
+
         println(
             "Warning: Invalid fleet row -> $fleetCsvRow"
         )
@@ -176,6 +177,7 @@ class FleetParser {
     private fun printEmptyFleetFieldWarning(
         fleetCsvRow: String
     ) {
+
         println(
             "Warning: Empty required fleet field -> $fleetCsvRow"
         )

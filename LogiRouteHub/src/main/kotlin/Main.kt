@@ -49,6 +49,13 @@ fun main() {
         warehouseParser = warehouseParser
     )
 
+    val fleetParser = FleetParser()
+    val vehicleRepository: VehicleRepository =
+        CsvVehicleRepository(
+            vehicleFile = File(FLEET_FILE_PATH),
+            fleetParser = fleetParser
+        )
+
     val rawPackages =
         loadPackages(
             packageRepository
@@ -57,18 +64,12 @@ fun main() {
     sortAndDisplayPackages(
         rawPackages
     )
-    val fleetParser = FleetParser()
 
-    val vehicleRepository: VehicleRepository =
-        CsvVehicleRepository(
-            filePath = FLEET_FILE_PATH,
-            fleetParser = fleetParser
-        )
     val rawWarehouses = loadWarehouses(warehouseRepository)
 
     val rawRoutes = loadRoutes()
 
-    val rawVehicles = loadVehicles()
+    val rawVehicles = loadVehicles(vehicleRepository)
 
     val warehouseIndex = buildDomainGraph(
         rawPackages = rawPackages,
@@ -198,17 +199,15 @@ private fun loadRoutes(): List<RouteRaw> {
     return routes
 }
 
-private fun loadVehicles(): List<FleetRaw> {
+private fun loadVehicles(
+    vehicleRepository: VehicleRepository
+): List<FleetRaw> {
 
     println("Starting Fleet Data Pipeline...")
 
-    val vehicles = FleetParser().readFleetRowsFromFile(FLEET_FILE_PATH)
+    val vehicles = vehicleRepository.loadVehicles()
 
-    println("Successfully parsed ${vehicles.size} " + "valid fleet records.")
-
-    println(
-        "--- Detailed Fleet Records ---"
-    )
+    println("Successfully loaded ${vehicles.size} valid fleet records.")
 
     for (vehicle in vehicles) {
         println(
@@ -243,11 +242,6 @@ private fun buildDomainGraph(
     )
     val fleetParser = FleetParser()
 
-    val vehicleRepository: VehicleRepository =
-        CsvVehicleRepository(
-            filePath = FLEET_FILE_PATH,
-            fleetParser = fleetParser
-        )
 
     val domainGraphBuilder = DomainGraphBuilder()
 
