@@ -8,23 +8,23 @@ import java.io.File
 private const val HEADER_ROW_COUNT = 1
 
 class CsvRouteRepository(
-    private val filePath: String,
+    private val routeFile: File,
     private val routeParser: RouteParser
 ) : RouteRepository {
 
     override fun loadRoutes(): List<RouteRaw> {
 
-        val file = File(filePath)
-
-        if (!file.exists()) {
+        if (!routeFile.exists()) {
             println(
-                "Diagnostic Warning: File $filePath does not exist."
+                "Diagnostic Warning: " +
+                        "File ${routeFile.name} does not exist."
             )
             return emptyList()
         }
 
-        val routes = mutableListOf<RouteRaw>()
-        val lines = file.readLines()
+        val lines = routeFile.readLines()
+
+        val validRoutes = mutableListOf<RouteRaw>()
 
         for ((rowNumber, line) in lines.withIndex()) {
 
@@ -32,16 +32,16 @@ class CsvRouteRepository(
                 continue
             }
 
-            val route = routeParser.parseRouteRow(
+            val parsedRoute = routeParser.parseRouteRow(
                 row = line,
                 rowNumber = rowNumber
             )
 
-            if (route != null) {
-                routes.add(route)
+            if (parsedRoute != null) {
+                validRoutes.add(parsedRoute)
             }
         }
 
-        return routes
+        return validRoutes
     }
 }

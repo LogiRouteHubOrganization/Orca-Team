@@ -52,7 +52,7 @@ fun main() {
     val routeParser = RouteParser()
 
     val routeRepository: RouteRepository = CsvRouteRepository(
-        filePath = ROUTES_FILE_PATH,
+        routeFile = File(ROUTES_FILE_PATH),
         routeParser = routeParser
     )
 
