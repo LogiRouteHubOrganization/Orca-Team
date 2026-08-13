@@ -6,6 +6,7 @@ import domain.model.Vehicle
 import domain.model.Warehouse
 import domain.pricing.*
 import domain.pricing.decorator.PackageComponent
+import domain.pricing.decorator.PackageDecorator
 import java.util.*
 
 fun validatePricingStrategies(
@@ -65,6 +66,26 @@ fun validatePricingStrategies(
                     Locale.US,
                     "%.2f",
                     baseTransitRate
+                )
+    )
+    val baseDecorator =
+        object : PackageDecorator(
+            wrappedComponent = basePackageComponent
+        ) {}
+
+    val decoratedBaseTransitRate =
+        baseDecorator.calculateTransitRate(
+            selectedRoute = route,
+            assignedVehicle = vehicle,
+            dispatchStrategy = EcoStrategy()
+        )
+
+    println(
+        "Base Decorator Transit Rate: " +
+                String.format(
+                    Locale.US,
+                    "%.2f",
+                    decoratedBaseTransitRate
                 )
     )
     for ((strategyName, strategy) in strategies) {

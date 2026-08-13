@@ -14,9 +14,9 @@ import parser.WarehouseParser
 import repository.PackageRepository
 import repository.RouteRepository
 import repository.WarehouseRepository
-import repository.csv.CsvWarehouseRepository
-import repository.csv.CsvRouteRepository
 import repository.csv.CsvPackageRepository
+import repository.csv.CsvRouteRepository
+import repository.csv.CsvWarehouseRepository
 import validation.validateDomainGraph
 import validation.validatePricingStrategies
 import java.io.File
@@ -56,27 +56,15 @@ fun main() {
         routeParser = routeParser
     )
 
-    val rawPackages =
-        loadPackages(
-            packageRepository
-        )
+    val rawPackages = loadPackages(packageRepository)
 
-    sortAndDisplayPackages(
-        rawPackages
-    )
+    sortAndDisplayPackages(rawPackages)
 
-    val rawWarehouses =
-        loadWarehouses(
-            warehouseRepository
-        )
+    val rawWarehouses = loadWarehouses(warehouseRepository)
 
-    val rawRoutes =
-        loadRoutes(
-            routeRepository
-        )
+    val rawRoutes = loadRoutes(routeRepository)
 
-    val rawVehicles =
-        loadVehicles()
+    val rawVehicles = loadVehicles()
 
     val warehouseIndex = buildDomainGraph(
         rawPackages = rawPackages,
@@ -98,10 +86,7 @@ private fun loadPackages(
 
     println("Starting Package Data Pipeline...")
 
-    val packages =
-        packageRepository
-            .loadPackages()
-            .toMutableList()
+    val packages = packageRepository.loadPackages().toMutableList()
 
     println(
         "Successfully loaded ${packages.size} " +
@@ -128,11 +113,7 @@ private fun sortAndDisplayPackages(
             packages.size
         )
 
-    for (
-    packageIndex in
-    packages.indices.take(
-        displayedPackageCount
-    )
+    for (packageIndex in packages.indices.take(displayedPackageCount)
     ) {
         val packagePosition =
             packageIndex + DISPLAY_POSITION_OFFSET
