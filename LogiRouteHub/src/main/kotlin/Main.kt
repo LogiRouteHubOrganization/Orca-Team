@@ -98,6 +98,8 @@ fun main() {
     validateQuickSort(warehouseIndex)
 
     validatePricingStrategies(warehouseIndex)
+
+
 }
 
 private fun loadPackages(
