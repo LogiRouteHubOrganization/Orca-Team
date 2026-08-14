@@ -23,7 +23,7 @@ import validation.validateDomainGraph
 import validation.validatePricingStrategies
 import java.io.File
 import java.util.*
-
+import domain.pricing.decorator.validateDecoratorIntegration
 private const val PACKAGES_FILE_PATH = "src/main/resources/packages.csv"
 private const val WAREHOUSES_FILE_PATH = "src/main/resources/warehouses.csv"
 private const val ROUTES_FILE_PATH = "src/main/resources/routes.csv"
@@ -99,6 +99,7 @@ fun main() {
 
     validatePricingStrategies(warehouseIndex)
 
+    validateDecoratorIntegration(warehouseIndex)
 
 }
 
@@ -336,8 +337,7 @@ private fun printCargoQueue(
 
     for (logisticsPackage in warehouse.cargoQueue) {
         println(
-            "${logisticsPackage.id}" +
-                    " | ${formatWeight(logisticsPackage.weightByKg)} kg"
+            logisticsPackage.id + " | ${formatWeight(logisticsPackage.weightByKg)} kg"
         )
     }
 }
