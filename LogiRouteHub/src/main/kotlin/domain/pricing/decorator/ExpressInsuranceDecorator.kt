@@ -16,12 +16,12 @@ class ExpressInsuranceDecorator(
         dispatchStrategy: DispatchStrategy
     ): Double {
 
-        val baseTransitRate = super.calculateTransitRate(
+        val currentTransitRate = super.calculateTransitRate(
             selectedRoute = selectedRoute,
             assignedVehicle = assignedVehicle,
             dispatchStrategy = dispatchStrategy
         )
 
-        return baseTransitRate + EXPRESS_INSURANCE_FEE
+        return currentTransitRate + EXPRESS_INSURANCE_FEE
     }
 }

@@ -16,12 +16,12 @@ class FragileHandlingDecorator(
         dispatchStrategy: DispatchStrategy
     ): Double {
 
-        val baseTransitRate = super.calculateTransitRate(
+        val currentTransitRate = super.calculateTransitRate(
             selectedRoute = selectedRoute,
             assignedVehicle = assignedVehicle,
             dispatchStrategy = dispatchStrategy
         )
 
-        return baseTransitRate + PROTECTIVE_FEE
+        return currentTransitRate + PROTECTIVE_FEE
     }
 }
