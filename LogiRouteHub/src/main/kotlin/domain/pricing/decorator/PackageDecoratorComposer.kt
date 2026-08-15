@@ -2,7 +2,7 @@ package domain.pricing.decorator
 
 class PackageDecoratorComposer {
 
-    fun compose(
+    fun applyOptionalDecorators(
         packageComponent: PackageComponent,
         isFragile: Boolean,
         requiresColdChain: Boolean,
