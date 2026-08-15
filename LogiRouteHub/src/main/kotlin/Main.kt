@@ -22,6 +22,7 @@ import repository.csv.CsvWarehouseRepository
 import validation.validateDecoratorIntegration
 import validation.validateDomainGraph
 import validation.validatePricingStrategies
+import validation.LeastHopRoutingValidation
 import java.io.File
 import java.util.*
 
@@ -102,6 +103,13 @@ fun main() {
 
     validateDecoratorIntegration(warehouseIndex)
 
+    val routingValidation = LeastHopRoutingValidation()
+
+
+
+    routingValidation.runRoutingValidation(
+        warehouseIndex
+    )
 }
 
 private fun loadPackages(
