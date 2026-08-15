@@ -7,8 +7,8 @@ import domain.pricing.DispatchStrategy
 private const val COLD_CHAIN_MULTIPLIER = 1.30
 
 class ColdChainDecorator(
-        wrappedComponent: PackageComponent
-    ) : PackageDecorator(wrappedComponent) {
+    wrappedComponent: PackageComponent
+) : PackageDecorator(wrappedComponent) {
 
     override fun calculateTransitRate(
         selectedRoute: Route,
@@ -16,12 +16,12 @@ class ColdChainDecorator(
         dispatchStrategy: DispatchStrategy
     ): Double {
 
-        val baseTransitRate = super.calculateTransitRate(
+        val currentTransitRate = super.calculateTransitRate(
             selectedRoute = selectedRoute,
             assignedVehicle = assignedVehicle,
             dispatchStrategy = dispatchStrategy
         )
 
-        return baseTransitRate * COLD_CHAIN_MULTIPLIER
+        return currentTransitRate * COLD_CHAIN_MULTIPLIER
     }
 }
