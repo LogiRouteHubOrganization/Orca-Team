@@ -5,7 +5,7 @@ import domain.model.Vehicle
 import domain.pricing.DispatchStrategy
 
 abstract class PackageDecorator(
-    protected val wrappedComponent: PackageComponent
+    private val wrappedComponent: PackageComponent
 ) : PackageComponent {
 
     override fun calculateTransitRate(
