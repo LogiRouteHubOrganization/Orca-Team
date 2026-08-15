@@ -12,6 +12,37 @@ class LeastHopRouter {
         if (startWarehouse.id == destinationWarehouse.id) {
             return listOf(startWarehouse)
         }
+
+        val queue = ArrayDeque<Warehouse>()
+        val visitedWarehouses = mutableSetOf<String>()
+        val previous = mutableMapOf<String, Warehouse>()
+
+        queue.addLast(startWarehouse)
+        visitedWarehouses.add(startWarehouse.id)
+
+        while (queue.isNotEmpty()) {
+
+            val currentWarehouse = queue.removeFirst()
+
+            for (route in currentWarehouse.outgoingRoutes) {
+
+                val nextWarehouse = route.destinationWarehouse
+
+                if (nextWarehouse.id in visitedWarehouses) {
+                    continue
+                }
+
+                previous[nextWarehouse.id] = currentWarehouse
+
+                if (nextWarehouse.id == destinationWarehouse.id) {
+                    // Path reconstruction will be handled by Member 3
+                }
+
+                visitedWarehouses.add(nextWarehouse.id)
+                queue.addLast(nextWarehouse)
+            }
+        }
+
         return emptyList()
     }
 }
