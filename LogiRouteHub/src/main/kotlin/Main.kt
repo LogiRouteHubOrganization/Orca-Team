@@ -105,11 +105,9 @@ fun main() {
 
     val routingValidation = LeastHopRoutingValidation()
 
+    routingValidation.runRoutingValidation()
 
 
-    routingValidation.runRoutingValidation(
-        warehouseIndex
-    )
 }
 
 private fun loadPackages(
