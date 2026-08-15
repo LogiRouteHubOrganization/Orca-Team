@@ -14,11 +14,11 @@ class LeastHopRouter {
         }
 
         val queue = ArrayDeque<Warehouse>()
-        val visitedWarehouses = mutableSetOf<String>()
-        val previous = mutableMapOf<String, Warehouse>()
+        val visitedWarehouseIds = mutableSetOf<String>()
+        val previousWarehouseById = mutableMapOf<String, Warehouse>()
 
         queue.addLast(startWarehouse)
-        visitedWarehouses.add(startWarehouse.id)
+        visitedWarehouseIds.add(startWarehouse.id)
 
         while (queue.isNotEmpty()) {
 
@@ -28,21 +28,47 @@ class LeastHopRouter {
 
                 val nextWarehouse = route.destinationWarehouse
 
-                if (nextWarehouse.id in visitedWarehouses) {
+                if (nextWarehouse.id in visitedWarehouseIds) {
                     continue
                 }
 
-                previous[nextWarehouse.id] = currentWarehouse
+
+                visitedWarehouseIds.add(nextWarehouse.id)
+                previousWarehouseById[nextWarehouse.id] = currentWarehouse
 
                 if (nextWarehouse.id == destinationWarehouse.id) {
-                    // Path reconstruction will be handled by Member 3
+                    return buildWarehousePath(
+                        startWarehouse,
+                        destinationWarehouse,
+                        previousWarehouseById
+                    )
                 }
-
-                visitedWarehouses.add(nextWarehouse.id)
                 queue.addLast(nextWarehouse)
             }
         }
 
         return emptyList()
+    }
+    private fun buildWarehousePath(
+        startWarehouse: Warehouse,
+        destinationWarehouse: Warehouse,
+        previousWarehouseById: Map<String, Warehouse>
+    ): List<Warehouse> {
+
+        val warehousePath = mutableListOf<Warehouse>()
+        var currentWarehouse = destinationWarehouse
+
+        warehousePath.add(currentWarehouse)
+
+        while (currentWarehouse.id != startWarehouse.id) {
+            val previousWarehouse = previousWarehouseById[currentWarehouse.id]
+                ?: return emptyList()
+
+            currentWarehouse = previousWarehouse
+            warehousePath.add(currentWarehouse)
+        }
+
+        warehousePath.reverse()
+        return warehousePath
     }
 }
