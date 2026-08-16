@@ -23,6 +23,7 @@ import validation.DijkstraRoutingValidation
 import validation.validateDecoratorIntegration
 import validation.validateDomainGraph
 import validation.validatePricingStrategies
+import validation.LeastHopRoutingValidation
 import java.io.File
 import java.util.*
 
@@ -87,12 +88,14 @@ fun main() {
     validatePricingStrategies(warehouseIndex)
 
     validateDecoratorIntegration(warehouseIndex)
+    
+    
+    val routingValidation = LeastHopRoutingValidation(warehouseIndex)
+    routingValidation.validateRouting()
 
-    val dijkstraRoutingValidation = DijkstraRoutingValidation(
-        warehouseIndex
-    )
+    val dijkstraRoutingValidation = DijkstraRoutingValidation(warehouseIndex)
     dijkstraRoutingValidation.validateRouting()
-
+    
 }
 
 private fun loadPackages(
