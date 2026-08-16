@@ -17,7 +17,7 @@ class LeastHopRoutingValidation
         validateSameWarehouse()
         validateCycle()
         validateLeastHopPath()
-       // validateIntegration()
+        validateIntegration()
 
         println("Routing validation completed.")
     }
@@ -34,56 +34,52 @@ class LeastHopRoutingValidation
             )
         )
 
-        val path = router.findLeastHopPath(
+        val warehousePath = router.findLeastHopPath(
             startWarehouse,
             destinationWarehouse
         )
 
         validateWarehousePath(
             "Direct path",
-            path,
+            warehousePath,
             listOf("WH-001", "WH-002")
         )
     }
 
     private fun validateNoPath() {
-
         val startWarehouse = createWarehouse("WH-001")
         val destinationWarehouse = createWarehouse("WH-002")
 
-        val path = router.findLeastHopPath(
+        val warehousePath = router.findLeastHopPath(
             startWarehouse,
             destinationWarehouse
         )
 
-        if (path.isEmpty()) {
+        if (warehousePath.isEmpty()) {
             println("No path: PASSED")
         } else {
             println("No path: FAILED")
+            println("Expected: empty path")
+            println("Actual:   ${warehousePath.map { it.id }}")
         }
     }
 
     private fun validateSameWarehouse() {
-
         val warehouse = createWarehouse("WH-001")
 
-        val path = router.findLeastHopPath(
+        val warehousePath = router.findLeastHopPath(
             warehouse,
             warehouse
         )
 
-        if (
-            path.map { it.id } ==
+        validateWarehousePath(
+            "Same warehouse",
+            warehousePath,
             listOf("WH-001")
-        ) {
-            println("Same warehouse: PASSED")
-        } else {
-            println("Same warehouse: FAILED")
-        }
+        )
     }
 
     private fun validateCycle() {
-
         val startWarehouse = createWarehouse("WH-001")
         val middleWarehouse = createWarehouse("WH-002")
         val destinationWarehouse = createWarehouse("WH-003")
@@ -112,34 +108,24 @@ class LeastHopRoutingValidation
             )
         )
 
-        val path = router.findLeastHopPath(
+        val warehousePath = router.findLeastHopPath(
             startWarehouse,
             destinationWarehouse
         )
 
-        if (
-            path.map { it.id } ==
-            listOf(
-                "WH-001",
-                "WH-002",
-                "WH-003"
-            )
-        ) {
-            println("Cycle: PASSED")
-        } else {
-            println("Cycle: FAILED")
-        }
+        validateWarehousePath(
+            "Cycle",
+            warehousePath,
+            listOf("WH-001", "WH-002", "WH-003")
+        )
     }
 
     private fun validateLeastHopPath() {
-
         val startWarehouse = createWarehouse("WH-001")
         val shortPathWarehouse = createWarehouse("WH-002")
         val alternativePathWarehouse = createWarehouse("WH-003")
         val destinationWarehouse = createWarehouse("WH-004")
         val extraPathWarehouse = createWarehouse("WH-005")
-
-
 
         startWarehouse.addRoute(
             createRoute(
@@ -157,8 +143,6 @@ class LeastHopRoutingValidation
             )
         )
 
-
-
         startWarehouse.addRoute(
             createRoute(
                 "RT-00003",
@@ -166,7 +150,6 @@ class LeastHopRoutingValidation
                 alternativePathWarehouse
             )
         )
-
 
         alternativePathWarehouse.addRoute(
             createRoute(
@@ -184,22 +167,40 @@ class LeastHopRoutingValidation
             )
         )
 
-        val path = router.findLeastHopPath(
+        val warehousePath = router.findLeastHopPath(
             startWarehouse,
             destinationWarehouse
         )
 
-        if (
-            path.map { it.id } ==
-            listOf(
-                "WH-001",
-                "WH-002",
-                "WH-004"
+        validateWarehousePath(
+            "Least-hop path",
+            warehousePath,
+            listOf("WH-001", "WH-002", "WH-004")
+        )
+    }
+    private fun validateIntegration() {
+        val startWarehouse = warehouseIndex["WH-001"]
+        val destinationWarehouse = warehouseIndex["WH-002"]
+
+        if (startWarehouse == null || destinationWarehouse == null) {
+            println("Integration: FAILED")
+            println("Required warehouses were not found.")
+            return
+        }
+
+        val warehousePath = router.findLeastHopPath(
+            startWarehouse,
+            destinationWarehouse
+        )
+
+        if (warehousePath.isNotEmpty()) {
+            println("Integration: PASSED")
+            println(
+                "WarehousePath: ${warehousePath.map { warehouse -> warehouse.id }}"
             )
-        ) {
-            println("Least-hop path: PASSED")
         } else {
-            println("Least-hop path: FAILED")
+            println("Integration: FAILED")
+            println("No path found between WH-001 and WH-002.")
         }
     }
 
