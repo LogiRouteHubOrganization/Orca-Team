@@ -59,7 +59,6 @@ class ShortestPathRouter(private val warehouses: List<Warehouse>) {
             previousWarehouse[nextWarehouse] = currentWarehouse
         }
     }
-
     private fun reconstructPath(
         startWarehouse: Warehouse,
         destinationWarehouse: Warehouse,
