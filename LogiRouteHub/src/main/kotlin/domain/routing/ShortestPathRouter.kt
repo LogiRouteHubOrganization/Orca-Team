@@ -3,6 +3,29 @@ package domain.routing
 import domain.model.Route
 import domain.model.Warehouse
 
+/**
+ * Dijkstra's algorithm finds the shortest path by evaluating the
+ * cumulative distance of all routes.
+ *
+ * BFS finds the path with the fewest hops between warehouses.
+ * However, it does not consider physical route distances.
+ *
+ * When route distances vary, BFS may select a path with fewer
+ * intermediate warehouses but a longer total distance.
+ *
+ * Dijkstra evaluates the total route cost and selects the path
+ * with the minimum cumulative distance.
+ *
+ *  For example, BFS may choose a 2-hop path with a total distance
+ *  of 14 km over a 3-hop path with a total distance of 9 km.
+ *  Dijkstra correctly selects the 9 km path because it minimizes
+ *  the cumulative route distance.
+ *
+ *  Therefore, BFS is suitable for finding the fewest hops, while
+ *  Dijkstra is required when the goal is to minimize physical
+ *  distance in a weighted graph.
+ */
+
 class ShortestPathRouter(
     private val warehouses: List<Warehouse>
 ) {
