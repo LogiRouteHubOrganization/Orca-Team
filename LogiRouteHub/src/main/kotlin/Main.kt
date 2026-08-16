@@ -103,9 +103,8 @@ fun main() {
 
     validateDecoratorIntegration(warehouseIndex)
 
-    val routingValidation = LeastHopRoutingValidation()
-
-    routingValidation.runRoutingValidation()
+    val routingValidation = LeastHopRoutingValidation(warehouseIndex)
+    routingValidation.validateRouting()
 
 
 }

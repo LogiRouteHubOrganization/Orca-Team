@@ -11,7 +11,7 @@ class LeastHopRoutingValidation
 
     private val router = LeastHopRouter()
 
-    fun runRoutingValidation() {
+    fun validateRouting() {
         validatePathExists()
         validateNoPath()
         validateSameWarehouse()
