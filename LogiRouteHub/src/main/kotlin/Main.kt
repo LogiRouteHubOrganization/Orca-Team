@@ -88,8 +88,7 @@ fun main() {
     validatePricingStrategies(warehouseIndex)
 
     validateDecoratorIntegration(warehouseIndex)
-    
-    
+
     val routingValidation = LeastHopRoutingValidation(warehouseIndex)
     routingValidation.validateRouting()
 
