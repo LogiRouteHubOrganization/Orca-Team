@@ -1,40 +1,67 @@
 package domain.routing
 
-import domain.model.Warehouse
 import domain.model.Route
-class ShortestPathRouter(private val warehouses: List<Warehouse>) {
+import domain.model.Warehouse
+
+class ShortestPathRouter(
+    private val warehouses: List<Warehouse>
+) {
 
     fun findShortestPath(
         startWarehouse: Warehouse,
         destinationWarehouse: Warehouse
     ): List<Warehouse> {
 
+        if (startWarehouse.id == destinationWarehouse.id) {
+            return listOf(startWarehouse)
+        }
         val distanceByWarehouse = mutableMapOf<Warehouse, Double>()
         val visitedWarehouses = mutableSetOf<Warehouse>()
-        val previousWarehouse = mutableMapOf<Warehouse, Warehouse?>()
+        val previousWarehouseMap = mutableMapOf<Warehouse, Warehouse?>()
 
         for (warehouse in warehouses) {
             distanceByWarehouse[warehouse] = Double.POSITIVE_INFINITY
-
-            previousWarehouse[warehouse] = null
+            previousWarehouseMap[warehouse] = null
         }
+
         distanceByWarehouse[startWarehouse] = 0.0
-        return emptyList()
+        while (true) {
+
+            val currentWarehouse = getUnvisitedNodeWithMinDistance(
+                distanceByWarehouse,
+                visitedWarehouses
+            ) ?: break
+
+            if (currentWarehouse == destinationWarehouse) break
+
+            visitedWarehouses.add(currentWarehouse)
+
+            for (route in currentWarehouse.outgoingRoutes) {
+                updateDistanceThroughRoute(
+                    currentWarehouse,
+                    route,
+                    distanceByWarehouse,
+                    previousWarehouseMap
+                )
+            }
+        }
+        return reconstructPath(
+            startWarehouse,
+            destinationWarehouse,
+            previousWarehouseMap
+        )
     }
 
     private fun getUnvisitedNodeWithMinDistance(
         distanceByWarehouse: Map<Warehouse, Double>,
         visitedWarehouses: Set<Warehouse>
     ): Warehouse? {
-
         var selectedWarehouse: Warehouse? = null
         var minimumDistance = Double.POSITIVE_INFINITY
 
         for ((warehouse, distance) in distanceByWarehouse) {
 
-            if (warehouse in visitedWarehouses) {
-                continue
-            }
+            if (warehouse in visitedWarehouses) continue
             if (distance < minimumDistance) {
                 minimumDistance = distance
                 selectedWarehouse = warehouse
@@ -50,8 +77,7 @@ class ShortestPathRouter(private val warehouses: List<Warehouse>) {
         previousWarehouse: MutableMap<Warehouse, Warehouse?>
     ) {
         val nextWarehouse = route.destinationWarehouse
-
-        val currentDistance = distanceByWarehouse[currentWarehouse] ?: 0.0
+        val currentDistance = distanceByWarehouse[currentWarehouse] ?: Double.POSITIVE_INFINITY
         val newDistance = currentDistance + route.distanceKm
 
         if (newDistance < (distanceByWarehouse[nextWarehouse] ?: Double.POSITIVE_INFINITY)) {
@@ -59,6 +85,7 @@ class ShortestPathRouter(private val warehouses: List<Warehouse>) {
             previousWarehouse[nextWarehouse] = currentWarehouse
         }
     }
+
     private fun reconstructPath(
         startWarehouse: Warehouse,
         destinationWarehouse: Warehouse,
@@ -75,10 +102,8 @@ class ShortestPathRouter(private val warehouses: List<Warehouse>) {
                 path.reverse()
                 return path
             }
-
             currentWarehouse = previousWarehouse[currentWarehouse]
         }
-
         return emptyList()
     }
 }
