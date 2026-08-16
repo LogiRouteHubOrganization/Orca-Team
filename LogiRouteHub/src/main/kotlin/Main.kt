@@ -19,6 +19,7 @@ import repository.csv.CsvPackageRepository
 import repository.csv.CsvRouteRepository
 import repository.csv.CsvVehicleRepository
 import repository.csv.CsvWarehouseRepository
+import validation.DijkstraRoutingValidation
 import validation.validateDecoratorIntegration
 import validation.validateDomainGraph
 import validation.validatePricingStrategies
@@ -44,8 +45,7 @@ fun main() {
         packageParser = packageParser
     )
 
-    val warehouseParser =
-        WarehouseParser()
+    val warehouseParser = WarehouseParser()
 
     val warehouseRepository: WarehouseRepository = CsvWarehouseRepository(
         warehouseFile = File(WAREHOUSES_FILE_PATH),
@@ -64,29 +64,15 @@ fun main() {
         vehicleFile = File(FLEET_FILE_PATH),
         fleetParser = fleetParser
     )
-
-    val rawPackages =
-        loadPackages(
-            packageRepository
-        )
-
-    sortAndDisplayPackages(
-        rawPackages
+    val rawPackages = loadPackages(
+        packageRepository
     )
+    sortAndDisplayPackages(rawPackages)
+    val rawWarehouses = loadWarehouses(warehouseRepository)
 
-    val rawWarehouses =
-        loadWarehouses(
-            warehouseRepository
-        )
+    val rawRoutes = loadRoutes(routeRepository)
 
-    val rawRoutes =
-        loadRoutes(
-            routeRepository
-        )
-
-    val rawVehicles =
-        loadVehicles(vehicleRepository)
-
+    val rawVehicles = loadVehicles(vehicleRepository)
     val warehouseIndex = buildDomainGraph(
         rawPackages = rawPackages,
         rawWarehouses = rawWarehouses,
@@ -101,6 +87,11 @@ fun main() {
     validatePricingStrategies(warehouseIndex)
 
     validateDecoratorIntegration(warehouseIndex)
+
+    val dijkstraRoutingValidation = DijkstraRoutingValidation(
+        warehouseIndex
+    )
+    dijkstraRoutingValidation.validateRouting()
 
 }
 
