@@ -5,22 +5,24 @@ import domain.model.Route
 import domain.model.Warehouse
 import domain.routing.LeastHopRouter
 
-class LeastHopRoutingValidation {
+class LeastHopRoutingValidation
+    (private val warehouseIndex: Map<String, Warehouse>)
+{
 
     private val router = LeastHopRouter()
 
     fun runRoutingValidation() {
-        testPathExists()
-        testNoPath()
-        testSameWarehouse()
-        testCycle()
-        testLeastHopPath()
+        validatePathExists()
+        validateNoPath()
+        validateSameWarehouse()
+        validateCycle()
+        validateLeastHopPath()
+       // validateIntegration()
 
         println("Routing validation completed.")
     }
 
-    private fun testPathExists() {
-
+    private fun validatePathExists() {
         val startWarehouse = createWarehouse("WH-001")
         val destinationWarehouse = createWarehouse("WH-002")
 
@@ -37,17 +39,14 @@ class LeastHopRoutingValidation {
             destinationWarehouse
         )
 
-        if (
-            path.map { it.id } ==
+        validateWarehousePath(
+            "Direct path",
+            path,
             listOf("WH-001", "WH-002")
-        ) {
-            println("Path exists: PASSED")
-        } else {
-            println("Path exists: FAILED")
-        }
+        )
     }
 
-    private fun testNoPath() {
+    private fun validateNoPath() {
 
         val startWarehouse = createWarehouse("WH-001")
         val destinationWarehouse = createWarehouse("WH-002")
@@ -64,7 +63,7 @@ class LeastHopRoutingValidation {
         }
     }
 
-    private fun testSameWarehouse() {
+    private fun validateSameWarehouse() {
 
         val warehouse = createWarehouse("WH-001")
 
@@ -83,7 +82,7 @@ class LeastHopRoutingValidation {
         }
     }
 
-    private fun testCycle() {
+    private fun validateCycle() {
 
         val startWarehouse = createWarehouse("WH-001")
         val middleWarehouse = createWarehouse("WH-002")
@@ -132,7 +131,7 @@ class LeastHopRoutingValidation {
         }
     }
 
-    private fun testLeastHopPath() {
+    private fun validateLeastHopPath() {
 
         val startWarehouse = createWarehouse("WH-001")
         val shortPathWarehouse = createWarehouse("WH-002")
@@ -230,5 +229,20 @@ class LeastHopRoutingValidation {
             distanceKm = 100.0,
             typicalDelayMin = 10
         )
+    }
+    private fun validateWarehousePath(
+        testName: String,
+        actualPath: List<Warehouse>,
+        expectedPath: List<String>
+    ) {
+        val actualWarehouseIds = actualPath.map { warehouse -> warehouse.id }
+
+        if (actualWarehouseIds == expectedPath) {
+            println("$testName: PASSED")
+        } else {
+            println("$testName: FAILED")
+            println("Expected: $expectedPath")
+            println("Actual:   $actualWarehouseIds")
+        }
     }
 }
