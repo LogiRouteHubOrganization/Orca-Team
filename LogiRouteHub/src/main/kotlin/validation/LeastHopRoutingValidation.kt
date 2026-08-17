@@ -5,11 +5,11 @@ import domain.model.Route
 import domain.model.Warehouse
 import domain.routing.LeastHopRouter
 
-class LeastHopRoutingValidation
-    (private val warehouseIndex: Map<String, Warehouse>)
+class LeastHopRoutingValidation(
+    private val warehouseIndex: Map<String, Warehouse>,
+    private val router: LeastHopRouter
+)
 {
-
-    private val router = LeastHopRouter()
 
     fun validateRouting() {
         validatePathExists()

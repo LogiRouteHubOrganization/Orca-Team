@@ -8,7 +8,8 @@ import domain.routing.ShortestPathRouter
 private const val DEFAULT_ROUTE_DELAY_MIN = 10
 
 class DijkstraRoutingValidation(
-    private val warehouseIndex: Map<String, Warehouse>
+    private val warehouseIndex: Map<String, Warehouse>,
+    private val router: ShortestPathRouter
 ) {
     fun validateRouting() {
         validatePathExists()
