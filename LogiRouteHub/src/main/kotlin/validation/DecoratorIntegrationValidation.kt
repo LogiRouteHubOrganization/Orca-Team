@@ -3,6 +3,7 @@ package validation
 import domain.model.Warehouse
 import domain.pricing.EcoStrategy
 import domain.pricing.decorator.PackageDecoratorComposer
+import domain.pricing.DispatchStrategy
 import kotlin.math.abs
 
 private const val COLD_CHAIN_MULTIPLIER = 1.30
@@ -11,7 +12,9 @@ private const val PROTECTIVE_FEE = 70.0
 private const val RATE_TOLERANCE = 0.001
 
 fun validateDecoratorIntegration(
-    warehouseIndex: Map<String, Warehouse>
+    warehouseIndex: Map<String, Warehouse>,
+    dispatchStrategy: DispatchStrategy,
+    decoratorComposer: PackageDecoratorComposer
 ) {
     val warehouse = warehouseIndex.values.firstOrNull()
         ?: run {
@@ -34,7 +37,7 @@ fun validateDecoratorIntegration(
             return
         }
 
-    val dispatchStrategy = EcoStrategy()
+
 
     val baseRate = logisticsPackage.calculateTransitRate(
         selectedRoute = selectedRoute,
@@ -43,7 +46,7 @@ fun validateDecoratorIntegration(
     )
 
     val decoratedPackage =
-        PackageDecoratorComposer().applyOptionalDecorators(
+        decoratorComposer.applyOptionalDecorators(
             packageComponent = logisticsPackage,
             isFragile = true,
             requiresColdChain = true,

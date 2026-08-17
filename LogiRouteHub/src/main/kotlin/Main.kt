@@ -7,6 +7,10 @@ import dataHolder.WarehouseRaw
 import domain.builder.DomainGraphBuilder
 import domain.builder.GraphBuilderInput
 import domain.model.Warehouse
+import domain.pricing.EcoStrategy
+import domain.pricing.decorator.PackageDecoratorComposer
+import domain.routing.LeastHopRouter
+import domain.routing.ShortestPathRouter
 import parser.FleetParser
 import parser.PackageParser
 import parser.RouteParser
@@ -65,15 +69,15 @@ fun main() {
         vehicleFile = File(FLEET_FILE_PATH),
         fleetParser = fleetParser
     )
-    val rawPackages = loadPackages(
-        packageRepository
-    )
+    val rawPackages = loadPackages(packageRepository)
     sortAndDisplayPackages(rawPackages)
+
     val rawWarehouses = loadWarehouses(warehouseRepository)
 
     val rawRoutes = loadRoutes(routeRepository)
 
     val rawVehicles = loadVehicles(vehicleRepository)
+
     val warehouseIndex = buildDomainGraph(
         rawPackages = rawPackages,
         rawWarehouses = rawWarehouses,
@@ -87,12 +91,31 @@ fun main() {
 
     validatePricingStrategies(warehouseIndex)
 
-    validateDecoratorIntegration(warehouseIndex)
+    val dispatchStrategy = EcoStrategy()
+    val decoratorComposer = PackageDecoratorComposer()
+    validateDecoratorIntegration(
+        warehouseIndex = warehouseIndex,
+        dispatchStrategy = dispatchStrategy,
+        decoratorComposer = decoratorComposer
+    )
 
-    val routingValidation = LeastHopRoutingValidation(warehouseIndex)
+    val leastHopRouter = LeastHopRouter()
+
+    val routingValidation = LeastHopRoutingValidation(
+        warehouseIndex = warehouseIndex,
+        router = leastHopRouter
+    )
     routingValidation.validateRouting()
 
-    val dijkstraRoutingValidation = DijkstraRoutingValidation(warehouseIndex)
+    val shortestPathRouter = ShortestPathRouter(
+        warehouseIndex.values.toList())
+
+    val dijkstraRoutingValidation =
+        DijkstraRoutingValidation(
+            warehouseIndex = warehouseIndex,
+            router = shortestPathRouter
+        )
+
     dijkstraRoutingValidation.validateRouting()
     
 }
@@ -108,10 +131,8 @@ private fun loadPackages(
             .loadPackages()
             .toMutableList()
 
-    println(
-        "Successfully loaded ${packages.size} " +
-                "valid package records."
-    )
+    println("Successfully loaded ${packages.size} " +
+                "valid package records.")
 
     return packages
 }
@@ -123,37 +144,28 @@ private fun sortAndDisplayPackages(
     sortPackages(packages)
 
     println()
-    println(
-        "Top $TOP_PACKAGE_COUNT priority packages:"
-    )
+    println("Top $TOP_PACKAGE_COUNT priority packages:")
 
-    val displayedPackageCount =
-        minOf(
+    val displayedPackageCount = minOf(
             TOP_PACKAGE_COUNT,
-            packages.size
-        )
+            packages.size)
 
-    for (
-    packageIndex in
-    packages.indices.take(
-        displayedPackageCount
-    )
-    ) {
+    for (packageIndex in packages.indices.take(
+        displayedPackageCount))
+    {
         val packagePosition =
             packageIndex + DISPLAY_POSITION_OFFSET
 
         val logisticsPackage =
             packages[packageIndex]
 
-        println(
-            "$packagePosition. " +
+        println("$packagePosition. " +
                     "ID: ${logisticsPackage.packageId}" +
                     " | Weight: " +
                     "${formatWeight(logisticsPackage.packageWeightByKg)} kg" +
                     " | Priority: ${logisticsPackage.packagePriority}"
         )
     }
-
     printSeparator()
 }
 
@@ -165,16 +177,13 @@ private fun loadWarehouses(
 
     val warehouses = warehouseRepository.loadWarehouses()
 
-    println(
-        "Successfully loaded ${warehouses.size} " +
-                "valid warehouse records."
-    )
+    println("Successfully loaded ${warehouses.size} " +
+                "valid warehouse records.")
 
     println("--- Detailed Warehouse Records ---")
 
     for (warehouse in warehouses) {
-        println(
-            "ID: ${warehouse.warehouseId}" +
+        println("ID: ${warehouse.warehouseId}" +
                     " | Name: ${warehouse.warehouseName}" +
                     " | Zone: ${warehouse.regionalZone}" +
                     " | Latitude: ${warehouse.latitude}" +
@@ -196,10 +205,8 @@ private fun loadRoutes(
 
     val routes = routeRepository.loadRoutes()
 
-    println(
-        "Successfully loaded ${routes.size} " +
-                "valid route records."
-    )
+    println("Successfully loaded ${routes.size} " +
+                "valid route records.")
 
     println("--- Detailed Route Records ---")
 
@@ -228,10 +235,8 @@ private fun loadVehicles(
 
     val vehicles = vehicleRepository.loadVehicles()
 
-    println(
-        "Successfully loaded ${vehicles.size} " +
-                "valid vehicle records."
-    )
+    println("Successfully loaded ${vehicles.size} " +
+                "valid vehicle records.")
 
     println("--- Detailed Vehicle Records ---")
 
@@ -245,7 +250,6 @@ private fun loadVehicles(
     }
 
     println("--- Vehicle Data Initialization Complete ---")
-
     printSeparator()
 
     return vehicles
@@ -277,22 +281,16 @@ private fun validateQuickSort(
     warehouseIndex: Map<String, Warehouse>
 ) {
     println()
-
-    println(
-        "=== QuickSort Validation ==="
-    )
+    println("=== QuickSort Validation ===")
 
     val firstWarehouse =
         warehouseIndex.values.firstOrNull()
 
     if (firstWarehouse == null) {
-        println(
-            "QuickSort validation skipped: " +
-                    "No warehouses were built."
-        )
+        println("QuickSort validation skipped: " +
+                    "No warehouses were built.")
 
         printSeparator()
-
         return
     }
 
@@ -300,22 +298,16 @@ private fun validateQuickSort(
     println()
 
     println("Cargo Queue Before Sorting:")
-
     printCargoQueue(firstWarehouse)
 
-    val packageQuickSorter =
-        PackageQuickSorter()
+    val packageQuickSorter = PackageQuickSorter()
 
     packageQuickSorter.sortAllCargoQueuesByDescendingWeight(
-        warehouseIndex
-    )
+        warehouseIndex)
 
     println()
-
     println("Cargo Queue After Sorting:")
-
     printCargoQueue(firstWarehouse)
-
     printSeparator()
 }
 
@@ -323,23 +315,17 @@ private fun printCargoQueue(
     warehouse: Warehouse
 ) {
     if (warehouse.cargoQueue.isEmpty()) {
-        println(
-            "No packages are available in this warehouse."
-        )
+        println("No packages are available in this warehouse.")
         return
     }
 
     for (logisticsPackage in warehouse.cargoQueue) {
-        println(
-            logisticsPackage.id + " | ${formatWeight(logisticsPackage.weightByKg)} kg"
-        )
+        println(logisticsPackage.id +
+                " | ${formatWeight(logisticsPackage.weightByKg)} kg")
     }
 }
 
-private fun formatWeight(
-    weightByKg: Double
-): String {
-
+private fun formatWeight(weightByKg: Double): String {
     return String.format(
         Locale.US,
         WEIGHT_DECIMAL_FORMAT,
@@ -348,9 +334,7 @@ private fun formatWeight(
 }
 
 private fun printSeparator() {
-
     println()
     println(OUTPUT_SEPARATOR)
-
     println()
 }
