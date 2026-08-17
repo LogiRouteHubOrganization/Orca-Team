@@ -12,6 +12,7 @@ class BidirectionalRouter(
         if (startWarehouse.id == destinationWarehouse.id) {
             return listOf(startWarehouse)
         }
+
         val forwardQueue = ArrayDeque<Warehouse>()
         val backwardQueue = ArrayDeque<Warehouse>()
         val forwardVisitedWarehouseIds = mutableSetOf<String>()
@@ -22,6 +23,7 @@ class BidirectionalRouter(
         forwardQueue.addLast(startWarehouse)
 
         forwardVisitedWarehouseIds.add(startWarehouse.id)
+
         backwardQueue.addLast(destinationWarehouse)
 
         backwardVisitedWarehouseIds.add(destinationWarehouse.id)
@@ -32,6 +34,7 @@ class BidirectionalRouter(
             forwardParentById = forwardParentById,
             backwardVisitedWarehouseIds = backwardVisitedWarehouseIds
         )
+
         return emptyList()
     }
 
@@ -56,6 +59,38 @@ class BidirectionalRouter(
 
             forwardQueue.addLast(nextWarehouse)
         }
+
+        return null
+    }
+
+    private fun performBackwardSearchStep(
+        backwardQueue: ArrayDeque<Warehouse>,
+        backwardVisitedWarehouseIds: MutableSet<String>,
+        backwardParentById: MutableMap<String, Warehouse>,
+        forwardVisitedWarehouseIds: Set<String>
+    ): Warehouse? {
+        val currentWarehouse = backwardQueue.removeFirst()
+
+        for (warehouse in warehouses) {
+            for (route in warehouse.outgoingRoutes) {
+                if (route.destinationWarehouse.id != currentWarehouse.id) continue
+
+                val previousWarehouse = warehouse
+
+                if (previousWarehouse.id in backwardVisitedWarehouseIds) continue
+
+                backwardVisitedWarehouseIds.add(previousWarehouse.id)
+
+                backwardParentById[previousWarehouse.id] = currentWarehouse
+
+                if (previousWarehouse.id in forwardVisitedWarehouseIds) {
+                    return previousWarehouse
+                }
+
+                backwardQueue.addLast(previousWarehouse)
+            }
+        }
+
         return null
     }
 }
