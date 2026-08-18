@@ -1,9 +1,8 @@
 package validation
 
 import domain.model.Warehouse
-import domain.pricing.EcoStrategy
-import domain.pricing.decorator.PackageDecoratorComposer
 import domain.pricing.DispatchStrategy
+import domain.pricing.decorator.PackageDecoratorComposer
 import kotlin.math.abs
 
 private const val COLD_CHAIN_MULTIPLIER = 1.30
@@ -16,52 +15,63 @@ fun validateDecoratorIntegration(
     dispatchStrategy: DispatchStrategy,
     decoratorComposer: PackageDecoratorComposer
 ) {
-    val warehouse = warehouseIndex.values.firstOrNull()
-        ?: run {
-            println("Decorator validation skipped: No warehouses available.")
-            return
-        }
-    val logisticsPackage = warehouse.cargoQueue.firstOrNull()
-        ?: run {
-            println("Decorator validation skipped: No packages available.")
-            return
-        }
-    val selectedRoute = warehouse.outgoingRoutes.firstOrNull()
-        ?: run {
-            println("Decorator validation skipped: No routes available.")
-            return
-        }
-    val assignedVehicle = warehouse.stationedVehicles.firstOrNull()
-        ?: run {
-            println("Decorator validation skipped: No vehicles available.")
-            return
-        }
+    val warehouse = findWarehouseForDecoratorValidation(warehouseIndex) ?: return
 
-
+    val logisticsPackage = warehouse.cargoQueue.first()
+    val selectedRoute = warehouse.outgoingRoutes.first()
+    val assignedVehicle = warehouse.stationedVehicles.first()
 
     val baseRate = logisticsPackage.calculateTransitRate(
-        selectedRoute = selectedRoute,
-        assignedVehicle = assignedVehicle,
-        dispatchStrategy = dispatchStrategy
+        selectedRoute,
+        assignedVehicle,
+        dispatchStrategy
     )
-
-    val decoratedPackage =
-        decoratorComposer.applyOptionalDecorators(
-            packageComponent = logisticsPackage,
-            isFragile = true,
-            requiresColdChain = true,
-            needsExpressInsurance = true
-        )
-
+    val decoratedPackage = decoratorComposer.applyOptionalDecorators(
+        logisticsPackage,
+        true,
+        true,
+        true
+    )
     val decoratedRate = decoratedPackage.calculateTransitRate(
-        selectedRoute = selectedRoute,
-        assignedVehicle = assignedVehicle,
-        dispatchStrategy = dispatchStrategy
+        selectedRoute,
+        assignedVehicle,
+        dispatchStrategy
     )
+    val expectedRate = calculateExpectedDecoratedRate(baseRate)
 
-    val expectedRate =
-        (baseRate + PROTECTIVE_FEE) * COLD_CHAIN_MULTIPLIER + EXPRESS_INSURANCE_FEE
+    printDecoratorValidationResult(
+        baseRate,
+        decoratedRate,
+        expectedRate
+    )
+}
 
+private fun findWarehouseForDecoratorValidation(
+    warehouseIndex: Map<String, Warehouse>
+): Warehouse? {
+
+    val warehouse = warehouseIndex.values.firstOrNull { warehouse ->
+        warehouse.cargoQueue.isNotEmpty() && warehouse.outgoingRoutes.isNotEmpty() &&
+                warehouse.stationedVehicles.isNotEmpty()
+    }
+    if (warehouse == null)
+        println("Decorator validation skipped: " + "No warehouse contains the required data.")
+
+    return warehouse
+}
+
+private fun calculateExpectedDecoratedRate(
+    baseRate: Double
+): Double {
+
+    return (baseRate + PROTECTIVE_FEE) * COLD_CHAIN_MULTIPLIER + EXPRESS_INSURANCE_FEE
+}
+
+private fun printDecoratorValidationResult(
+    baseRate: Double,
+    decoratedRate: Double,
+    expectedRate: Double
+) {
     println()
     println("=== Decorator Integration Validation ===")
     println("Base Rate: $baseRate")
@@ -69,10 +79,7 @@ fun validateDecoratorIntegration(
     println("Expected Rate: $expectedRate")
 
     if (
-        isCloseTo(
-            actualRate = decoratedRate,
-            expectedRate = expectedRate
-        )
+        isCloseTo(actualRate = decoratedRate, expectedRate = expectedRate)
     ) {
         println("Decorator integration validation passed.")
     } else {

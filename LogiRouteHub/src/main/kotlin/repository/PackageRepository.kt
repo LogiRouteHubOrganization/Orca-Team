@@ -1,6 +1,6 @@
 package repository
 
-import dataHolder.LogisticsPackageRaw
+import dataholder.LogisticsPackageRaw
 
 interface PackageRepository {
 

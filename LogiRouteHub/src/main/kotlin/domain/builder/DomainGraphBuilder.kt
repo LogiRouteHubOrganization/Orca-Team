@@ -1,9 +1,9 @@
 package domain.builder
 
-import dataHolder.FleetRaw
-import dataHolder.LogisticsPackageRaw
-import dataHolder.RouteRaw
-import dataHolder.WarehouseRaw
+import dataholder.FleetRaw
+import dataholder.LogisticsPackageRaw
+import dataholder.RouteRaw
+import dataholder.WarehouseRaw
 import domain.model.Package
 import domain.model.Route
 import domain.model.Vehicle
@@ -145,12 +145,11 @@ class DomainGraphBuilder {
                 warehousesById
             )
             if (originWarehouse != null && destinationWarehouse != null) {
-                val route =
-                    createRouteFromRawData(
-                        rawRoute,
-                        originWarehouse,
-                        destinationWarehouse
-                    )
+                val route = createRouteFromRawData(
+                    rawRoute,
+                    originWarehouse,
+                    destinationWarehouse
+                )
                 originWarehouse.addRoute(route)
             }
         }

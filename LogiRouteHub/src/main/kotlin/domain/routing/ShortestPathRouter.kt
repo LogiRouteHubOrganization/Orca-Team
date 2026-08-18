@@ -34,31 +34,28 @@ class ShortestPathRouter(
         startWarehouse: Warehouse,
         destinationWarehouse: Warehouse
     ): List<Warehouse> {
-
-        if (startWarehouse.id == destinationWarehouse.id) {
-            return listOf(startWarehouse)
-        }
+        if (startWarehouse.id == destinationWarehouse.id) return listOf(startWarehouse)
         val distanceByWarehouse = mutableMapOf<Warehouse, Double>()
         val visitedWarehouses = mutableSetOf<Warehouse>()
         val previousWarehouseMap = mutableMapOf<Warehouse, Warehouse?>()
-
         for (warehouse in warehouses) {
             distanceByWarehouse[warehouse] = Double.POSITIVE_INFINITY
             previousWarehouseMap[warehouse] = null
         }
-
         distanceByWarehouse[startWarehouse] = 0.0
         while (true) {
-
             val currentWarehouse = getUnvisitedNodeWithMinDistance(
                 distanceByWarehouse,
                 visitedWarehouses
             ) ?: break
-
-            if (currentWarehouse == destinationWarehouse) break
-
+            if (currentWarehouse == destinationWarehouse) {
+                return reconstructPath(
+                    startWarehouse,
+                    destinationWarehouse,
+                    previousWarehouseMap
+                )
+            }
             visitedWarehouses.add(currentWarehouse)
-
             for (route in currentWarehouse.outgoingRoutes) {
                 updateDistanceThroughRoute(
                     currentWarehouse,
@@ -114,7 +111,6 @@ class ShortestPathRouter(
         destinationWarehouse: Warehouse,
         previousWarehouse: Map<Warehouse, Warehouse?>
     ): List<Warehouse> {
-
         val path = mutableListOf<Warehouse>()
         var currentWarehouse: Warehouse? = destinationWarehouse
 
@@ -130,3 +126,4 @@ class ShortestPathRouter(
         return emptyList()
     }
 }
+

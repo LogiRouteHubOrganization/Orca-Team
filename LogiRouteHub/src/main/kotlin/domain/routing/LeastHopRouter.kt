@@ -9,30 +9,19 @@ class LeastHopRouter {
         destinationWarehouse: Warehouse
     ): List<Warehouse> {
 
-        if (startWarehouse.id == destinationWarehouse.id) {
-            return listOf(startWarehouse)
-        }
-
+        if (startWarehouse.id == destinationWarehouse.id) return listOf(startWarehouse)
         val queue = ArrayDeque<Warehouse>()
         val visitedWarehouseIds = mutableSetOf<String>()
         val previousWarehouseById = mutableMapOf<String, Warehouse>()
-
         queue.addLast(startWarehouse)
         visitedWarehouseIds.add(startWarehouse.id)
 
         while (queue.isNotEmpty()) {
-
             val currentWarehouse = queue.removeFirst()
-
             for (route in currentWarehouse.outgoingRoutes) {
 
                 val nextWarehouse = route.destinationWarehouse
-
-                if (nextWarehouse.id in visitedWarehouseIds) {
-                    continue
-                }
-
-
+                if (nextWarehouse.id in visitedWarehouseIds) continue
                 visitedWarehouseIds.add(nextWarehouse.id)
                 previousWarehouseById[nextWarehouse.id] = currentWarehouse
 
@@ -46,9 +35,9 @@ class LeastHopRouter {
                 queue.addLast(nextWarehouse)
             }
         }
-
         return emptyList()
     }
+
     private fun buildWarehousePath(
         startWarehouse: Warehouse,
         destinationWarehouse: Warehouse,
@@ -67,7 +56,6 @@ class LeastHopRouter {
             currentWarehouse = previousWarehouse
             warehousePath.add(currentWarehouse)
         }
-
         warehousePath.reverse()
         return warehousePath
     }

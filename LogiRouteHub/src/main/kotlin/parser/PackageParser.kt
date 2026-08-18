@@ -1,6 +1,6 @@
 package parser
 
-import dataHolder.LogisticsPackageRaw
+import dataholder.LogisticsPackageRaw
 
 private const val CSV_SEPARATOR = ","
 private const val EXPECTED_COLUMN_COUNT = 5
@@ -29,33 +29,22 @@ class PackageParser {
             return null
         }
 
-        val packageId = normalizeIdentifier(
-            packageColumns[PACKAGE_ID_COLUMN_INDEX]
-        )
-
-        val originHubId = normalizeIdentifier(
-            packageColumns[ORIGIN_HUB_ID_COLUMN_INDEX]
-        )
-
-        val destinationHubId = normalizeIdentifier(
-            packageColumns[DESTINATION_HUB_ID_COLUMN_INDEX]
-        )
+        val packageId = normalizeIdentifier(packageColumns[PACKAGE_ID_COLUMN_INDEX])
+        val originHubId = normalizeIdentifier(packageColumns[ORIGIN_HUB_ID_COLUMN_INDEX])
+        val destinationHubId = normalizeIdentifier(packageColumns[DESTINATION_HUB_ID_COLUMN_INDEX])
 
         if (hasEmptyRequiredField(packageId, originHubId, destinationHubId)) {
             printEmptyPackageFieldWarning(packageCsvRow)
             return null
         }
-
         val packageWeightByKg = parsePackageWeightByKg(
             packageColumns[PACKAGE_WEIGHT_COLUMN_INDEX],
             packageCsvRow
         ) ?: return null
-
         val packagePriority = parsePackagePriority(
             packageColumns[PRIORITY_COLUMN_INDEX],
             packageCsvRow
         ) ?: return null
-
         return LogisticsPackageRaw(
             packageId = packageId,
             packageWeightByKg = packageWeightByKg,

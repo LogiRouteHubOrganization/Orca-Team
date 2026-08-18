@@ -12,20 +12,14 @@ class PackageDecoratorComposer {
         var decoratedPackage = packageComponent
 
         if (isFragile) {
-            decoratedPackage =
-                FragileHandlingDecorator(decoratedPackage)
+            decoratedPackage = FragileHandlingDecorator(decoratedPackage)
         }
-
         if (requiresColdChain) {
-            decoratedPackage =
-                ColdChainDecorator(decoratedPackage)
+            decoratedPackage = ColdChainDecorator(decoratedPackage)
         }
-
         if (needsExpressInsurance) {
-            decoratedPackage =
-                ExpressInsuranceDecorator(decoratedPackage)
+            decoratedPackage = ExpressInsuranceDecorator(decoratedPackage)
         }
-
         return decoratedPackage
     }
 }
