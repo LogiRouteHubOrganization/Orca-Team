@@ -134,17 +134,22 @@ class BidirectionalRoutingValidation(
 
     private fun validateBenchmark() {
         val start = warehouseIndex.values.firstOrNull() ?: run {
-                println("Benchmark: SKIPPED")
-                return
-            }
+            println("Benchmark: SKIPPED")
+            return
+        }
         val destination = findLongestHopDestination(start) ?: run {
-                println("Benchmark: SKIPPED")
-                return
-            }
-        val standardPath = runStandardBfs(start, destination)
+            println("Benchmark: SKIPPED")
+            return
+        }
 
-        val bidirectionalPath =
-            router.findLeastHopPath(start, destination)
+
+        val standardStartTime = System.nanoTime()
+        val standardPath = runStandardBfs(start, destination)
+        val standardDurationMs = (System.nanoTime() - standardStartTime) / 1_000_000.0
+
+        val bidirectionalStartTime = System.nanoTime()
+        val bidirectionalPath = router.findLeastHopPath(start, destination)
+        val bidirectionalDurationMs = (System.nanoTime() - bidirectionalStartTime) / 1_000_000.0
 
         val standardHops = standardPath.path.size - 1
         val bidirectionalHops = bidirectionalPath.size - 1
@@ -153,17 +158,45 @@ class BidirectionalRoutingValidation(
             "Benchmark paths have different lengths."
         }
 
+        val standardPathString = standardPath.path.joinToString(" -> ") { it.id }
+        val bidirectionalPathString = bidirectionalPath.joinToString(" -> ") { it.id }
+
+        val evaluatedDifference = standardPath.evaluatedWarehouses - router.evaluatedWarehouseCount
+        val improvementPercentage = if (standardPath.evaluatedWarehouses > 0) {
+            evaluatedDifference * 100.0 / standardPath.evaluatedWarehouses
+        } else 0.0
+
         println()
-        println("========== Bidirectional BFS Benchmark ==========")
-        println("Start: ${start.id}")
-        println("Destination: ${destination.id}")
-        println("Path hops: $bidirectionalHops")
+        println("==================================================================")
+        println("                   BFS ALGORITHM BENCHMARK")
+        println("==================================================================")
+        println(String.format("%-18s : %s -> %s", "Route", start.id, destination.id))
+        println(String.format("%-18s : %d", "Target Path Hops", bidirectionalHops))
+        println("------------------------------------------------------------------")
 
-        println("Standard BFS evaluated: "+ standardPath.evaluatedWarehouses)
+        // --- Unidirectional ---
+        println("\n[ UNIDIRECTIONAL BFS ]")
+        println(String.format("  %-16s : %s", "Path", standardPathString))
+        println(String.format("  %-16s : %d hops", "Path Length", standardHops))
+        println(String.format("  %-16s : %d warehouses", "Evaluated", standardPath.evaluatedWarehouses))
+        println(String.format("  %-16s : %.3f ms", "Execution Time", standardDurationMs))
 
-        println("Bidirectional BFS evaluated: "+ router.evaluatedWarehouseCount)
-        println("======================================================")
-        println("Benchmark: PASS")
+        // --- Bidirectional ---
+        println("\n[ BIDIRECTIONAL BFS ]")
+        println(String.format("  %-16s : %s", "Path", bidirectionalPathString))
+        println(String.format("  %-16s : %d hops", "Path Length", bidirectionalHops))
+        println(String.format("  %-16s : %d warehouses", "Evaluated", router.evaluatedWarehouseCount))
+        println(String.format("  %-16s : %.3f ms", "Execution Time", bidirectionalDurationMs))
+
+        // --- Performance Summary ---
+        println("\n------------------------------------------------------------------")
+        println(" PERFORMANCE SUMMARY")
+        println("------------------------------------------------------------------")
+        println(String.format("  %-20s : %.1f%% fewer warehouses evaluated", "Efficiency Gain", improvementPercentage))
+        println(String.format("  %-20s : %d warehouses", "Evaluations Saved", evaluatedDifference))
+        println(String.format("  %-20s : PASSED", "Validation Check"))
+        println("==================================================================")
+        println()
     }
 
     private fun runStandardBfs(
