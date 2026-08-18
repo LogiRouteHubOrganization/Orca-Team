@@ -1,6 +1,6 @@
 package repository.csv
 
-import dataHolder.WarehouseRaw
+import dataholder.WarehouseRaw
 import parser.WarehouseParser
 import repository.WarehouseRepository
 import java.io.File

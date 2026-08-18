@@ -7,5 +7,3 @@ data class Vehicle(
     val currentWarehouse: Warehouse
 
 )
-
-

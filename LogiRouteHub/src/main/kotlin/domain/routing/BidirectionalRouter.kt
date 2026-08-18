@@ -7,65 +7,77 @@ private const val DUPLICATED_MEETING_WAREHOUSE_COUNT = 1
 class BidirectionalRouter(private val warehouses: List<Warehouse>) {
     var evaluatedWarehouseCount = 0
 
-    fun findLeastHopPath(
-        startWarehouse: Warehouse,
-        destinationWarehouse: Warehouse
-    ): List<Warehouse> {
+    fun findLeastHopPath(startWarehouse: Warehouse, destinationWarehouse: Warehouse): List<Warehouse> {
+
         evaluatedWarehouseCount = 0
-        if (startWarehouse.id == destinationWarehouse.id) {
-            return listOf(startWarehouse)
-        }
-
-        val forwardQueue = ArrayDeque<Warehouse>()
-        val backwardQueue = ArrayDeque<Warehouse>()
-
-        val forwardVisitedWarehouseIds = mutableSetOf<String>()
-        val backwardVisitedWarehouseIds = mutableSetOf<String>()
-
+        if (startWarehouse.id == destinationWarehouse.id) return listOf(startWarehouse)
+        val forwardQueue = initializeForwardQueue(startWarehouse)
+        val backwardQueue = initializeBackwardQueue(destinationWarehouse)
+        val forwardVisitedWarehouseIds = initializeVisitedWarehouseIds(startWarehouse)
+        val backwardVisitedWarehouseIds = initializeVisitedWarehouseIds(destinationWarehouse)
         val forwardParentById = mutableMapOf<String, Warehouse>()
         val backwardParentById = mutableMapOf<String, Warehouse>()
-
-        forwardQueue.addLast(startWarehouse)
-        forwardVisitedWarehouseIds.add(startWarehouse.id)
-
-        backwardQueue.addLast(destinationWarehouse)
-        backwardVisitedWarehouseIds.add(destinationWarehouse.id)
-
         while (forwardQueue.isNotEmpty() && backwardQueue.isNotEmpty()) {
-
             val forwardMeetingWarehouse = performForwardSearchStep(
-                forwardQueue = forwardQueue,
-                forwardVisitedWarehouseIds = forwardVisitedWarehouseIds,
-                forwardParentById = forwardParentById,
-                backwardVisitedWarehouseIds = backwardVisitedWarehouseIds
+                forwardQueue,
+                forwardVisitedWarehouseIds,
+                forwardParentById,
+                backwardVisitedWarehouseIds
             )
-
             if (forwardMeetingWarehouse != null) {
                 return buildCompletePath(
-                    meetingWarehouse = forwardMeetingWarehouse,
-                    forwardParentById = forwardParentById,
-                    backwardParentById = backwardParentById
+                    forwardMeetingWarehouse,
+                    forwardParentById,
+                    backwardParentById
                 )
             }
-
             val backwardMeetingWarehouse = performBackwardSearchStep(
-                backwardQueue = backwardQueue,
-                backwardVisitedWarehouseIds = backwardVisitedWarehouseIds,
-                backwardParentById = backwardParentById,
-                forwardVisitedWarehouseIds = forwardVisitedWarehouseIds
+                backwardQueue,
+                backwardVisitedWarehouseIds,
+                backwardParentById,
+                forwardVisitedWarehouseIds
             )
-
             if (backwardMeetingWarehouse != null) {
                 return buildCompletePath(
-                    meetingWarehouse = backwardMeetingWarehouse,
-                    forwardParentById = forwardParentById,
-                    backwardParentById = backwardParentById
+                    backwardMeetingWarehouse,
+                    forwardParentById,
+                    backwardParentById
                 )
             }
         }
         return emptyList()
     }
 
+    private fun initializeForwardQueue(
+        startWarehouse: Warehouse
+    ): ArrayDeque<Warehouse> {
+
+        val forwardQueue = ArrayDeque<Warehouse>()
+
+        forwardQueue.addLast(startWarehouse)
+
+        return forwardQueue
+    }
+
+    private fun initializeBackwardQueue(
+        destinationWarehouse: Warehouse
+    ): ArrayDeque<Warehouse> {
+
+        val backwardQueue = ArrayDeque<Warehouse>()
+
+        backwardQueue.addLast(destinationWarehouse)
+
+        return backwardQueue
+    }
+
+    private fun initializeVisitedWarehouseIds(
+        warehouse: Warehouse
+    ): MutableSet<String> {
+
+        val visitedWarehouseIds = mutableSetOf<String>()
+        visitedWarehouseIds.add(warehouse.id)
+        return visitedWarehouseIds
+    }
 
     private fun performForwardSearchStep(
         forwardQueue: ArrayDeque<Warehouse>,
@@ -73,15 +85,10 @@ class BidirectionalRouter(private val warehouses: List<Warehouse>) {
         forwardParentById: MutableMap<String, Warehouse>,
         backwardVisitedWarehouseIds: Set<String>
     ): Warehouse? {
-
         val currentLevelWarehouseCount = forwardQueue.size
-
         for (currentLevelIndex in 0 until currentLevelWarehouseCount) {
-
             val currentWarehouse = forwardQueue.removeFirst()
-
             evaluatedWarehouseCount++
-
             for (route in currentWarehouse.outgoingRoutes) {
 
                 val nextWarehouse = route.destinationWarehouse
@@ -112,24 +119,27 @@ class BidirectionalRouter(private val warehouses: List<Warehouse>) {
         for (currentLevelIndex in 0 until currentLevelWarehouseCount) {
 
             val currentWarehouse = backwardQueue.removeFirst()
-
             evaluatedWarehouseCount++
 
             for (warehouse in warehouses) {
-
                 for (route in warehouse.outgoingRoutes) {
 
-                    if (route.destinationWarehouse.id != currentWarehouse.id) continue
-
                     val previousWarehouse = warehouse
+                    val isRouteLeadingToCurrentWarehouse =
+                        route.destinationWarehouse.id == currentWarehouse.id
 
-                    if (previousWarehouse.id in backwardVisitedWarehouseIds) continue
+                    val isPreviousWarehouseUnvisited = previousWarehouse.id !in backwardVisitedWarehouseIds
+
+                    if (
+                        !isRouteLeadingToCurrentWarehouse ||
+                        !isPreviousWarehouseUnvisited
+                    ) continue
 
                     backwardVisitedWarehouseIds.add(previousWarehouse.id)
                     backwardParentById[previousWarehouse.id] = currentWarehouse
-
-                    if (previousWarehouse.id in forwardVisitedWarehouseIds) return previousWarehouse
-
+                    if (previousWarehouse.id in forwardVisitedWarehouseIds) {
+                        return previousWarehouse
+                    }
                     backwardQueue.addLast(previousWarehouse)
                 }
             }

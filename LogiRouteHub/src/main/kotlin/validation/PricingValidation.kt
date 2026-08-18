@@ -19,15 +19,28 @@ fun validatePricingStrategies(
     expressStrategy: DispatchStrategy,
     fragileStrategy: DispatchStrategy
 ) {
-
     println()
     println("=== Pricing Validation ===")
+    val warehouse = findWarehouseForPricingValidation(warehousesById) ?: return
+    validateBasePricing(
+        warehouse = warehouse,
+        ecoStrategy = ecoStrategy
+    )
+    validateAvailableStrategies(
+        warehouse = warehouse,
+        pricingEngine = pricingEngine,
+        ecoStrategy = ecoStrategy,
+        expressStrategy = expressStrategy,
+        fragileStrategy = fragileStrategy
+    )
+    println()
+    println("Pricing validation completed.")
+}
 
-    val warehouse = findWarehouseForPricingValidation(warehousesById)
-    if (warehouse == null) {
-        println("Pricing validation skipped: " + "No warehouse contains a package, route, and vehicle.")
-        return
-    }
+private fun validateBasePricing(
+    warehouse: Warehouse,
+    ecoStrategy: DispatchStrategy
+) {
     val logisticsPackage = warehouse.cargoQueue.firstOrNull()
     val route = warehouse.outgoingRoutes.firstOrNull()
     val vehicle = warehouse.stationedVehicles.firstOrNull()
@@ -36,43 +49,54 @@ fun validatePricingStrategies(
         println("Pricing validation failed: Missing required data.")
         return
     }
+    println()
+    println("Warehouse: ${warehouse.id}")
+
+    val basePackageComponent: PackageComponent = logisticsPackage
+
+    val baseTransitRate = basePackageComponent.calculateTransitRate(
+        route,
+        vehicle,
+        ecoStrategy
+    )
+    printBaseTransitRate(baseTransitRate)
+    validateBaseDecorator(
+        basePackageComponent,
+        route,
+        vehicle,
+        ecoStrategy
+    )
+}
+
+private fun printBaseTransitRate(
+    baseTransitRate: Double
+) {
 
     println()
     println(
-        "Warehouse: ${warehouse.id}"
-    )
-
-    val basePackageComponent: PackageComponent =
-        logisticsPackage
-
-    val baseTransitRate =
-        basePackageComponent.calculateTransitRate(
-            selectedRoute = route,
-            assignedVehicle = vehicle,
-            dispatchStrategy = ecoStrategy
+        "Base Package Transit Rate: " + String.format(
+            Locale.US,
+            DECIMAL_FORMAT,
+            baseTransitRate
         )
-
-    println()
-    println(
-        "Base Package Transit Rate: " +
-                String.format(
-                    Locale.US,
-                    DECIMAL_FORMAT,
-                    baseTransitRate
-                )
     )
+}
 
+private fun validateBaseDecorator(
+    basePackageComponent: PackageComponent,
+    route: Route,
+    vehicle: Vehicle,
+    ecoStrategy: DispatchStrategy
+) {
     val baseDecorator = object : PackageDecorator(
         wrappedComponent = basePackageComponent
     ) {}
 
-    val decoratedBaseTransitRate =
-        baseDecorator.calculateTransitRate(
-            selectedRoute = route,
-            assignedVehicle = vehicle,
-            dispatchStrategy = ecoStrategy
-        )
-
+    val decoratedBaseTransitRate = baseDecorator.calculateTransitRate(
+        route,
+        vehicle,
+        ecoStrategy
+    )
     println(
         "Base Decorator Transit Rate: " + String.format(
             Locale.US,
@@ -80,35 +104,44 @@ fun validatePricingStrategies(
             decoratedBaseTransitRate
         )
     )
+}
+
+private fun validateAvailableStrategies(
+    warehouse: Warehouse,
+    pricingEngine: RoutePricingEngine,
+    ecoStrategy: DispatchStrategy,
+    expressStrategy: DispatchStrategy,
+    fragileStrategy: DispatchStrategy
+) {
+
+    val logisticsPackage = warehouse.cargoQueue.firstOrNull() ?: return
+    val route = warehouse.outgoingRoutes.firstOrNull() ?: return
+    val vehicle = warehouse.stationedVehicles.firstOrNull() ?: return
 
     validateStrategy(
-        pricingEngine = pricingEngine,
-        strategyName = "EcoStrategy",
-        strategy = ecoStrategy,
-        logisticsPackage = logisticsPackage,
-        route = route,
-        vehicle = vehicle
+        pricingEngine,
+        "EcoStrategy",
+        ecoStrategy,
+        logisticsPackage,
+        route,
+        vehicle
     )
-
     validateStrategy(
-        pricingEngine = pricingEngine,
-        strategyName = "ExpressStrategy",
-        strategy = expressStrategy,
-        logisticsPackage = logisticsPackage,
-        route = route,
-        vehicle = vehicle
+        pricingEngine,
+        "ExpressStrategy",
+        expressStrategy,
+        logisticsPackage,
+        route,
+        vehicle
     )
-
     validateStrategy(
-        pricingEngine = pricingEngine,
-        strategyName = "FragileStrategy",
-        strategy = fragileStrategy,
-        logisticsPackage = logisticsPackage,
-        route = route,
-        vehicle = vehicle
+        pricingEngine,
+        "FragileStrategy",
+        fragileStrategy,
+        logisticsPackage,
+        route,
+        vehicle
     )
-    println()
-    println("Pricing validation completed.")
 }
 
 private fun validateStrategy(
@@ -129,7 +162,6 @@ private fun validateStrategy(
         route,
         vehicle
     )
-
     println(
         "$strategyName Cost: " + String.format(
             Locale.US,

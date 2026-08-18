@@ -1,6 +1,6 @@
 package parser
 
-import dataHolder.WarehouseRaw
+import dataholder.WarehouseRaw
 
 private const val CSV_SEPARATOR = ","
 private const val EXPECTED_COLUMN_COUNT = 5
@@ -38,21 +38,13 @@ class WarehouseParser {
         columns: List<String>,
         originalRow: String
     ): WarehouseRaw? {
-
-        val warehouseId = normalizeIdentifier(
-            columns[WAREHOUSE_ID_COLUMN_INDEX]
-        )
-
+        val warehouseId = normalizeIdentifier(columns[WAREHOUSE_ID_COLUMN_INDEX])
         val warehouseName = columns[WAREHOUSE_NAME_COLUMN_INDEX].trim()
-
         val regionalZone = columns[REGIONAL_ZONE_COLUMN_INDEX].trim().uppercase()
-
         val latitudeText = columns[LATITUDE_COLUMN_INDEX].trim()
-
         val longitudeText = columns[LONGITUDE_COLUMN_INDEX].trim()
 
-        if (
-            hasEmptyWarehouseField(
+        if (hasEmptyWarehouseField(
                 warehouseId = warehouseId,
                 warehouseName = warehouseName,
                 regionalZone = regionalZone,
@@ -60,24 +52,19 @@ class WarehouseParser {
                 longitude = longitudeText
             )
         ) {
-            println(
-                "Diagnostic Warning: " + "Skipping row with empty fields -> '$originalRow'"
-            )
+            println("Diagnostic Warning: " + "Skipping row with empty fields -> '$originalRow'")
             return null
         }
-
         val latitude = parseCoordinate(
             coordinate = latitudeText,
             coordinateName = "latitude",
             originalRow = originalRow
         ) ?: return null
-
         val longitude = parseCoordinate(
             coordinate = longitudeText,
             coordinateName = "longitude",
             originalRow = originalRow
         ) ?: return null
-
         return WarehouseRaw(
             warehouseId = warehouseId,
             warehouseName = warehouseName,
