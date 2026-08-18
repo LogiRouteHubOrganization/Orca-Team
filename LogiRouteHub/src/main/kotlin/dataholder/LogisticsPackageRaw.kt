@@ -1,4 +1,4 @@
-package dataHolder
+package dataholder
 
 data class LogisticsPackageRaw(
     val packageId: String,

@@ -1,6 +1,6 @@
 package repository
 
-import dataHolder.WarehouseRaw
+import dataholder.WarehouseRaw
 
 interface WarehouseRepository {
 

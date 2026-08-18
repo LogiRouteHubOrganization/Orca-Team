@@ -9,22 +9,18 @@ fun validateDomainGraph(warehousesById: Map<String, Warehouse>) {
         println("Validation skipped: No warehouses were built.")
         return
     }
-
     warehousesById.values.forEach { warehouse ->
         println("\nWarehouse: ${warehouse.id}")
 
         warehouse.cargoQueue.forEach { pkg ->
             println("Package ${pkg.id} linked correctly: ${pkg.originWarehouse === warehouse}")
         }
-
         warehouse.stationedVehicles.forEach { vehicle ->
             println("Vehicle ${vehicle.id} linked correctly: ${vehicle.currentWarehouse === warehouse}")
         }
-
         warehouse.outgoingRoutes.forEach { route ->
             println("Route ${route.id} linked correctly: ${route.originWarehouse === warehouse}")
         }
     }
-
     println("\nDomain graph validation completed.")
 }

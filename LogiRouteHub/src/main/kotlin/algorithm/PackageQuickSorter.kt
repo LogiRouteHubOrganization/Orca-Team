@@ -38,9 +38,8 @@ class PackageQuickSorter {
         sectionStartIndex: Int,
         sectionEndIndex: Int
     ) {
-        if (isSectionAlreadySorted(sectionStartIndex, sectionEndIndex)) {
-            return
-        }
+        if (isSectionAlreadySorted(sectionStartIndex, sectionEndIndex)) return
+
         val finalPivotIndex = dividePackagesAroundPivot(
             warehouse = warehouse,
             sectionStartIndex = sectionStartIndex,
@@ -133,4 +132,3 @@ class PackageQuickSorter {
         return this.weightByKg
     }
 }
-

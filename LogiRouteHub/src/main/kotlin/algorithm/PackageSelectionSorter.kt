@@ -1,6 +1,6 @@
 package algorithm
 
-import dataHolder.LogisticsPackageRaw
+import dataholder.LogisticsPackageRaw
 
 private const val URGENT_PRIORITY = "URGENT"
 private const val STANDARD_PRIORITY = "STANDARD"
@@ -17,12 +17,13 @@ fun sortPackages(logisticsPackages: MutableList<LogisticsPackageRaw>) {
     sortPackagesByWeight(logisticsPackages)
     sortPackagesByPriority(logisticsPackages)
 }
+
 private fun sortPackagesByWeight(logisticsPackages: MutableList<LogisticsPackageRaw>) {
     for (currentSortingIndex in FIRST_PACKAGE_INDEX until logisticsPackages.lastIndex) {
         val packageWithHighestWeightIndex = findPackageWithHighestWeightIndex(
-                logisticsPackages = logisticsPackages,
-                searchStartingIndex = currentSortingIndex
-            )
+            logisticsPackages = logisticsPackages,
+            searchStartingIndex = currentSortingIndex
+        )
         placePackageAtSortingIndex(
             logisticsPackages = logisticsPackages,
             packageCurrentIndex = packageWithHighestWeightIndex,
@@ -30,6 +31,7 @@ private fun sortPackagesByWeight(logisticsPackages: MutableList<LogisticsPackage
         )
     }
 }
+
 private fun findPackageWithHighestWeightIndex(
     logisticsPackages: MutableList<LogisticsPackageRaw>,
     searchStartingIndex: Int
@@ -81,6 +83,7 @@ private fun sortPackagesByPriority(
         )
     }
 }
+
 private fun findPackageWithHighestPriorityIndex(
     logisticsPackages: MutableList<LogisticsPackageRaw>,
     searchStartingIndex: Int
@@ -109,7 +112,7 @@ private fun hasHigherPriority(
 ): Boolean {
 
     val currentPackagePriorityLevel = getPriorityLevel(
-            currentPackage.packagePriority
+        currentPackage.packagePriority
     )
     val highestPackagePriorityLevel = getPriorityLevel(
         packageWithHighestPriority.packagePriority
@@ -131,6 +134,7 @@ private fun getPriorityLevel(
         else -> LOW_PRIORITY_LEVEL
     }
 }
+
 private fun placePackageAtSortingIndex(
     logisticsPackages: MutableList<LogisticsPackageRaw>,
     packageCurrentIndex: Int,
@@ -140,8 +144,8 @@ private fun placePackageAtSortingIndex(
         return
     }
     val packageToPlace = logisticsPackages.removeAt(
-            packageCurrentIndex
-        )
+        packageCurrentIndex
+    )
     logisticsPackages.add(
         requiredSortingIndex,
         packageToPlace

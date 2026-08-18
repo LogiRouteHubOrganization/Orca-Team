@@ -1,9 +1,9 @@
 package domain.builder
 
-import dataHolder.FleetRaw
-import dataHolder.LogisticsPackageRaw
-import dataHolder.RouteRaw
-import dataHolder.WarehouseRaw
+import dataholder.FleetRaw
+import dataholder.LogisticsPackageRaw
+import dataholder.RouteRaw
+import dataholder.WarehouseRaw
 
 data class GraphBuilderInput(
     val warehouses: List<WarehouseRaw>,

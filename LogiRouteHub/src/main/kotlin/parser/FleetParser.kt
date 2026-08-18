@@ -1,7 +1,6 @@
 package parser
 
-import dataHolder.FleetRaw
-import java.io.File
+import dataholder.FleetRaw
 
 private const val CSV_SEPARATOR = ","
 private const val EXPECTED_COLUMN_COUNT = 4
@@ -17,32 +16,24 @@ class FleetParser {
     fun parseFleetRow(
         fleetCsvRow: String
     ): FleetRaw? {
-
         val columns = fleetCsvRow.split(CSV_SEPARATOR)
 
         if (hasInvalidColumnCount(columns)) {
             printInvalidFleetRowWarning(fleetCsvRow)
             return null
         }
-
         val vehicleId = normalizeIdentifier(
             columns[VEHICLE_ID_COLUMN_INDEX]
         )
-
-        val currentHubId = normalizeIdentifier(
-            columns[CURRENT_HUB_ID_COLUMN_INDEX]
-        )
-
+        val currentHubId = normalizeIdentifier(columns[CURRENT_HUB_ID_COLUMN_INDEX])
         if (hasEmptyRequiredField(vehicleId, currentHubId)) {
             printEmptyFleetFieldWarning(fleetCsvRow)
             return null
         }
-
         val maxCapacityKg = parseMaxCapacityKg(
             columns[MAX_CAPACITY_COLUMN_INDEX],
             fleetCsvRow
         ) ?: return null
-
         val costPerKm = parseCostPerKm(
             columns[COST_PER_KM_COLUMN_INDEX],
             fleetCsvRow

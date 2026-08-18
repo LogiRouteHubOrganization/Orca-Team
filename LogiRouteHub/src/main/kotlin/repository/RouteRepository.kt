@@ -1,6 +1,6 @@
 package repository
 
-import dataHolder.RouteRaw
+import dataholder.RouteRaw
 
 interface RouteRepository {
     fun loadRoutes(): List<RouteRaw>

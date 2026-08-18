@@ -1,6 +1,6 @@
 package repository
 
-import dataHolder.FleetRaw
+import dataholder.FleetRaw
 
 interface VehicleRepository {
 
