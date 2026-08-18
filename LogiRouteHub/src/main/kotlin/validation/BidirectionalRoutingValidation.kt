@@ -23,7 +23,7 @@ class BidirectionalRoutingValidation(
                 println("Same warehouse: SKIPPED")
                 return
             }
-        val  path = router.findShortestPath(
+        val  path = router.findLeastHopPath(
             warehouse,
             warehouse
         )
@@ -46,7 +46,7 @@ class BidirectionalRoutingValidation(
                 println("Direct path: SKIPPED")
                 return
             }
-        val path = router.findShortestPath(
+        val path = router.findLeastHopPath(
             startWarehouse,
             destinationWarehouse
         )
@@ -71,7 +71,7 @@ class BidirectionalRoutingValidation(
                 println("Valid path: SKIPPED")
                 return
             }
-        val path = router.findShortestPath(
+        val path = router.findLeastHopPath(
             startWarehouse,
             destinationWarehouse
         )
@@ -97,7 +97,7 @@ class BidirectionalRoutingValidation(
             println("No path: SKIPPED")
             return
         }
-        val path = router.findShortestPath(
+        val path = router.findLeastHopPath(
             unreachableWarehousePair .startWarehouse,
             unreachableWarehousePair .destinationWarehouse
         )
@@ -118,7 +118,7 @@ class BidirectionalRoutingValidation(
                 return
             }
         val bidirectionalPath =
-            router.findShortestPath(startWarehouse, destinationWarehouse)
+            router.findLeastHopPath(startWarehouse, destinationWarehouse)
 
         val standardPath =
             runStandardBfs(startWarehouse, destinationWarehouse)
@@ -144,10 +144,7 @@ class BidirectionalRoutingValidation(
         val standardPath = runStandardBfs(start, destination)
 
         val bidirectionalPath =
-            router.findShortestPath(
-                start,
-                destination
-            )
+            router.findLeastHopPath(start, destination)
 
         val standardHops = standardPath.path.size - 1
         val bidirectionalHops = bidirectionalPath.size - 1
@@ -162,12 +159,10 @@ class BidirectionalRoutingValidation(
         println("Destination: ${destination.id}")
         println("Path hops: $bidirectionalHops")
 
-        println("Standard BFS evaluated: " +
-                    standardPath.evaluatedWarehouses)
+        println("Standard BFS evaluated: "+ standardPath.evaluatedWarehouses)
 
-        println("Bidirectional BFS evaluated: "
-                + router.evaluatedWarehouses)
-        println("=================================================")
+        println("Bidirectional BFS evaluated: "+ router.evaluatedWarehouseCount)
+        println("======================================================")
         println("Benchmark: PASS")
     }
 
@@ -183,7 +178,6 @@ class BidirectionalRoutingValidation(
         visited.add(startWarehouse.id)
 
         var evaluatedWarehouses = 0
-
         while (queue.isNotEmpty()) {
             val currentWarehouse = queue.removeFirst()
             evaluatedWarehouses++
@@ -200,7 +194,6 @@ class BidirectionalRoutingValidation(
                 }
             }
         }
-
         if (destinationWarehouse.id !in visited) {
             return BfsResult(path = emptyList(),
                 evaluatedWarehouses = evaluatedWarehouses)
@@ -216,9 +209,7 @@ class BidirectionalRoutingValidation(
             path.add(currentWarehouse)
         }
         path.reverse()
-
-        return BfsResult(path = path,
-            evaluatedWarehouses = evaluatedWarehouses)
+        return BfsResult(path = path, evaluatedWarehouses = evaluatedWarehouses)
     }
 
     private fun findLongestHopDestination(start: Warehouse): Warehouse? {
@@ -270,7 +261,6 @@ class BidirectionalRoutingValidation(
 
         val queue = ArrayDeque<Warehouse>()
         val visited = mutableSetOf<String>()
-
         queue.addLast(startWarehouse)
         visited.add(startWarehouse.id)
 
@@ -313,4 +303,5 @@ class BidirectionalRoutingValidation(
         val startWarehouse: Warehouse,
         val destinationWarehouse: Warehouse
     )
+
 }
