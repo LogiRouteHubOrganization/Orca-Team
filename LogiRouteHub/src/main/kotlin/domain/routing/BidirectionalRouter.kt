@@ -3,6 +3,7 @@ package domain.routing
 import domain.model.Warehouse
 
 class BidirectionalRouter(private val warehouses: List<Warehouse>) {
+    val evaluatedWarehouses:Int=0
 
     fun findShortestPath(
         startWarehouse: Warehouse,

@@ -14,6 +14,8 @@ import domain.pricing.RoutePricingEngine
 import domain.pricing.decorator.PackageDecoratorComposer
 import domain.routing.LeastHopRouter
 import domain.routing.ShortestPathRouter
+import domain.routing.BidirectionalRouter
+import validation.BidirectionalRoutingValidation
 import parser.FleetParser
 import parser.PackageParser
 import parser.RouteParser
@@ -143,8 +145,19 @@ fun main() {
         router = shortestPathRouter
     )
 
-    dijkstraRoutingValidation.validateRouting()
 
+
+    val bidirectionalRouter = BidirectionalRouter(
+        warehouseIndex.values.toList()
+    )
+
+    val bidirectionalRoutingValidation =
+        BidirectionalRoutingValidation(
+            warehouseIndex = warehouseIndex,
+            router = bidirectionalRouter
+        )
+
+    bidirectionalRoutingValidation.validateRouting()
 }
 
 private fun loadPackages(
