@@ -2,13 +2,16 @@ package domain.routing
 
 import domain.model.Warehouse
 
-class BidirectionalRouter(private val warehouses: List<Warehouse>) {
+private const val DUPLICATED_MEETING_WAREHOUSE_COUNT = 1
 
-    fun findShortestPath(
+class BidirectionalRouter(private val warehouses: List<Warehouse>) {
+    var evaluatedWarehouseCount = 0
+
+    fun findLeastHopPath(
         startWarehouse: Warehouse,
         destinationWarehouse: Warehouse
     ): List<Warehouse> {
-
+        evaluatedWarehouseCount = 0
         if (startWarehouse.id == destinationWarehouse.id) {
             return listOf(startWarehouse)
         }
@@ -70,20 +73,29 @@ class BidirectionalRouter(private val warehouses: List<Warehouse>) {
         forwardParentById: MutableMap<String, Warehouse>,
         backwardVisitedWarehouseIds: Set<String>
     ): Warehouse? {
-        val currentWarehouse = forwardQueue.removeFirst()
 
-        for (route in currentWarehouse.outgoingRoutes) {
-            val nextWarehouse = route.destinationWarehouse
+        val currentLevelWarehouseCount = forwardQueue.size
 
-            if (nextWarehouse.id in forwardVisitedWarehouseIds) continue
+        for (currentLevelIndex in 0 until currentLevelWarehouseCount) {
 
-            forwardVisitedWarehouseIds.add(nextWarehouse.id)
+            val currentWarehouse = forwardQueue.removeFirst()
 
-            forwardParentById[nextWarehouse.id] = currentWarehouse
+            evaluatedWarehouseCount++
 
-            if (nextWarehouse.id in backwardVisitedWarehouseIds) return nextWarehouse
+            for (route in currentWarehouse.outgoingRoutes) {
 
-            forwardQueue.addLast(nextWarehouse)
+                val nextWarehouse = route.destinationWarehouse
+
+                if (nextWarehouse.id in forwardVisitedWarehouseIds) continue
+
+                forwardVisitedWarehouseIds.add(nextWarehouse.id)
+
+                forwardParentById[nextWarehouse.id] = currentWarehouse
+
+                if (nextWarehouse.id in backwardVisitedWarehouseIds) return nextWarehouse
+
+                forwardQueue.addLast(nextWarehouse)
+            }
         }
         return null
     }
@@ -94,24 +106,32 @@ class BidirectionalRouter(private val warehouses: List<Warehouse>) {
         backwardParentById: MutableMap<String, Warehouse>,
         forwardVisitedWarehouseIds: Set<String>
     ): Warehouse? {
-        val currentWarehouse = backwardQueue.removeFirst()
 
-        for (warehouse in warehouses) {
-            for (route in warehouse.outgoingRoutes) {
-                if (route.destinationWarehouse.id != currentWarehouse.id) continue
+        val currentLevelWarehouseCount = backwardQueue.size
 
-                val previousWarehouse = warehouse
+        for (currentLevelIndex in 0 until currentLevelWarehouseCount) {
 
-                if (previousWarehouse.id in backwardVisitedWarehouseIds) continue
+            val currentWarehouse = backwardQueue.removeFirst()
 
-                backwardVisitedWarehouseIds.add(previousWarehouse.id)
+            evaluatedWarehouseCount++
 
-                backwardParentById[previousWarehouse.id] = currentWarehouse
+            for (warehouse in warehouses) {
 
-                if (previousWarehouse.id in forwardVisitedWarehouseIds) {
-                    return previousWarehouse
+                for (route in warehouse.outgoingRoutes) {
+
+                    if (route.destinationWarehouse.id != currentWarehouse.id) continue
+
+                    val previousWarehouse = warehouse
+
+                    if (previousWarehouse.id in backwardVisitedWarehouseIds) continue
+
+                    backwardVisitedWarehouseIds.add(previousWarehouse.id)
+                    backwardParentById[previousWarehouse.id] = currentWarehouse
+
+                    if (previousWarehouse.id in forwardVisitedWarehouseIds) return previousWarehouse
+
+                    backwardQueue.addLast(previousWarehouse)
                 }
-                backwardQueue.addLast(previousWarehouse)
             }
         }
         return null
@@ -133,9 +153,8 @@ class BidirectionalRouter(private val warehouses: List<Warehouse>) {
             backwardParentById = backwardParentById
         )
 
-        return forwardPath + backwardPath.drop(1)
+        return forwardPath + backwardPath.drop(DUPLICATED_MEETING_WAREHOUSE_COUNT)
     }
-
 
     private fun buildForwardPath(
         meetingWarehouse: Warehouse,
@@ -169,18 +188,11 @@ class BidirectionalRouter(private val warehouses: List<Warehouse>) {
         backwardPath.add(currentWarehouse)
 
         while (currentWarehouse.id in backwardParentById) {
-            val nextWarehouse = backwardParentById[currentWarehouse.id]
-                ?: break
+            val nextWarehouse = backwardParentById[currentWarehouse.id] ?: break
 
             currentWarehouse = nextWarehouse
             backwardPath.add(currentWarehouse)
         }
         return backwardPath
     }
-
-
 }
-
-
-
-
