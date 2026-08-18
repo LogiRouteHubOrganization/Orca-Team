@@ -14,6 +14,7 @@ import domain.pricing.RoutePricingEngine
 import domain.pricing.decorator.PackageDecoratorComposer
 import domain.routing.LeastHopRouter
 import domain.routing.ShortestPathRouter
+import domain.routing.BidirectionalRouter
 import parser.FleetParser
 import parser.PackageParser
 import parser.RouteParser
@@ -26,9 +27,14 @@ import repository.csv.CsvPackageRepository
 import repository.csv.CsvRouteRepository
 import repository.csv.CsvVehicleRepository
 import repository.csv.CsvWarehouseRepository
-import validation.*
+import validation.BidirectionalRoutingValidation
+import validation.DijkstraRoutingValidation
+import validation.LeastHopRoutingValidation
+import validation.validatePricingStrategies
+import validation.validateDomainGraph
+import validation.validateDecoratorIntegration
 import java.io.File
-import java.util.*
+import java.util.Locale
 
 private const val PACKAGES_FILE_PATH = "src/main/resources/packages.csv"
 private const val WAREHOUSES_FILE_PATH = "src/main/resources/warehouses.csv"
@@ -186,6 +192,17 @@ private fun validateRoutingAlgorithms(
         router = shortestPathRouter
     )
     dijkstraRoutingValidation.validateRouting()
+
+    val bidirectionalRouter = BidirectionalRouter(
+        warehouseIndex.values.toList()
+    )
+
+    val bidirectionalRoutingValidation = BidirectionalRoutingValidation(
+        warehouseIndex = warehouseIndex,
+        router = bidirectionalRouter
+    )
+    bidirectionalRoutingValidation.validateRouting()
+
 }
 
 private fun loadPackages(
