@@ -65,6 +65,7 @@ class BidirectionalRouter(private val warehouses: List<Warehouse>) {
     }
 
 
+
     private fun performForwardSearchStep(
         forwardQueue: ArrayDeque<Warehouse>,
         forwardVisitedWarehouseIds: MutableSet<String>,

@@ -14,7 +14,7 @@ class BidirectionalRoutingValidation(
         validatePath()
         validateNoPath()
         validateShortestPath()
-        //validateBenchmark()
+        validateBenchmark()
 
         println("Bidirectional routing validation completed.")
     }
