@@ -5,12 +5,12 @@ import parser.WarehouseParser
 import repository.WarehouseRepository
 import java.io.File
 
-private const val HEADER_LINE_COUNT = 1
 
 class CsvWarehouseRepository(
     private val warehouseFile: File,
     private val warehouseParser: WarehouseParser
 ) : WarehouseRepository {
+    private val HEADER_LINE_COUNT = 1
 
     override fun loadWarehouses(): List<WarehouseRaw> {
 

@@ -5,13 +5,12 @@ import parser.RouteParser
 import repository.RouteRepository
 import java.io.File
 
-private const val HEADER_ROW_COUNT = 1
 
 class CsvRouteRepository(
     private val routeFile: File,
     private val routeParser: RouteParser
 ) : RouteRepository {
-
+    private val HEADER_ROW_COUNT = 1
     override fun loadRoutes(): List<RouteRaw> {
 
         if (!routeFile.exists()) {

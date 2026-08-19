@@ -3,11 +3,11 @@ package algorithm
 import domain.model.Package
 import domain.model.Warehouse
 
-private const val FIRST_CARGO_QUEUE_INDEX = 0
-private const val MINIMUM_PACKAGE_COUNT_REQUIRED_FOR_SORTING = 2
-private const val SINGLE_INDEX_STEP = 1
 
 class PackageQuickSorter {
+    private val FIRST_CARGO_QUEUE_INDEX = 0
+    private val MINIMUM_PACKAGE_COUNT_REQUIRED_FOR_SORTING = 2
+    private val SINGLE_INDEX_STEP = 1
 
     fun sortAllCargoQueuesByDescendingWeight(
         warehousesById: Map<String, Warehouse>

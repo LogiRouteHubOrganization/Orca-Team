@@ -3,18 +3,18 @@ package validation
 import domain.model.Warehouse
 import domain.routing.BidirectionalRouter
 
-private const val SINGLE_STEP = 1
-private const val DIRECT_PATH_WAREHOUSE_COUNT = 2
-private const val INITIAL_EVALUATED_WAREHOUSE_COUNT = 0
-private const val NO_EVALUATIONS = 0
-private const val ZERO_PERCENTAGE = 0.0
-private const val PERCENTAGE_MULTIPLIER = 100.0
-private const val NANOSECONDS_PER_MILLISECOND = 1_000_000.0
 
 class BidirectionalRoutingValidation(
     private val warehouseIndex: Map<String, Warehouse>,
     private val router: BidirectionalRouter
 ) {
+    private val SINGLE_STEP = 1
+    private val DIRECT_PATH_WAREHOUSE_COUNT = 2
+    private val INITIAL_EVALUATED_WAREHOUSE_COUNT = 0
+    private val NO_EVALUATIONS = 0
+    private val ZERO_PERCENTAGE = 0.0
+    private val PERCENTAGE_MULTIPLIER = 100.0
+    private val NANOSECONDS_PER_MILLISECOND = 1_000_000.0
 
     fun validateRouting() {
         validateSameWarehouse()

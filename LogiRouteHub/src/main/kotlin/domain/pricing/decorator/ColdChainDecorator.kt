@@ -4,11 +4,11 @@ import domain.model.Route
 import domain.model.Vehicle
 import domain.pricing.DispatchStrategy
 
-private const val COLD_CHAIN_MULTIPLIER = 1.30
 
 class ColdChainDecorator(
     wrappedComponent: PackageComponent
 ) : PackageDecorator(wrappedComponent) {
+    private val COLD_CHAIN_MULTIPLIER = 1.30
 
     override fun calculateTransitRate(
         selectedRoute: Route,

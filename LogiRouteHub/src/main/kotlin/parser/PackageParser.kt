@@ -2,21 +2,19 @@ package parser
 
 import dataholder.LogisticsPackageRaw
 
-private const val CSV_SEPARATOR = ","
-private const val EXPECTED_COLUMN_COUNT = 5
-
-private const val PACKAGE_ID_COLUMN_INDEX = 0
-private const val PACKAGE_WEIGHT_COLUMN_INDEX = 1
-private const val ORIGIN_HUB_ID_COLUMN_INDEX = 2
-private const val DESTINATION_HUB_ID_COLUMN_INDEX = 3
-private const val PRIORITY_COLUMN_INDEX = 4
-
-private const val URGENT_PRIORITY = "URGENT"
-private const val STANDARD_PRIORITY = "STANDARD"
-private const val LOW_PRIORITY = "LOW"
 
 class PackageParser {
 
+    private val CSV_SEPARATOR = ","
+    private val EXPECTED_COLUMN_COUNT = 5
+    private val PACKAGE_ID_COLUMN_INDEX = 0
+    private val PACKAGE_WEIGHT_COLUMN_INDEX = 1
+    private val ORIGIN_HUB_ID_COLUMN_INDEX = 2
+    private val DESTINATION_HUB_ID_COLUMN_INDEX = 3
+    private val PRIORITY_COLUMN_INDEX = 4
+    private val URGENT_PRIORITY = "URGENT"
+    private val STANDARD_PRIORITY = "STANDARD"
+    private val LOW_PRIORITY = "LOW"
 
     fun parsePackageRow(
         packageCsvRow: String

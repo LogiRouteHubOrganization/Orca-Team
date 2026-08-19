@@ -2,16 +2,14 @@ package parser
 
 import dataholder.RouteRaw
 
-private const val CSV_SEPARATOR = ","
-private const val EXPECTED_COLUMN_COUNT = 5
-
-private const val ROUTE_ID_COLUMN_INDEX = 0
-private const val ORIGIN_HUB_ID_COLUMN_INDEX = 1
-private const val DESTINATION_HUB_ID_COLUMN_INDEX = 2
-private const val DISTANCE_COLUMN_INDEX = 3
-private const val DELAY_COLUMN_INDEX = 4
-
 class RouteParser {
+    private val CSV_SEPARATOR = ","
+    private val EXPECTED_COLUMN_COUNT = 5
+    private val ROUTE_ID_COLUMN_INDEX = 0
+    private val ORIGIN_HUB_ID_COLUMN_INDEX = 1
+    private val DESTINATION_HUB_ID_COLUMN_INDEX = 2
+    private val DISTANCE_COLUMN_INDEX = 3
+    private val DELAY_COLUMN_INDEX = 4
 
     fun parseRouteRow(
         row: String,

@@ -5,12 +5,12 @@ import parser.PackageParser
 import repository.PackageRepository
 import java.io.File
 
-private const val HEADER_LINE_COUNT = 1
 
 class CsvPackageRepository(
     private val packageFile: File,
     private val packageParser: PackageParser
 ) : PackageRepository {
+    private val HEADER_LINE_COUNT = 1
 
     override fun loadPackages(): List<LogisticsPackageRaw> {
         if (!packageFile.exists()) {

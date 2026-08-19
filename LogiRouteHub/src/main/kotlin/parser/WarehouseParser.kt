@@ -2,16 +2,15 @@ package parser
 
 import dataholder.WarehouseRaw
 
-private const val CSV_SEPARATOR = ","
-private const val EXPECTED_COLUMN_COUNT = 5
-
-private const val WAREHOUSE_ID_COLUMN_INDEX = 0
-private const val WAREHOUSE_NAME_COLUMN_INDEX = 1
-private const val REGIONAL_ZONE_COLUMN_INDEX = 2
-private const val LATITUDE_COLUMN_INDEX = 3
-private const val LONGITUDE_COLUMN_INDEX = 4
 
 class WarehouseParser {
+    private val CSV_SEPARATOR = ","
+    private val EXPECTED_COLUMN_COUNT = 5
+    private val WAREHOUSE_ID_COLUMN_INDEX = 0
+    private val WAREHOUSE_NAME_COLUMN_INDEX = 1
+    private val REGIONAL_ZONE_COLUMN_INDEX = 2
+    private val LATITUDE_COLUMN_INDEX = 3
+    private val LONGITUDE_COLUMN_INDEX = 4
 
     fun parseWarehouseRow(row: String): WarehouseRaw? {
         val trimmedRow = row.trim()

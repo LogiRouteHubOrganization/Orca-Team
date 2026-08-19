@@ -4,13 +4,13 @@ import domain.model.Package
 import domain.model.Route
 import domain.model.Vehicle
 
-private const val BASE_COST = 10.0
-private const val SAFETY_FEE = 50.0
-private const val WEIGHT_MULTIPLIER = 1.2
-private const val DISTANCE_MULTIPLIER = 1.3
-private const val STRATEGY_MULTIPLIER = 1.2
 
 class FragileStrategy : DispatchStrategy {
+    private val BASE_COST = 10.0
+    private val SAFETY_FEE = 50.0
+    private val WEIGHT_MULTIPLIER = 1.2
+    private val DISTANCE_MULTIPLIER = 1.3
+    private val STRATEGY_MULTIPLIER = 1.2
 
     override fun calculateTransitCost(
         logisticsPackage: Package,

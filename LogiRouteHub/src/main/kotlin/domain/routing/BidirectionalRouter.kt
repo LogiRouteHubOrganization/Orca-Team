@@ -2,10 +2,10 @@ package domain.routing
 
 import domain.model.Warehouse
 
-private const val DUPLICATED_MEETING_WAREHOUSE_COUNT = 1
 
 class BidirectionalRouter(private val warehouses: List<Warehouse>) {
     var evaluatedWarehouseCount = 0
+    private val DUPLICATED_MEETING_WAREHOUSE_COUNT = 1
 
     fun findLeastHopPath(startWarehouse: Warehouse, destinationWarehouse: Warehouse): List<Warehouse> {
 

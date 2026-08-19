@@ -2,16 +2,15 @@ package parser
 
 import dataholder.FleetRaw
 
-private const val CSV_SEPARATOR = ","
-private const val EXPECTED_COLUMN_COUNT = 4
-
-private const val VEHICLE_ID_COLUMN_INDEX = 0
-private const val CURRENT_HUB_ID_COLUMN_INDEX = 1
-private const val MAX_CAPACITY_COLUMN_INDEX = 2
-private const val COST_PER_KM_COLUMN_INDEX = 3
 
 class FleetParser {
 
+    private val CSV_SEPARATOR = ","
+    private val EXPECTED_COLUMN_COUNT = 4
+    private val VEHICLE_ID_COLUMN_INDEX = 0
+    private val CURRENT_HUB_ID_COLUMN_INDEX = 1
+    private val MAX_CAPACITY_COLUMN_INDEX = 2
+    private val COST_PER_KM_COLUMN_INDEX = 3
 
     fun parseFleetRow(
         fleetCsvRow: String

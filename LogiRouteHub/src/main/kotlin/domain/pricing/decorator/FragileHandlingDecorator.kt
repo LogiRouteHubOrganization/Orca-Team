@@ -4,11 +4,12 @@ import domain.model.Route
 import domain.model.Vehicle
 import domain.pricing.DispatchStrategy
 
-private const val PROTECTIVE_FEE = 70.0
 
 class FragileHandlingDecorator(
     wrappedComponent: PackageComponent
 ) : PackageDecorator(wrappedComponent) {
+
+    private val PROTECTIVE_FEE = 70.0
 
     override fun calculateTransitRate(
         selectedRoute: Route,
