@@ -4,20 +4,20 @@ import dataholder.WarehouseRaw
 
 
 class WarehouseParser {
-    private val CSV_SEPARATOR = ","
-    private val EXPECTED_COLUMN_COUNT = 5
-    private val WAREHOUSE_ID_COLUMN_INDEX = 0
-    private val WAREHOUSE_NAME_COLUMN_INDEX = 1
-    private val REGIONAL_ZONE_COLUMN_INDEX = 2
-    private val LATITUDE_COLUMN_INDEX = 3
-    private val LONGITUDE_COLUMN_INDEX = 4
+    private val csvSeparator = ","
+    private val expectedColumnCount = 5
+    private val warehouseIdColumnIndex = 0
+    private val warehouseNameColumnIndex = 1
+    private val regionalZoneColumnIndex = 2
+    private val latitudeColumnIndex = 3
+    private val longitudeColumnIndex = 4
 
     fun parseWarehouseRow(row: String): WarehouseRaw? {
         val trimmedRow = row.trim()
         if (trimmedRow.isEmpty()) {
             return null
         }
-        val columns = trimmedRow.split(CSV_SEPARATOR)
+        val columns = trimmedRow.split(csvSeparator)
 
         if (hasInvalidColumnCount(columns)) {
             println("Diagnostic Warning: " + "Invalid warehouse column count -> '$row'")
@@ -30,18 +30,18 @@ class WarehouseParser {
     }
 
     private fun hasInvalidColumnCount(columns: List<String>): Boolean {
-        return columns.size != EXPECTED_COLUMN_COUNT
+        return columns.size != expectedColumnCount
     }
 
     private fun buildWarehouseFromColumns(
         columns: List<String>,
         originalRow: String
     ): WarehouseRaw? {
-        val warehouseId = normalizeIdentifier(columns[WAREHOUSE_ID_COLUMN_INDEX])
-        val warehouseName = columns[WAREHOUSE_NAME_COLUMN_INDEX].trim()
-        val regionalZone = columns[REGIONAL_ZONE_COLUMN_INDEX].trim().uppercase()
-        val latitudeText = columns[LATITUDE_COLUMN_INDEX].trim()
-        val longitudeText = columns[LONGITUDE_COLUMN_INDEX].trim()
+        val warehouseId = normalizeIdentifier(columns[warehouseIdColumnIndex])
+        val warehouseName = columns[warehouseNameColumnIndex].trim()
+        val regionalZone = columns[regionalZoneColumnIndex].trim().uppercase()
+        val latitudeText = columns[latitudeColumnIndex].trim()
+        val longitudeText = columns[longitudeColumnIndex].trim()
 
         if (hasEmptyWarehouseField(
                 warehouseId = warehouseId,

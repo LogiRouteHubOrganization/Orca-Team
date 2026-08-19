@@ -10,7 +10,8 @@ class CsvRouteRepository(
     private val routeFile: File,
     private val routeParser: RouteParser
 ) : RouteRepository {
-    private val HEADER_ROW_COUNT = 1
+    private val headerLineCount = 1
+
     override fun loadRoutes(): List<RouteRaw> {
 
         if (!routeFile.exists()) {
@@ -22,7 +23,7 @@ class CsvRouteRepository(
 
         for ((rowNumber, line) in lines.withIndex()) {
 
-            if (rowNumber < HEADER_ROW_COUNT) continue
+            if (rowNumber < headerLineCount) continue
 
             val parsedRoute = routeParser.parseRouteRow(
                 row = line,

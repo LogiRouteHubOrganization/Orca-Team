@@ -10,7 +10,7 @@ class CsvVehicleRepository(
     private val vehicleFile: File,
     private val fleetParser: FleetParser
 ) : VehicleRepository {
-    private val HEADER_ROW_COUNT = 1
+    private val headerLineCount = 1
 
     override fun loadVehicles(): List<FleetRaw> {
         if (!vehicleFile.exists()) {
@@ -19,7 +19,7 @@ class CsvVehicleRepository(
         }
 
         return vehicleFile.readLines()
-            .drop(HEADER_ROW_COUNT)
+            .drop(headerLineCount)
             .mapNotNull { row -> fleetParser.parseFleetRow(row) }
     }
 }

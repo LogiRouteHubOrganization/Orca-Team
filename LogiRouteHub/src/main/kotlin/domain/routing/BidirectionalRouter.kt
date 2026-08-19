@@ -5,7 +5,7 @@ import domain.model.Warehouse
 
 class BidirectionalRouter(private val warehouses: List<Warehouse>) {
     var evaluatedWarehouseCount = 0
-    private val DUPLICATED_MEETING_WAREHOUSE_COUNT = 1
+    private val duplicatedMeetingWarehouseCount = 1
 
     fun findLeastHopPath(startWarehouse: Warehouse, destinationWarehouse: Warehouse): List<Warehouse> {
 
@@ -163,7 +163,7 @@ class BidirectionalRouter(private val warehouses: List<Warehouse>) {
             backwardParentById = backwardParentById
         )
 
-        return forwardPath + backwardPath.drop(DUPLICATED_MEETING_WAREHOUSE_COUNT)
+        return forwardPath + backwardPath.drop(duplicatedMeetingWarehouseCount)
     }
 
     private fun buildForwardPath(

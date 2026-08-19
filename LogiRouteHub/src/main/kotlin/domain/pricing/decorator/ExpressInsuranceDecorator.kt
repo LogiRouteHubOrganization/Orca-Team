@@ -9,7 +9,7 @@ class ExpressInsuranceDecorator(
     wrappedComponent: PackageComponent
 ) : PackageDecorator(wrappedComponent) {
 
-    private val EXPRESS_INSURANCE_FEE = 50.0
+    private val expressInsuranceFee = 50.0
 
     override fun calculateTransitRate(
         selectedRoute: Route,
@@ -23,6 +23,6 @@ class ExpressInsuranceDecorator(
             dispatchStrategy = dispatchStrategy
         )
 
-        return currentTransitRate + EXPRESS_INSURANCE_FEE
+        return currentTransitRate + expressInsuranceFee
     }
 }

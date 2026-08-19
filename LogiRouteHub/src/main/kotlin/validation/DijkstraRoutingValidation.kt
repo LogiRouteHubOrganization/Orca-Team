@@ -10,7 +10,7 @@ class DijkstraRoutingValidation(
     private val warehouseIndex: Map<String, Warehouse>,
     private val router: ShortestPathRouter
 ) {
-    private val DEFAULT_ROUTE_DELAY_MIN = 10
+    private val defaultRouteDelayMin = 10
 
     fun validateRouting() {
         validatePathExists()
@@ -291,7 +291,7 @@ class DijkstraRoutingValidation(
             originWarehouse = origin,
             destinationWarehouse = destination,
             distanceKm = distanceKm,
-            typicalDelayMin = DEFAULT_ROUTE_DELAY_MIN
+            typicalDelayMin = defaultRouteDelayMin
         )
     }
 
