@@ -3,6 +3,14 @@ package validation
 import domain.model.Warehouse
 import domain.routing.BidirectionalRouter
 
+private const val SINGLE_STEP = 1
+private const val DIRECT_PATH_WAREHOUSE_COUNT = 2
+private const val INITIAL_EVALUATED_WAREHOUSE_COUNT = 0
+private const val NO_EVALUATIONS = 0
+private const val ZERO_PERCENTAGE = 0.0
+private const val PERCENTAGE_MULTIPLIER = 100.0
+private const val NANOSECONDS_PER_MILLISECOND = 1_000_000.0
+
 class BidirectionalRoutingValidation(
     private val warehouseIndex: Map<String, Warehouse>,
     private val router: BidirectionalRouter
@@ -20,14 +28,14 @@ class BidirectionalRoutingValidation(
 
     private fun validateSameWarehouse() {
         val warehouse = warehouseIndex.values.firstOrNull() ?: run {
-                println("Same warehouse: SKIPPED")
-                return
-            }
-        val  path = router.findLeastHopPath(
+            println("Same warehouse: SKIPPED")
+            return
+        }
+        val path = router.findLeastHopPath(
             warehouse,
             warehouse
         )
-        require( path.size == 1) {
+        require(path.size == SINGLE_STEP) {
             "Same warehouse test failed."
         }
         require(path.first().id == warehouse.id) {
@@ -38,19 +46,19 @@ class BidirectionalRoutingValidation(
 
     private fun validateDirectPath() {
         val startWarehouse = warehouseIndex.values.firstOrNull() ?: run {
-                println("Direct path: SKIPPED")
-                return
-            }
+            println("Direct path: SKIPPED")
+            return
+        }
         val destinationWarehouse = startWarehouse.outgoingRoutes.firstOrNull()
             ?.destinationWarehouse ?: run {
-                println("Direct path: SKIPPED")
-                return
-            }
+            println("Direct path: SKIPPED")
+            return
+        }
         val path = router.findLeastHopPath(
             startWarehouse,
             destinationWarehouse
         )
-        require(path.size == 2) {
+        require(path.size == DIRECT_PATH_WAREHOUSE_COUNT) {
             "Direct path should contain exactly two warehouses."
         }
         require(path.first().id == startWarehouse.id) {
@@ -64,13 +72,13 @@ class BidirectionalRoutingValidation(
 
     private fun validateValidPath() {
         val startWarehouse = warehouseIndex.values.firstOrNull() ?: run {
-                println("Valid path: SKIPPED")
-                return
-            }
+            println("Valid path: SKIPPED")
+            return
+        }
         val destinationWarehouse = findLongestHopDestination(startWarehouse) ?: run {
-                println("Valid path: SKIPPED")
-                return
-            }
+            println("Valid path: SKIPPED")
+            return
+        }
         val path = router.findLeastHopPath(
             startWarehouse,
             destinationWarehouse
@@ -91,40 +99,38 @@ class BidirectionalRoutingValidation(
     }
 
     private fun validateNoPath() {
-        val unreachableWarehousePair  = findUnreachablePair()
+        val unreachableWarehousePair = findUnreachablePair()
 
-        if (unreachableWarehousePair  == null) {
+        if (unreachableWarehousePair == null) {
             println("No path: SKIPPED")
             return
         }
         val path = router.findLeastHopPath(
-            unreachableWarehousePair .startWarehouse,
-            unreachableWarehousePair .destinationWarehouse
+            unreachableWarehousePair.startWarehouse,
+            unreachableWarehousePair.destinationWarehouse
         )
         require(path.isEmpty()) {
-            "Expected no path between ${unreachableWarehousePair .startWarehouse.id} " +
-             "and ${unreachableWarehousePair .destinationWarehouse.id}."
+            "Expected no path between ${unreachableWarehousePair.startWarehouse.id} " +
+                    "and ${unreachableWarehousePair.destinationWarehouse.id}."
         }
         println("No path: PASS")
     }
 
     private fun validateShortestPath() {
         val startWarehouse = warehouseIndex.values.firstOrNull() ?: run {
-                println("Shortest path: SKIPPED")
-                return
-            }
+            println("Shortest path: SKIPPED")
+            return
+        }
         val destinationWarehouse = findLongestHopDestination(startWarehouse) ?: run {
-                println("Shortest path: SKIPPED")
-                return
-            }
-        val bidirectionalPath =
-            router.findLeastHopPath(startWarehouse, destinationWarehouse)
+            println("Shortest path: SKIPPED")
+            return
+        }
+        val bidirectionalPath = router.findLeastHopPath(startWarehouse, destinationWarehouse)
 
-        val standardPath =
-            runStandardBfs(startWarehouse, destinationWarehouse)
+        val standardPath = runStandardBfs(startWarehouse, destinationWarehouse)
 
-        val bidirectionalHops = bidirectionalPath.size - 1
-        val standardHops = standardPath.path.size - 1
+        val bidirectionalHops = bidirectionalPath.size - SINGLE_STEP
+        val standardHops = standardPath.path.size - SINGLE_STEP
 
         require(bidirectionalHops == standardHops) {
             "Bidirectional BFS did not return the shortest path."
@@ -133,91 +139,157 @@ class BidirectionalRoutingValidation(
     }
 
     private fun validateBenchmark() {
-        val start = warehouseIndex.values.firstOrNull() ?: run {
+
+        val startWarehouse = warehouseIndex.values.firstOrNull() ?: run {
             println("Benchmark: SKIPPED")
             return
         }
-        val destination = findLongestHopDestination(start) ?: run {
+        val destinationWarehouse = findLongestHopDestination(startWarehouse) ?: run {
             println("Benchmark: SKIPPED")
             return
         }
-
-
         val standardStartTime = System.nanoTime()
-        val standardPath = runStandardBfs(start, destination)
-        val standardDurationMs = (System.nanoTime() - standardStartTime) / 1_000_000.0
+        val standardPath = runStandardBfs(startWarehouse, destinationWarehouse)
+        val standardDurationMs = (System.nanoTime() - standardStartTime) / NANOSECONDS_PER_MILLISECOND
 
         val bidirectionalStartTime = System.nanoTime()
-        val bidirectionalPath = router.findLeastHopPath(start, destination)
-        val bidirectionalDurationMs = (System.nanoTime() - bidirectionalStartTime) / 1_000_000.0
-
-        val standardHops = standardPath.path.size - 1
-        val bidirectionalHops = bidirectionalPath.size - 1
+        val bidirectionalPath = router.findLeastHopPath(
+            startWarehouse,
+            destinationWarehouse
+        )
+        val bidirectionalDurationMs = (System.nanoTime() - bidirectionalStartTime) / NANOSECONDS_PER_MILLISECOND
+        val standardHops = standardPath.path.size - SINGLE_STEP
+        val bidirectionalHops = bidirectionalPath.size - SINGLE_STEP
 
         require(standardHops == bidirectionalHops) {
             "Benchmark paths have different lengths."
         }
+        printBenchmarkResult(
+            startWarehouse,
+            destinationWarehouse,
+            standardPath,
+            bidirectionalPath,
+            standardHops,
+            bidirectionalHops,
+            standardDurationMs,
+            bidirectionalDurationMs
+        )
+    }
 
+    private fun printBenchmarkResult(
+        startWarehouse: Warehouse,
+        destinationWarehouse: Warehouse,
+        standardPath: BfsResult,
+        bidirectionalPath: List<Warehouse>,
+        standardHops: Int,
+        bidirectionalHops: Int,
+        standardDurationMs: Double,
+        bidirectionalDurationMs: Double
+    ) {
         val standardPathString = standardPath.path.joinToString(" -> ") { it.id }
         val bidirectionalPathString = bidirectionalPath.joinToString(" -> ") { it.id }
 
         val evaluatedDifference = standardPath.evaluatedWarehouses - router.evaluatedWarehouseCount
-        val improvementPercentage = if (standardPath.evaluatedWarehouses > 0) {
-            evaluatedDifference * 100.0 / standardPath.evaluatedWarehouses
-        } else 0.0
+        val improvementPercentage = if (standardPath.evaluatedWarehouses > NO_EVALUATIONS) {
+            evaluatedDifference * PERCENTAGE_MULTIPLIER / standardPath.evaluatedWarehouses
+        } else ZERO_PERCENTAGE
 
+        printBenchmarkComparison(
+            startWarehouse,
+            destinationWarehouse,
+            standardPathString,
+            bidirectionalPathString,
+            standardHops,
+            bidirectionalHops,
+            standardPath.evaluatedWarehouses,
+            standardDurationMs,
+            bidirectionalDurationMs
+        )
+        printPerformanceSummary(
+            improvementPercentage,
+            evaluatedDifference
+        )
+    }
+
+    private fun printBenchmarkComparison(
+        startWarehouse: Warehouse,
+        destinationWarehouse: Warehouse,
+        standardPathString: String,
+        bidirectionalPathString: String,
+        standardHops: Int,
+        bidirectionalHops: Int,
+        standardEvaluatedWarehouseCount: Int,
+        standardDurationMs: Double,
+        bidirectionalDurationMs: Double
+    ) {
         println()
         println("==================================================================")
         println("                   BFS ALGORITHM BENCHMARK")
         println("==================================================================")
-        println(String.format("%-18s : %s -> %s", "Route", start.id, destination.id))
-        println(String.format("%-18s : %d", "Target Path Hops", bidirectionalHops))
+        println(
+            String.format("%-18s : %s -> %s", "Route", startWarehouse.id, destinationWarehouse.id)
+        )
+        println(
+            String.format("%-18s : %d", "Target Path Hops", bidirectionalHops)
+        )
         println("------------------------------------------------------------------")
-
-        // --- Unidirectional ---
         println("\n[ UNIDIRECTIONAL BFS ]")
         println(String.format("  %-16s : %s", "Path", standardPathString))
         println(String.format("  %-16s : %d hops", "Path Length", standardHops))
-        println(String.format("  %-16s : %d warehouses", "Evaluated", standardPath.evaluatedWarehouses))
-        println(String.format("  %-16s : %.3f ms", "Execution Time", standardDurationMs))
-
-        // --- Bidirectional ---
+        println(
+            String.format("  %-16s : %d warehouses", "Evaluated", standardEvaluatedWarehouseCount)
+        )
+        println(
+            String.format("  %-16s : %.3f ms", "Execution Time", standardDurationMs)
+        )
         println("\n[ BIDIRECTIONAL BFS ]")
         println(String.format("  %-16s : %s", "Path", bidirectionalPathString))
         println(String.format("  %-16s : %d hops", "Path Length", bidirectionalHops))
         println(String.format("  %-16s : %d warehouses", "Evaluated", router.evaluatedWarehouseCount))
         println(String.format("  %-16s : %.3f ms", "Execution Time", bidirectionalDurationMs))
+    }
 
-        // --- Performance Summary ---
+    private fun printPerformanceSummary(
+        improvementPercentage: Double,
+        evaluatedDifference: Int
+    ) {
         println("\n------------------------------------------------------------------")
         println(" PERFORMANCE SUMMARY")
         println("------------------------------------------------------------------")
-        println(String.format("  %-20s : %.1f%% fewer warehouses evaluated", "Efficiency Gain", improvementPercentage))
-        println(String.format("  %-20s : %d warehouses", "Evaluations Saved", evaluatedDifference))
-        println(String.format("  %-20s : PASSED", "Validation Check"))
+        println(
+            String.format(
+                "  %-20s : %.1f%% fewer warehouses evaluated", "Efficiency Gain", improvementPercentage
+            )
+        )
+        println(
+            String.format(
+                "  %-20s : %d warehouses", "Evaluations Saved", evaluatedDifference
+            )
+        )
+        println(
+            String.format("  %-20s : PASSED", "Validation Check")
+        )
         println("==================================================================")
         println()
     }
 
     private fun runStandardBfs(
         startWarehouse: Warehouse,
-        destinationWarehouse: Warehouse): BfsResult {
+        destinationWarehouse: Warehouse
+    ): BfsResult {
 
         val queue = ArrayDeque<Warehouse>()
         val visited = mutableSetOf<String>()
         val parent = mutableMapOf<String, Warehouse>()
-
         queue.addLast(startWarehouse)
         visited.add(startWarehouse.id)
+        var evaluatedWarehouses = INITIAL_EVALUATED_WAREHOUSE_COUNT
 
-        var evaluatedWarehouses = 0
         while (queue.isNotEmpty()) {
             val currentWarehouse = queue.removeFirst()
             evaluatedWarehouses++
 
-            if (currentWarehouse.id == destinationWarehouse.id) {
-                break
-            }
+            if (currentWarehouse.id == destinationWarehouse.id) break
             for (route in currentWarehouse.outgoingRoutes) {
                 val nextWarehouse = route.destinationWarehouse
 
@@ -228,21 +300,32 @@ class BidirectionalRoutingValidation(
             }
         }
         if (destinationWarehouse.id !in visited) {
-            return BfsResult(path = emptyList(),
-                evaluatedWarehouses = evaluatedWarehouses)
+            return BfsResult(path = emptyList(), evaluatedWarehouses = evaluatedWarehouses)
         }
+        val path = buildStandardBfsPath(destinationWarehouse, parent)
+        return BfsResult(path = path, evaluatedWarehouses = evaluatedWarehouses)
+    }
+
+    private fun buildStandardBfsPath(
+        destinationWarehouse: Warehouse,
+        parentById: Map<String, Warehouse>
+    ): List<Warehouse> {
+
         val path = mutableListOf<Warehouse>()
         var currentWarehouse = destinationWarehouse
 
         path.add(currentWarehouse)
 
-        while (currentWarehouse.id in parent) {
-            val parentWarehouse = parent[currentWarehouse.id] ?: break
+        while (currentWarehouse.id in parentById) {
+            val parentWarehouse =
+                parentById[currentWarehouse.id]
+                    ?: break
+
             currentWarehouse = parentWarehouse
             path.add(currentWarehouse)
         }
         path.reverse()
-        return BfsResult(path = path, evaluatedWarehouses = evaluatedWarehouses)
+        return path
     }
 
     private fun findLongestHopDestination(start: Warehouse): Warehouse? {
@@ -280,10 +363,11 @@ class BidirectionalRoutingValidation(
 
             for (destinationWarehouse in warehouseIndex.values) {
                 if (startWarehouse.id != destinationWarehouse.id &&
-                    destinationWarehouse.id !in reachableIds) {
-
-                    return WarehousePair(startWarehouse= startWarehouse
-                        , destinationWarehouse = destinationWarehouse)
+                    destinationWarehouse.id !in reachableIds
+                ) {
+                    return WarehousePair(
+                        startWarehouse = startWarehouse, destinationWarehouse = destinationWarehouse
+                    )
                 }
             }
         }
@@ -315,7 +399,7 @@ class BidirectionalRoutingValidation(
 
         for (index in 0 until path.lastIndex) {
             val currentWarehouse = path[index]
-            val nextWarehouse = path[index + 1]
+            val nextWarehouse = path[index + SINGLE_STEP]
 
             val hasValidRoute = currentWarehouse.outgoingRoutes.any { route ->
                 route.destinationWarehouse.id == nextWarehouse.id
