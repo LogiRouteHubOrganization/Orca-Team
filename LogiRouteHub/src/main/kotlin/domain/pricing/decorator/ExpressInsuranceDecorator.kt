@@ -4,11 +4,12 @@ import domain.model.Route
 import domain.model.Vehicle
 import domain.pricing.DispatchStrategy
 
-private const val EXPRESS_INSURANCE_FEE = 50.0
 
 class ExpressInsuranceDecorator(
     wrappedComponent: PackageComponent
 ) : PackageDecorator(wrappedComponent) {
+
+    private val expressInsuranceFee = 50.0
 
     override fun calculateTransitRate(
         selectedRoute: Route,
@@ -22,6 +23,6 @@ class ExpressInsuranceDecorator(
             dispatchStrategy = dispatchStrategy
         )
 
-        return currentTransitRate + EXPRESS_INSURANCE_FEE
+        return currentTransitRate + expressInsuranceFee
     }
 }

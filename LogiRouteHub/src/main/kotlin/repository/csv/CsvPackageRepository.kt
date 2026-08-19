@@ -5,12 +5,13 @@ import parser.PackageParser
 import repository.PackageRepository
 import java.io.File
 
-private const val HEADER_LINE_COUNT = 1
 
 class CsvPackageRepository(
     private val packageFile: File,
     private val packageParser: PackageParser
 ) : PackageRepository {
+
+    private val headerLineCount = 1
 
     override fun loadPackages(): List<LogisticsPackageRaw> {
         if (!packageFile.exists()) {
@@ -18,7 +19,7 @@ class CsvPackageRepository(
             return emptyList()
         }
         val packageRows = packageFile.readLines()
-        val dataRows = packageRows.drop(HEADER_LINE_COUNT)
+        val dataRows = packageRows.drop(headerLineCount)
         val validPackages = mutableListOf<LogisticsPackageRaw>()
 
         for (packageRow in dataRows) {

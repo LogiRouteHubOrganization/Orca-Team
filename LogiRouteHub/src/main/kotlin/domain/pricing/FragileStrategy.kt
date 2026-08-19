@@ -4,13 +4,13 @@ import domain.model.Package
 import domain.model.Route
 import domain.model.Vehicle
 
-private const val BASE_COST = 10.0
-private const val SAFETY_FEE = 50.0
-private const val WEIGHT_MULTIPLIER = 1.2
-private const val DISTANCE_MULTIPLIER = 1.3
-private const val STRATEGY_MULTIPLIER = 1.2
 
 class FragileStrategy : DispatchStrategy {
+    private val baseCost = 10.0
+    private val safetyFee = 50.0
+    private val weightMultiplier = 1.2
+    private val distanceMultiplier = 1.3
+    private val strategyMultiplier = 1.2
 
     override fun calculateTransitCost(
         logisticsPackage: Package,
@@ -18,16 +18,16 @@ class FragileStrategy : DispatchStrategy {
         assignedVehicle: Vehicle
     ): Double {
 
-        val weightCost = logisticsPackage.weightByKg * WEIGHT_MULTIPLIER
+        val weightCost = logisticsPackage.weightByKg * weightMultiplier
 
-        val transportationCost = selectedRoute.distanceKm * assignedVehicle.costPerKm * DISTANCE_MULTIPLIER
+        val transportationCost = selectedRoute.distanceKm * assignedVehicle.costPerKm * distanceMultiplier
 
-        val costBeforeStrategyMultiplier = BASE_COST + SAFETY_FEE + weightCost + transportationCost
+        val costBeforeStrategyMultiplier = baseCost + safetyFee + weightCost + transportationCost
 
         return costBeforeStrategyMultiplier * getStrategyMultiplier()
     }
 
     override fun getStrategyMultiplier(): Double {
-        return STRATEGY_MULTIPLIER
+        return strategyMultiplier
     }
 }

@@ -4,12 +4,13 @@ import domain.model.Package
 import domain.model.Route
 import domain.model.Vehicle
 
-private const val BASE_COST = 18.0
-private const val WEIGHT_MULTIPLIER = 1.4
-private const val DISTANCE_MULTIPLIER = 1.25
-private const val STRATEGY_MULTIPLIER = 1.20
 
 class ExpressStrategy : DispatchStrategy {
+
+    private val baseCost = 18.0
+    private val weightMultiplier = 1.4
+    private val distanceMultiplier = 1.25
+    private val strategyMultiplier = 1.20
 
     override fun calculateTransitCost(
         logisticsPackage: Package,
@@ -17,16 +18,16 @@ class ExpressStrategy : DispatchStrategy {
         assignedVehicle: Vehicle
     ): Double {
 
-        val weightCost = logisticsPackage.weightByKg * WEIGHT_MULTIPLIER
+        val weightCost = logisticsPackage.weightByKg * weightMultiplier
 
-        val transportationCost = selectedRoute.distanceKm * assignedVehicle.costPerKm * DISTANCE_MULTIPLIER
+        val transportationCost = selectedRoute.distanceKm * assignedVehicle.costPerKm * distanceMultiplier
 
-        val costBeforeStrategyMultiplier = BASE_COST + weightCost + transportationCost
+        val costBeforeStrategyMultiplier = baseCost + weightCost + transportationCost
 
         return costBeforeStrategyMultiplier * getStrategyMultiplier()
     }
 
     override fun getStrategyMultiplier(): Double {
-        return STRATEGY_MULTIPLIER
+        return strategyMultiplier
     }
 }

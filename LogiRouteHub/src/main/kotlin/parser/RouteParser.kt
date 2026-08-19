@@ -2,16 +2,14 @@ package parser
 
 import dataholder.RouteRaw
 
-private const val CSV_SEPARATOR = ","
-private const val EXPECTED_COLUMN_COUNT = 5
-
-private const val ROUTE_ID_COLUMN_INDEX = 0
-private const val ORIGIN_HUB_ID_COLUMN_INDEX = 1
-private const val DESTINATION_HUB_ID_COLUMN_INDEX = 2
-private const val DISTANCE_COLUMN_INDEX = 3
-private const val DELAY_COLUMN_INDEX = 4
-
 class RouteParser {
+    private val csvSeparator = ","
+    private val expectedColumnCount = 5
+    private val routeIdColumnIndex = 0
+    private val originHubIdColumnIndex = 1
+    private val destinationHubIdColumnIndex = 2
+    private val distanceColumnIndex = 3
+    private val delayColumnIndex = 4
 
     fun parseRouteRow(
         row: String,
@@ -36,7 +34,7 @@ class RouteParser {
         line: String
     ): List<String> {
         return line
-            .split(CSV_SEPARATOR)
+            .split(csvSeparator)
             .map { value ->
                 value.trim()
             }
@@ -47,7 +45,7 @@ class RouteParser {
         rowNumber: Int
     ): Boolean {
 
-        if (values.size != EXPECTED_COLUMN_COUNT) {
+        if (values.size != expectedColumnCount) {
             println("Warning: Row ${rowNumber + 1} " + "has wrong number of columns")
             return false
         }
@@ -72,26 +70,26 @@ class RouteParser {
     ): RouteRaw? {
 
         val distanceKm = parseDistanceKm(
-            values[DISTANCE_COLUMN_INDEX],
+            values[distanceColumnIndex],
             rowNumber
         )
         if (distanceKm == null) return null
 
         val typicalDelayMin = parseTypicalDelayMin(
-            values[DELAY_COLUMN_INDEX],
+            values[delayColumnIndex],
             rowNumber
         )
         if (typicalDelayMin == null) return null
 
         return RouteRaw(
             routeId = normalizeIdentifier(
-                values[ROUTE_ID_COLUMN_INDEX]
+                values[routeIdColumnIndex]
             ),
             originHubId = normalizeIdentifier(
-                values[ORIGIN_HUB_ID_COLUMN_INDEX]
+                values[originHubIdColumnIndex]
             ),
             destinationHubId = normalizeIdentifier(
-                values[DESTINATION_HUB_ID_COLUMN_INDEX]
+                values[destinationHubIdColumnIndex]
             ),
             distanceKm = distanceKm,
             typicalDelayMin = typicalDelayMin

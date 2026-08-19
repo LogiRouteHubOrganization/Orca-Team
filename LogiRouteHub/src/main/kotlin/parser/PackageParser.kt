@@ -2,47 +2,45 @@ package parser
 
 import dataholder.LogisticsPackageRaw
 
-private const val CSV_SEPARATOR = ","
-private const val EXPECTED_COLUMN_COUNT = 5
-
-private const val PACKAGE_ID_COLUMN_INDEX = 0
-private const val PACKAGE_WEIGHT_COLUMN_INDEX = 1
-private const val ORIGIN_HUB_ID_COLUMN_INDEX = 2
-private const val DESTINATION_HUB_ID_COLUMN_INDEX = 3
-private const val PRIORITY_COLUMN_INDEX = 4
-
-private const val URGENT_PRIORITY = "URGENT"
-private const val STANDARD_PRIORITY = "STANDARD"
-private const val LOW_PRIORITY = "LOW"
 
 class PackageParser {
 
+    private val csvSeparator = ","
+    private val expectedColumnCount = 5
+    private val packageIdColumnIndex = 0
+    private val packageWeightColumnIndex = 1
+    private val originHubIdColumnIndex = 2
+    private val destinationHubIdColumnIndex = 3
+    private val priorityColumnIndex = 4
+    private val urgentPriority = "URGENT"
+    private val standardPriority = "STANDARD"
+    private val lowPriority = "LOW"
 
     fun parsePackageRow(
         packageCsvRow: String
     ): LogisticsPackageRaw? {
 
-        val packageColumns = packageCsvRow.split(CSV_SEPARATOR)
+        val packageColumns = packageCsvRow.split(csvSeparator)
 
         if (hasInvalidColumnCount(packageColumns)) {
             printInvalidPackageRowWarning(packageCsvRow)
             return null
         }
 
-        val packageId = normalizeIdentifier(packageColumns[PACKAGE_ID_COLUMN_INDEX])
-        val originHubId = normalizeIdentifier(packageColumns[ORIGIN_HUB_ID_COLUMN_INDEX])
-        val destinationHubId = normalizeIdentifier(packageColumns[DESTINATION_HUB_ID_COLUMN_INDEX])
+        val packageId = normalizeIdentifier(packageColumns[packageIdColumnIndex])
+        val originHubId = normalizeIdentifier(packageColumns[originHubIdColumnIndex])
+        val destinationHubId = normalizeIdentifier(packageColumns[destinationHubIdColumnIndex])
 
         if (hasEmptyRequiredField(packageId, originHubId, destinationHubId)) {
             printEmptyPackageFieldWarning(packageCsvRow)
             return null
         }
         val packageWeightByKg = parsePackageWeightByKg(
-            packageColumns[PACKAGE_WEIGHT_COLUMN_INDEX],
+            packageColumns[packageWeightColumnIndex],
             packageCsvRow
         ) ?: return null
         val packagePriority = parsePackagePriority(
-            packageColumns[PRIORITY_COLUMN_INDEX],
+            packageColumns[priorityColumnIndex],
             packageCsvRow
         ) ?: return null
         return LogisticsPackageRaw(
@@ -55,7 +53,7 @@ class PackageParser {
     }
 
     private fun hasInvalidColumnCount(columns: List<String>): Boolean {
-        return columns.size != EXPECTED_COLUMN_COUNT
+        return columns.size != expectedColumnCount
     }
 
     private fun hasEmptyRequiredField(
@@ -85,9 +83,9 @@ class PackageParser {
         packageCsvRow: String
     ): String? {
         return when (priority.trim().uppercase()) {
-            URGENT_PRIORITY -> URGENT_PRIORITY
-            STANDARD_PRIORITY -> STANDARD_PRIORITY
-            LOW_PRIORITY -> LOW_PRIORITY
+            urgentPriority -> urgentPriority
+            standardPriority -> standardPriority
+            lowPriority -> lowPriority
             else -> {
                 println("Warning: Invalid package priority -> $packageCsvRow")
                 null

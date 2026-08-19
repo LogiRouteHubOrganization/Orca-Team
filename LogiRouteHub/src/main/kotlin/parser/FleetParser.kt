@@ -2,40 +2,39 @@ package parser
 
 import dataholder.FleetRaw
 
-private const val CSV_SEPARATOR = ","
-private const val EXPECTED_COLUMN_COUNT = 4
-
-private const val VEHICLE_ID_COLUMN_INDEX = 0
-private const val CURRENT_HUB_ID_COLUMN_INDEX = 1
-private const val MAX_CAPACITY_COLUMN_INDEX = 2
-private const val COST_PER_KM_COLUMN_INDEX = 3
 
 class FleetParser {
 
+    private val csvSeparator = ","
+    private val expectedColumnCount = 4
+    private val vehicleIdColumnIndex = 0
+    private val currentHubIdColumnIndex = 1
+    private val maxCapacityColumnIndex = 2
+    private val costPerKmColumnIndex = 3
 
     fun parseFleetRow(
         fleetCsvRow: String
     ): FleetRaw? {
-        val columns = fleetCsvRow.split(CSV_SEPARATOR)
+        val columns = fleetCsvRow.split(csvSeparator)
 
         if (hasInvalidColumnCount(columns)) {
             printInvalidFleetRowWarning(fleetCsvRow)
             return null
         }
         val vehicleId = normalizeIdentifier(
-            columns[VEHICLE_ID_COLUMN_INDEX]
+            columns[vehicleIdColumnIndex]
         )
-        val currentHubId = normalizeIdentifier(columns[CURRENT_HUB_ID_COLUMN_INDEX])
+        val currentHubId = normalizeIdentifier(columns[currentHubIdColumnIndex])
         if (hasEmptyRequiredField(vehicleId, currentHubId)) {
             printEmptyFleetFieldWarning(fleetCsvRow)
             return null
         }
         val maxCapacityKg = parseMaxCapacityKg(
-            columns[MAX_CAPACITY_COLUMN_INDEX],
+            columns[maxCapacityColumnIndex],
             fleetCsvRow
         ) ?: return null
         val costPerKm = parseCostPerKm(
-            columns[COST_PER_KM_COLUMN_INDEX],
+            columns[costPerKmColumnIndex],
             fleetCsvRow
         ) ?: return null
 
@@ -48,7 +47,7 @@ class FleetParser {
     }
 
     private fun hasInvalidColumnCount(columns: List<String>): Boolean {
-        return columns.size != EXPECTED_COLUMN_COUNT
+        return columns.size != expectedColumnCount
     }
 
     private fun hasEmptyRequiredField(vehicleId: String, currentHubId: String): Boolean {
