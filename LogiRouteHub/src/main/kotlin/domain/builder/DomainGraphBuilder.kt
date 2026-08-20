@@ -4,42 +4,35 @@ import domain.model.Package
 import domain.model.Route
 import domain.model.Vehicle
 import domain.model.Warehouse
-import repository.PackageRepository
-import repository.RouteRepository
-import repository.VehicleRepository
-import repository.WarehouseRepository
 import dataholder.FleetRaw
 import dataholder.LogisticsPackageRaw
 import dataholder.RouteRaw
 import dataholder.WarehouseRaw
 
 class DomainGraphBuilder(
-    private val packageRepository: PackageRepository,
-    private val warehouseRepository: WarehouseRepository,
-    private val vehicleRepository: VehicleRepository,
-    private val routeRepository: RouteRepository
+    private val repositories: GraphBuilderInput
 ) {
 
     fun buildGraph(): Map<String, Warehouse> {
 
         val warehouses = createWarehouses(
-            warehouseRepository.loadWarehouses()
+            repositories.warehouseRepository.loadWarehouses()
         )
 
         val warehouseIndex = createWarehouseIndex(warehouses)
 
         buildPackages(
-            packageRepository.loadPackages(),
+            repositories.packageRepository.loadPackages(),
             warehouseIndex
         )
 
         buildVehicles(
-            vehicleRepository.loadVehicles(),
+            repositories.vehicleRepository.loadVehicles(),
             warehouseIndex
         )
 
         buildRoutes(
-            routeRepository.loadRoutes(),
+            repositories.routeRepository.loadRoutes(),
             warehouseIndex
         )
 

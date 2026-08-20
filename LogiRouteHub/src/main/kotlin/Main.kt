@@ -4,6 +4,7 @@ import dataholder.FleetRaw
 import dataholder.LogisticsPackageRaw
 import dataholder.RouteRaw
 import dataholder.WarehouseRaw
+import domain.builder.GraphBuilderInput
 import domain.builder.DomainGraphBuilder
 import domain.model.Warehouse
 import domain.pricing.EcoStrategy
@@ -54,18 +55,21 @@ fun main() {
     val routeRepository = createRouteRepository()
     val vehicleRepository = createVehicleRepository()
 
-    // Step 2: Load and preprocess raw data from CSV files.
-    val rawPackages = loadPackages(packageRepository)
-    sortPackagesByPriorityAndWeight(rawPackages)
-    displayTopPriorityPackages(rawPackages)
-
-    // Step 3: Build the domain graph from the raw data.
-    val warehouseIndex = buildProjectDomainGraph(
+    // Step 2: Group repositories required by the domain graph builder.
+    val graphRepositories = GraphBuilderInput(
         packageRepository = packageRepository,
         warehouseRepository = warehouseRepository,
         vehicleRepository = vehicleRepository,
         routeRepository = routeRepository
     )
+
+    // Step 2: Load and preprocess raw data from CSV files.
+    val rawPackages = loadPackages(packageRepository)
+    sortPackagesByPriorityAndWeight(rawPackages)
+    displayTopPriorityPackages(rawPackages)
+
+    // Step 4: Build the domain graph.
+    val warehouseIndex = buildProjectDomainGraph(repositories = graphRepositories)
 
     // Step 4: Validate graph construction and package sorting.
     validateGraphAndSorting(warehouseIndex)
@@ -116,18 +120,10 @@ private fun createVehicleRepository(): VehicleRepository {
 }
 
 private fun buildProjectDomainGraph(
-    packageRepository: PackageRepository,
-    warehouseRepository: WarehouseRepository,
-    vehicleRepository: VehicleRepository,
-    routeRepository: RouteRepository
+    repositories: GraphBuilderInput
 ): Map<String, Warehouse> {
 
-    val domainGraphBuilder = DomainGraphBuilder(
-        packageRepository = packageRepository,
-        warehouseRepository = warehouseRepository,
-        vehicleRepository = vehicleRepository,
-        routeRepository = routeRepository
-    )
+    val domainGraphBuilder = DomainGraphBuilder(repositories = repositories)
 
     return domainGraphBuilder.buildGraph()
 }
