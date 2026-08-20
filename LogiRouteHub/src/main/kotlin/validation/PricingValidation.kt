@@ -10,7 +10,7 @@ import domain.pricing.decorator.PackageComponent
 import domain.pricing.decorator.PackageDecorator
 import java.util.*
 
-private const val DECIMAL_FORMAT = "%.2f"
+private const val decimalFormat = "%.2f"
 
 fun validatePricingStrategies(
     warehousesById: Map<String, Warehouse>,
@@ -76,7 +76,7 @@ private fun printBaseTransitRate(
     println(
         "Base Package Transit Rate: " + String.format(
             Locale.US,
-            DECIMAL_FORMAT,
+            decimalFormat,
             baseTransitRate
         )
     )
@@ -100,7 +100,7 @@ private fun validateBaseDecorator(
     println(
         "Base Decorator Transit Rate: " + String.format(
             Locale.US,
-            DECIMAL_FORMAT,
+            decimalFormat,
             decoratedBaseTransitRate
         )
     )
@@ -165,7 +165,7 @@ private fun validateStrategy(
     println(
         "$strategyName Cost: " + String.format(
             Locale.US,
-            DECIMAL_FORMAT,
+            decimalFormat,
             cost
         )
     )

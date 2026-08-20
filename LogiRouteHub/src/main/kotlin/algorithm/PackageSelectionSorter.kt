@@ -2,16 +2,16 @@ package algorithm
 
 import dataholder.LogisticsPackageRaw
 
-private const val URGENT_PRIORITY = "URGENT"
-private const val STANDARD_PRIORITY = "STANDARD"
-private const val LOW_PRIORITY = "LOW"
+private const val urgentPriority = "URGENT"
+private const val standardPriority= "STANDARD"
+private const val lowPriority = "LOW"
 
-private const val URGENT_PRIORITY_LEVEL = 3
-private const val STANDARD_PRIORITY_LEVEL = 2
-private const val LOW_PRIORITY_LEVEL = 1
+private const val urgentPriorityLevel = 3
+private const val standardPriorityLevel = 2
+private const val lowPriorityLevel = 1
 
-private const val FIRST_PACKAGE_INDEX = 0
-private const val SINGLE_INDEX_STEP = 1
+private const val firstPackageIndex = 0
+private const val singleIndexStep = 1
 
 fun sortPackages(logisticsPackages: MutableList<LogisticsPackageRaw>) {
     sortPackagesByWeight(logisticsPackages)
@@ -19,7 +19,7 @@ fun sortPackages(logisticsPackages: MutableList<LogisticsPackageRaw>) {
 }
 
 private fun sortPackagesByWeight(logisticsPackages: MutableList<LogisticsPackageRaw>) {
-    for (currentSortingIndex in FIRST_PACKAGE_INDEX until logisticsPackages.lastIndex) {
+    for (currentSortingIndex in firstPackageIndex  until logisticsPackages.lastIndex) {
         val packageWithHighestWeightIndex = findPackageWithHighestWeightIndex(
             logisticsPackages = logisticsPackages,
             searchStartingIndex = currentSortingIndex
@@ -39,7 +39,7 @@ private fun findPackageWithHighestWeightIndex(
     var packageWithHighestWeightIndex =
         searchStartingIndex
 
-    val firstPackageIndexToCompare = searchStartingIndex + SINGLE_INDEX_STEP
+    val firstPackageIndexToCompare = searchStartingIndex + singleIndexStep
 
     for (currentPackageIndex in firstPackageIndexToCompare until logisticsPackages.size) {
 
@@ -69,7 +69,7 @@ private fun sortPackagesByPriority(
 ) {
     for (
     currentSortingIndex in
-    FIRST_PACKAGE_INDEX until logisticsPackages.lastIndex
+    firstPackageIndex  until logisticsPackages.lastIndex
     ) {
         val packageWithHighestPriorityIndex =
             findPackageWithHighestPriorityIndex(
@@ -90,7 +90,7 @@ private fun findPackageWithHighestPriorityIndex(
 ): Int {
     var packageWithHighestPriorityIndex = searchStartingIndex
 
-    val firstPackageIndexToCompare = searchStartingIndex + SINGLE_INDEX_STEP
+    val firstPackageIndexToCompare = searchStartingIndex + singleIndexStep
 
     for (currentPackageIndex in firstPackageIndexToCompare until logisticsPackages.size) {
 
@@ -125,13 +125,13 @@ private fun getPriorityLevel(
     priority: String
 ): Int {
     return when (priority.uppercase()) {
-        URGENT_PRIORITY -> URGENT_PRIORITY_LEVEL
+        urgentPriority -> urgentPriorityLevel
 
-        STANDARD_PRIORITY -> STANDARD_PRIORITY_LEVEL
+        standardPriority-> standardPriorityLevel
 
-        LOW_PRIORITY -> LOW_PRIORITY_LEVEL
+        lowPriority -> lowPriorityLevel
 
-        else -> LOW_PRIORITY_LEVEL
+        else -> lowPriorityLevel
     }
 }
 

@@ -36,16 +36,16 @@ import validation.validateDecoratorIntegration
 import java.io.File
 import java.util.Locale
 
-private const val PACKAGES_FILE_PATH = "src/main/resources/packages.csv"
-private const val WAREHOUSES_FILE_PATH = "src/main/resources/warehouses.csv"
-private const val ROUTES_FILE_PATH = "src/main/resources/routes.csv"
-private const val FLEET_FILE_PATH = "src/main/resources/fleet.csv"
+private const val  packagesFilePath= "src/main/resources/packages.csv"
+private const val warehousesFilePath = "src/main/resources/warehouses.csv"
+private const val routesFilePath = "src/main/resources/routes.csv"
+private const val fleetFilePath= "src/main/resources/fleet.csv"
 
-private const val TOP_PACKAGE_COUNT = 3
-private const val DISPLAY_POSITION_OFFSET = 1
-private const val WEIGHT_DECIMAL_FORMAT = "%.2f"
+private const val topPackageCount = 3
+private const val displayPositionOffset = 1
+private const val wightDecimalFormat = "%.2f"
 
-private const val OUTPUT_SEPARATOR = "******************************************************"
+private const val  OutputSeparator= "******************************************************"
 
 fun main() {
 
@@ -84,7 +84,7 @@ fun main() {
 private fun createPackageRepository(): PackageRepository {
     val packageParser = PackageParser()
     return CsvPackageRepository(
-        packageFile = File(PACKAGES_FILE_PATH),
+        packageFile = File(packagesFilePath),
         packageParser = packageParser
     )
 }
@@ -94,7 +94,7 @@ private fun createWarehouseRepository(): WarehouseRepository {
     val warehouseParser = WarehouseParser()
 
     return CsvWarehouseRepository(
-        warehouseFile = File(WAREHOUSES_FILE_PATH),
+        warehouseFile = File(warehousesFilePath),
         warehouseParser = warehouseParser
     )
 }
@@ -104,7 +104,7 @@ private fun createRouteRepository(): RouteRepository {
     val routeParser = RouteParser()
 
     return CsvRouteRepository(
-        routeFile = File(ROUTES_FILE_PATH),
+        routeFile = File(routesFilePath),
         routeParser = routeParser
     )
 }
@@ -114,7 +114,7 @@ private fun createVehicleRepository(): VehicleRepository {
     val fleetParser = FleetParser()
 
     return CsvVehicleRepository(
-        vehicleFile = File(FLEET_FILE_PATH),
+        vehicleFile = File(fleetFilePath),
         fleetParser = fleetParser
     )
 }
@@ -229,13 +229,13 @@ private fun displayTopPriorityPackages(
     packages: List<LogisticsPackageRaw>
 ) {
     println()
-    println("Top $TOP_PACKAGE_COUNT priority packages:")
+    println("Top $topPackageCount priority packages:")
 
-    val displayedPackageCount = minOf(TOP_PACKAGE_COUNT, packages.size)
+    val displayedPackageCount = minOf(topPackageCount, packages.size)
 
     for (packageIndex in packages.indices.take(displayedPackageCount)
     ) {
-        val packagePosition = packageIndex + DISPLAY_POSITION_OFFSET
+        val packagePosition = packageIndex + displayPositionOffset
 
         val logisticsPackage = packages[packageIndex]
 
@@ -385,13 +385,13 @@ private fun printCargoQueue(
 private fun formatWeight(weightByKg: Double): String {
     return String.format(
         Locale.US,
-        WEIGHT_DECIMAL_FORMAT,
+        wightDecimalFormat,
         weightByKg
     )
 }
 
 private fun printSeparator() {
     println()
-    println(OUTPUT_SEPARATOR)
+    println(OutputSeparator)
     println()
 }
