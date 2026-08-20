@@ -5,7 +5,6 @@ import dataholder.LogisticsPackageRaw
 import dataholder.RouteRaw
 import dataholder.WarehouseRaw
 import domain.builder.DomainGraphBuilder
-import domain.builder.GraphBuilderInput
 import domain.model.Warehouse
 import domain.pricing.EcoStrategy
 import domain.pricing.ExpressStrategy
@@ -58,19 +57,16 @@ fun main() {
     // Step 2: Load and preprocess raw data from CSV files.
     val rawPackages = loadPackages(packageRepository)
     sortPackagesByPriorityAndWeight(rawPackages)
-
     displayTopPriorityPackages(rawPackages)
-    val rawWarehouses = loadWarehouses(warehouseRepository)
-    val rawRoutes = loadRoutes(routeRepository)
-    val rawVehicles = loadVehicles(vehicleRepository)
 
     // Step 3: Build the domain graph from the raw data.
     val warehouseIndex = buildProjectDomainGraph(
-        rawPackages,
-        rawWarehouses,
-        rawRoutes,
-        rawVehicles
+        packageRepository = packageRepository,
+        warehouseRepository = warehouseRepository,
+        vehicleRepository = vehicleRepository,
+        routeRepository = routeRepository
     )
+
     // Step 4: Validate graph construction and package sorting.
     validateGraphAndSorting(warehouseIndex)
 
@@ -120,21 +116,20 @@ private fun createVehicleRepository(): VehicleRepository {
 }
 
 private fun buildProjectDomainGraph(
-    rawPackages: List<LogisticsPackageRaw>,
-    rawWarehouses: List<WarehouseRaw>,
-    rawRoutes: List<RouteRaw>,
-    rawVehicles: List<FleetRaw>
+    packageRepository: PackageRepository,
+    warehouseRepository: WarehouseRepository,
+    vehicleRepository: VehicleRepository,
+    routeRepository: RouteRepository
 ): Map<String, Warehouse> {
 
-    val domainGraphBuilder = DomainGraphBuilder()
-
-    return buildDomainGraph(
-        rawPackages = rawPackages,
-        rawWarehouses = rawWarehouses,
-        rawRoutes = rawRoutes,
-        rawVehicles = rawVehicles,
-        domainGraphBuilder = domainGraphBuilder
+    val domainGraphBuilder = DomainGraphBuilder(
+        packageRepository = packageRepository,
+        warehouseRepository = warehouseRepository,
+        vehicleRepository = vehicleRepository,
+        routeRepository = routeRepository
     )
+
+    return domainGraphBuilder.buildGraph()
 }
 
 private fun validateGraphAndSorting(
@@ -322,25 +317,9 @@ private fun loadVehicles(
     return vehicles
 }
 
-private fun buildDomainGraph(
-    rawPackages: List<LogisticsPackageRaw>,
-    rawWarehouses: List<WarehouseRaw>,
-    rawRoutes: List<RouteRaw>,
-    rawVehicles: List<FleetRaw>,
-    domainGraphBuilder: DomainGraphBuilder
-): Map<String, Warehouse> {
 
-    val graphBuilderInput = GraphBuilderInput(
-        warehouses = rawWarehouses,
-        packages = rawPackages,
-        vehicles = rawVehicles,
-        routes = rawRoutes
-    )
 
-    return domainGraphBuilder.buildGraph(
-        graphBuilderInput
-    )
-}
+
 
 private fun validateQuickSort(
     warehouseIndex: Map<String, Warehouse>,
@@ -395,3 +374,4 @@ private fun printSeparator() {
     println(OUTPUT_SEPARATOR)
     println()
 }
+

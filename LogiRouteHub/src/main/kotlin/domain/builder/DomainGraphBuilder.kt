@@ -1,37 +1,59 @@
 package domain.builder
 
-import dataholder.FleetRaw
-import dataholder.LogisticsPackageRaw
-import dataholder.RouteRaw
-import dataholder.WarehouseRaw
 import domain.model.Package
 import domain.model.Route
 import domain.model.Vehicle
 import domain.model.Warehouse
+import repository.PackageRepository
+import repository.RouteRepository
+import repository.VehicleRepository
+import repository.WarehouseRepository
+import dataholder.FleetRaw
+import dataholder.LogisticsPackageRaw
+import dataholder.RouteRaw
+import dataholder.WarehouseRaw
 
-class DomainGraphBuilder {
+class DomainGraphBuilder(
+    private val packageRepository: PackageRepository,
+    private val warehouseRepository: WarehouseRepository,
+    private val vehicleRepository: VehicleRepository,
+    private val routeRepository: RouteRepository
+) {
 
-    fun buildGraph(
-        input: GraphBuilderInput
-    ): Map<String, Warehouse> {
+    fun buildGraph(): Map<String, Warehouse> {
 
-        val warehouses = createWarehouses(input.warehouses)
+        val warehouses = createWarehouses(
+            warehouseRepository.loadWarehouses()
+        )
 
         val warehouseIndex = createWarehouseIndex(warehouses)
 
-        buildPackages(input.packages, warehouseIndex)
+        buildPackages(
+            packageRepository.loadPackages(),
+            warehouseIndex
+        )
 
-        buildVehicles(input.vehicles, warehouseIndex)
+        buildVehicles(
+            vehicleRepository.loadVehicles(),
+            warehouseIndex
+        )
 
-        buildRoutes(input.routes, warehouseIndex)
+        buildRoutes(
+            routeRepository.loadRoutes(),
+            warehouseIndex
+        )
 
         return warehouseIndex
     }
 
-    private fun createWarehouses(rawWarehouses: List<WarehouseRaw>): List<Warehouse> {
+    private fun createWarehouses(
+        rawWarehouses: List<WarehouseRaw>
+    ): List<Warehouse> {
 
         val warehouses = mutableListOf<Warehouse>()
+
         for (rawWarehouse in rawWarehouses) {
+
             val warehouse = Warehouse(
                 id = rawWarehouse.warehouseId,
                 name = rawWarehouse.warehouseName,
@@ -39,12 +61,16 @@ class DomainGraphBuilder {
                 latitude = rawWarehouse.latitude,
                 longitude = rawWarehouse.longitude
             )
+
             warehouses.add(warehouse)
         }
+
         return warehouses
     }
 
-    private fun createWarehouseIndex(warehouses: List<Warehouse>): Map<String, Warehouse> {
+    private fun createWarehouseIndex(
+        warehouses: List<Warehouse>
+    ): Map<String, Warehouse> {
 
         return warehouses.associateBy { warehouse ->
             warehouse.id
@@ -61,6 +87,7 @@ class DomainGraphBuilder {
         if (warehouse == null) {
             println("Warning: Warehouse not found -> $warehouseId")
         }
+
         return warehouse
     }
 
@@ -68,22 +95,27 @@ class DomainGraphBuilder {
         rawPackages: List<LogisticsPackageRaw>,
         warehousesById: Map<String, Warehouse>
     ) {
+
         for (rawPackage in rawPackages) {
 
             val originWarehouse = getWarehouseById(
                 rawPackage.originHubId,
                 warehousesById
             )
+
             val destinationWarehouse = getWarehouseById(
                 rawPackage.destinationHubId,
                 warehousesById
             )
+
             if (originWarehouse != null && destinationWarehouse != null) {
+
                 val logisticsPackage = createPackageFromRawData(
                     rawPackage,
                     originWarehouse,
                     destinationWarehouse
                 )
+
                 originWarehouse.addPackage(logisticsPackage)
             }
         }
@@ -94,6 +126,7 @@ class DomainGraphBuilder {
         originWarehouse: Warehouse,
         destinationWarehouse: Warehouse
     ): Package {
+
         return Package(
             id = rawPackage.packageId,
             weightByKg = rawPackage.packageWeightByKg,
@@ -107,16 +140,21 @@ class DomainGraphBuilder {
         rawVehicles: List<FleetRaw>,
         warehousesById: Map<String, Warehouse>
     ) {
+
         for (rawVehicle in rawVehicles) {
+
             val currentWarehouse = getWarehouseById(
                 rawVehicle.currentHubId,
                 warehousesById
             )
+
             if (currentWarehouse != null) {
+
                 val vehicle = createVehicleFromRawData(
                     rawVehicle,
                     currentWarehouse
                 )
+
                 currentWarehouse.addVehicle(vehicle)
             }
         }
@@ -126,6 +164,7 @@ class DomainGraphBuilder {
         rawVehicle: FleetRaw,
         currentWarehouse: Warehouse
     ): Vehicle {
+
         return Vehicle(
             id = rawVehicle.vehicleId,
             maxCapacityKg = rawVehicle.maxCapacityKg,
@@ -134,22 +173,31 @@ class DomainGraphBuilder {
         )
     }
 
-    private fun buildRoutes(rawRoutes: List<RouteRaw>, warehousesById: Map<String, Warehouse>) {
+    private fun buildRoutes(
+        rawRoutes: List<RouteRaw>,
+        warehousesById: Map<String, Warehouse>
+    ) {
+
         for (rawRoute in rawRoutes) {
+
             val originWarehouse = getWarehouseById(
                 rawRoute.originHubId,
                 warehousesById
             )
+
             val destinationWarehouse = getWarehouseById(
                 rawRoute.destinationHubId,
                 warehousesById
             )
+
             if (originWarehouse != null && destinationWarehouse != null) {
+
                 val route = createRouteFromRawData(
                     rawRoute,
                     originWarehouse,
                     destinationWarehouse
                 )
+
                 originWarehouse.addRoute(route)
             }
         }
@@ -160,6 +208,7 @@ class DomainGraphBuilder {
         originWarehouse: Warehouse,
         destinationWarehouse: Warehouse
     ): Route {
+
         return Route(
             id = rawRoute.routeId,
             originWarehouse = originWarehouse,
@@ -169,3 +218,4 @@ class DomainGraphBuilder {
         )
     }
 }
+
