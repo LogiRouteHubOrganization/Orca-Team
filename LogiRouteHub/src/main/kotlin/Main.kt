@@ -81,7 +81,7 @@ fun main() {
     validateRoutingAlgorithms(warehouseIndex)
 }
 
-private fun createPackageRepository(): PackageRepository {
+private fun createPackageRepository(): CsvPackageRepository {
     val packageParser = PackageParser()
     return CsvPackageRepository(
         packageFile = File(PACKAGES_FILE_PATH),
@@ -89,7 +89,7 @@ private fun createPackageRepository(): PackageRepository {
     )
 }
 
-private fun createWarehouseRepository(): WarehouseRepository {
+private fun createWarehouseRepository(): CsvWarehouseRepository{
 
     val warehouseParser = WarehouseParser()
 
@@ -99,7 +99,7 @@ private fun createWarehouseRepository(): WarehouseRepository {
     )
 }
 
-private fun createRouteRepository(): RouteRepository {
+private fun createRouteRepository(): CsvRouteRepository {
 
     val routeParser = RouteParser()
 
@@ -109,7 +109,7 @@ private fun createRouteRepository(): RouteRepository {
     )
 }
 
-private fun createVehicleRepository(): VehicleRepository {
+private fun createVehicleRepository(): CsvVehicleRepository {
 
     val fleetParser = FleetParser()
 
