@@ -4,8 +4,8 @@ import dataholder.FleetRaw
 import dataholder.LogisticsPackageRaw
 import dataholder.RouteRaw
 import dataholder.WarehouseRaw
-import domain.builder.DomainGraphBuilder
 import domain.builder.GraphBuilderInput
+import domain.builder.DomainGraphBuilder
 import domain.model.Warehouse
 import domain.pricing.EcoStrategy
 import domain.pricing.ExpressStrategy
@@ -55,22 +55,22 @@ fun main() {
     val routeRepository = createRouteRepository()
     val vehicleRepository = createVehicleRepository()
 
+    // Step 2: Group repositories required by the domain graph builder.
+    val graphRepositories = GraphBuilderInput(
+        packageRepository = packageRepository,
+        warehouseRepository = warehouseRepository,
+        vehicleRepository = vehicleRepository,
+        routeRepository = routeRepository
+    )
+
     // Step 2: Load and preprocess raw data from CSV files.
     val rawPackages = loadPackages(packageRepository)
     sortPackagesByPriorityAndWeight(rawPackages)
-
     displayTopPriorityPackages(rawPackages)
-    val rawWarehouses = loadWarehouses(warehouseRepository)
-    val rawRoutes = loadRoutes(routeRepository)
-    val rawVehicles = loadVehicles(vehicleRepository)
 
-    // Step 3: Build the domain graph from the raw data.
-    val warehouseIndex = buildProjectDomainGraph(
-        rawPackages,
-        rawWarehouses,
-        rawRoutes,
-        rawVehicles
-    )
+    // Step 4: Build the domain graph.
+    val warehouseIndex = buildProjectDomainGraph(repositories = graphRepositories)
+
     // Step 4: Validate graph construction and package sorting.
     validateGraphAndSorting(warehouseIndex)
 
@@ -81,7 +81,7 @@ fun main() {
     validateRoutingAlgorithms(warehouseIndex)
 }
 
-private fun createPackageRepository(): PackageRepository {
+private fun createPackageRepository(): CsvPackageRepository {
     val packageParser = PackageParser()
     return CsvPackageRepository(
         packageFile = File(PACKAGES_FILE_PATH),
@@ -89,7 +89,7 @@ private fun createPackageRepository(): PackageRepository {
     )
 }
 
-private fun createWarehouseRepository(): WarehouseRepository {
+private fun createWarehouseRepository(): CsvWarehouseRepository{
 
     val warehouseParser = WarehouseParser()
 
@@ -99,7 +99,7 @@ private fun createWarehouseRepository(): WarehouseRepository {
     )
 }
 
-private fun createRouteRepository(): RouteRepository {
+private fun createRouteRepository(): CsvRouteRepository {
 
     val routeParser = RouteParser()
 
@@ -109,7 +109,7 @@ private fun createRouteRepository(): RouteRepository {
     )
 }
 
-private fun createVehicleRepository(): VehicleRepository {
+private fun createVehicleRepository(): CsvVehicleRepository {
 
     val fleetParser = FleetParser()
 
@@ -120,21 +120,12 @@ private fun createVehicleRepository(): VehicleRepository {
 }
 
 private fun buildProjectDomainGraph(
-    rawPackages: List<LogisticsPackageRaw>,
-    rawWarehouses: List<WarehouseRaw>,
-    rawRoutes: List<RouteRaw>,
-    rawVehicles: List<FleetRaw>
+    repositories: GraphBuilderInput
 ): Map<String, Warehouse> {
 
-    val domainGraphBuilder = DomainGraphBuilder()
+    val domainGraphBuilder = DomainGraphBuilder(repositories = repositories)
 
-    return buildDomainGraph(
-        rawPackages = rawPackages,
-        rawWarehouses = rawWarehouses,
-        rawRoutes = rawRoutes,
-        rawVehicles = rawVehicles,
-        domainGraphBuilder = domainGraphBuilder
-    )
+    return domainGraphBuilder.buildGraph()
 }
 
 private fun validateGraphAndSorting(
@@ -322,25 +313,9 @@ private fun loadVehicles(
     return vehicles
 }
 
-private fun buildDomainGraph(
-    rawPackages: List<LogisticsPackageRaw>,
-    rawWarehouses: List<WarehouseRaw>,
-    rawRoutes: List<RouteRaw>,
-    rawVehicles: List<FleetRaw>,
-    domainGraphBuilder: DomainGraphBuilder
-): Map<String, Warehouse> {
 
-    val graphBuilderInput = GraphBuilderInput(
-        warehouses = rawWarehouses,
-        packages = rawPackages,
-        vehicles = rawVehicles,
-        routes = rawRoutes
-    )
 
-    return domainGraphBuilder.buildGraph(
-        graphBuilderInput
-    )
-}
+
 
 private fun validateQuickSort(
     warehouseIndex: Map<String, Warehouse>,
@@ -395,3 +370,4 @@ private fun printSeparator() {
     println(OUTPUT_SEPARATOR)
     println()
 }
+

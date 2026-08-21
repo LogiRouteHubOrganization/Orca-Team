@@ -1,13 +1,14 @@
 package domain.builder
 
-import dataholder.FleetRaw
-import dataholder.LogisticsPackageRaw
-import dataholder.RouteRaw
-import dataholder.WarehouseRaw
+import repository.csv.CsvWarehouseRepository
+import repository.csv.CsvPackageRepository
+import repository.csv.CsvVehicleRepository
+import repository.csv.CsvRouteRepository
 
 data class GraphBuilderInput(
-    val warehouses: List<WarehouseRaw>,
-    val packages: List<LogisticsPackageRaw>,
-    val vehicles: List<FleetRaw>,
-    val routes: List<RouteRaw>
+    val packageRepository: CsvPackageRepository,
+    val warehouseRepository: CsvWarehouseRepository,
+    val vehicleRepository: CsvVehicleRepository,
+    val routeRepository: CsvRouteRepository
 )
+
