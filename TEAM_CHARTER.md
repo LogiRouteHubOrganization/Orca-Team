@@ -1,3 +1,6 @@
+<p align="center">
+  <img src="assets/orca_logo2.jpeg" alt="Team Logo" width="250">
+</p>
 # ORCA Team Charter
 
 This charter defines how the ORCA team collaborates, writes code, manages the repository, reviews contributions, and protects project data.
