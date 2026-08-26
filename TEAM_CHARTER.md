@@ -23,9 +23,8 @@ This charter defines how the ORCA team collaborates, writes code, manages the re
 |---------------|-------------|
 | Member 1      | Shatha      |
 | Member 2      | Raghad      |
-| Member 3      | Abd Al Hade |
-| Member 4      | Fatima      |
-| Member 5      | Saja        |
+| Member 3      | Fatima      |
+| Member 4      | Ruba        |
 
 ### 1.2 Branch Strategy
 
@@ -33,8 +32,7 @@ Each team member works on a separate branch:
 
 - `feature/charter-shatha`
 - `feature/charter-fatima`
-- `feature/charter-abd-al-hade`
-- `feature/charter-saja`
+- `feature/charter-ruba`
 - `feature/charter-raghad`
 
 The `main` branch contains only reviewed and approved work.
@@ -305,15 +303,11 @@ Small, continuous improvements are preferred over unnecessary rewrites.
 
 ## 3. Communication and SLAs
 
-**Prepared by:** Abd Al Hade
-
 ### 3.1 Communication Channels
 
 - **WhatsApp:** Main channel for quick updates, questions, and coordination.
-- **Daily Meeting:** The team meets daily at 12:00 AM to review progress, discuss ongoing tasks, and resolve any issues.
+- **Daily Meeting:** The team meets daily at 12:00 PM to review progress, discuss ongoing tasks, and resolve any issues.
 - **Trello:** Optional tool for task organization, ownership, and progress tracking.
-- **Miro:** Optional tool for visual planning, workflows, and responsibility mapping.
-
 ### 3.2 Communication Rules
 
 - Keep communication clear, respectful, and task-focused.
@@ -521,8 +515,6 @@ The team values honesty, respectful feedback, shared responsibility, and continu
 ---
 
 ## 6. Security and Data Protection
-
-**Prepared by:** Saja
 
 ### 6.1 Secure Coding Practices
 
