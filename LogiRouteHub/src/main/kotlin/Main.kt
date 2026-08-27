@@ -4,17 +4,18 @@ import dataholder.FleetRaw
 import dataholder.LogisticsPackageRaw
 import dataholder.RouteRaw
 import dataholder.WarehouseRaw
-import domain.builder.GraphBuilderInput
 import domain.builder.DomainGraphBuilder
+import domain.builder.GraphBuilderInput
 import domain.model.Warehouse
 import domain.pricing.EcoStrategy
 import domain.pricing.ExpressStrategy
 import domain.pricing.FragileStrategy
 import domain.pricing.RoutePricingEngine
 import domain.pricing.decorator.PackageDecoratorComposer
+import domain.routing.BidirectionalRouter
 import domain.routing.LeastHopRouter
 import domain.routing.ShortestPathRouter
-import domain.routing.BidirectionalRouter
+import domain.usecase.FindOptimalPathUseCase
 import parser.FleetParser
 import parser.PackageParser
 import parser.RouteParser
@@ -27,14 +28,9 @@ import repository.csv.CsvPackageRepository
 import repository.csv.CsvRouteRepository
 import repository.csv.CsvVehicleRepository
 import repository.csv.CsvWarehouseRepository
-import validation.BidirectionalRoutingValidation
-import validation.DijkstraRoutingValidation
-import validation.LeastHopRoutingValidation
-import validation.validatePricingStrategies
-import validation.validateDomainGraph
-import validation.validateDecoratorIntegration
+import validation.*
 import java.io.File
-import java.util.Locale
+import java.util.*
 
 private const val PACKAGES_FILE_PATH = "src/main/resources/packages.csv"
 private const val WAREHOUSES_FILE_PATH = "src/main/resources/warehouses.csv"
@@ -89,7 +85,7 @@ private fun createPackageRepository(): CsvPackageRepository {
     )
 }
 
-private fun createWarehouseRepository(): CsvWarehouseRepository{
+private fun createWarehouseRepository(): CsvWarehouseRepository {
 
     val warehouseParser = WarehouseParser()
 
@@ -176,11 +172,15 @@ private fun validateRoutingAlgorithms(
     )
     routingValidation.validateRouting()
 
-    val shortestPathRouter = ShortestPathRouter(warehouseIndex.values.toList())
+    val shortestPathRouter = ShortestPathRouter(
+        warehouseIndex.values.toList()
+    )
 
+    val findOptimalPathUseCase = FindOptimalPathUseCase(shortestPathRouter = shortestPathRouter)
     val dijkstraRoutingValidation = DijkstraRoutingValidation(
         warehouseIndex = warehouseIndex,
-        router = shortestPathRouter
+        router = shortestPathRouter,
+        findOptimalPathUseCase = findOptimalPathUseCase
     )
     dijkstraRoutingValidation.validateRouting()
 
@@ -193,7 +193,6 @@ private fun validateRoutingAlgorithms(
         router = bidirectionalRouter
     )
     bidirectionalRoutingValidation.validateRouting()
-
 }
 
 private fun loadPackages(
@@ -312,9 +311,6 @@ private fun loadVehicles(
 
     return vehicles
 }
-
-
-
 
 
 private fun validateQuickSort(

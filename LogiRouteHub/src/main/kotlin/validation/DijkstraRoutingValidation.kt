@@ -4,11 +4,14 @@ import domain.model.Route
 import domain.model.Warehouse
 import domain.routing.LeastHopRouter
 import domain.routing.ShortestPathRouter
+import domain.usecase.FindOptimalPathUseCase
 
 
 class DijkstraRoutingValidation(
     private val warehouseIndex: Map<String, Warehouse>,
-    private val router: ShortestPathRouter
+    private val router: ShortestPathRouter,
+    private val findOptimalPathUseCase: FindOptimalPathUseCase
+
 ) {
     private val defaultRouteDelayMin = 10
 
@@ -250,12 +253,9 @@ class DijkstraRoutingValidation(
             println("Required warehouses were not found.")
             return
         }
-        val router = ShortestPathRouter(
-            warehouseIndex.values.toList()
-        )
-        val warehousePath = router.findShortestPath(
-            startWarehouse,
-            destinationWarehouse
+        val warehousePath = findOptimalPathUseCase(
+            startWarehouse = startWarehouse,
+            destinationWarehouse = destinationWarehouse
         )
         if (warehousePath.isNotEmpty()) {
             println("Dijkstra integration: PASSED")
