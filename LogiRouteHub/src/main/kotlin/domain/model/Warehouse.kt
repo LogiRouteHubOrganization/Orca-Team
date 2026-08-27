@@ -23,6 +23,9 @@ class Warehouse(
     fun addPackage(logisticsPackage: Package) {
         cargoQueueList.add(logisticsPackage)
     }
+    fun removePackage(logisticsPackage: Package) {
+        cargoQueueList.remove(logisticsPackage)
+    }
 
     fun addRoute(route: Route) {
         outgoingRoutesList.add(route)
