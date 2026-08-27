@@ -11,22 +11,27 @@ class DispatchVehicleUseCase {
         warehouse: Warehouse
     ): List<Package> {
 
-        val remainingCapacity =
-            vehicle.maxCapacityKg - vehicle.currentLoadKg()
+        val availableCapacity =
+            vehicle.maxCapacityKg -
+                    vehicle.calculateTotalLoadedWeightKg()
 
-        val packagesToDispatch = warehouse.cargoQueue
-            .filter { logisticsPackage ->
-                logisticsPackage.weightByKg <= remainingCapacity
-            }
-            .takeWhile { logisticsPackage ->
-                logisticsPackage.weightByKg <= remainingCapacity
-            }
+        val packagesToDispatch = warehouse.cargoQueue.fold(
+            emptyList<Package>() to availableCapacity
+        ) { (selectedPackages, remainingCapacity), logisticsPackage ->
 
+            if (logisticsPackage.weightByKg <= remainingCapacity) {
+
+                (selectedPackages + logisticsPackage) to
+                        (remainingCapacity - logisticsPackage.weightByKg)
+
+            } else {
+                selectedPackages to remainingCapacity
+            }
+        }.first
         packagesToDispatch.forEach { logisticsPackage ->
             vehicle.addPackage(logisticsPackage)
             warehouse.removePackage(logisticsPackage)
         }
-
         return packagesToDispatch
     }
 }
