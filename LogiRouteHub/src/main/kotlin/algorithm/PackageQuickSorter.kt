@@ -9,6 +9,10 @@ class PackageQuickSorter {
     private val minimumPackageCountRequiredForSorting = 2
     private val singleIndexStep = 1
 
+    fun sortCargoQueue(warehouse: Warehouse) {
+        sortWarehouseCargoQueueByDescendingWeight(warehouse)
+    }
+
     fun sortAllCargoQueuesByDescendingWeight(
         warehousesById: Map<String, Warehouse>
     ) {
