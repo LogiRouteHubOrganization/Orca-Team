@@ -2,7 +2,7 @@ package domain.usecase
 
 import algorithm.PackageQuickSorter
 import domain.model.Package
-import domain.model.Warehouse
+
 
 class AssignPackageToCargoQueueUseCase(
     private val packageQuickSorter: PackageQuickSorter
@@ -12,6 +12,9 @@ class AssignPackageToCargoQueueUseCase(
         val originWarehouse = logisticsPackage.originWarehouse
 
         originWarehouse.addPackage(logisticsPackage)
-        packageQuickSorter.sortCargoQueue(originWarehouse)
+
+        packageQuickSorter.sortCargoQueue(
+            originWarehouse
+        )
     }
 }
