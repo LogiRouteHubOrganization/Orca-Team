@@ -4,17 +4,20 @@ import dataholder.FleetRaw
 import dataholder.LogisticsPackageRaw
 import dataholder.RouteRaw
 import dataholder.WarehouseRaw
-import domain.builder.GraphBuilderInput
 import domain.builder.DomainGraphBuilder
+import domain.builder.GraphBuilderInput
 import domain.model.Warehouse
 import domain.pricing.EcoStrategy
 import domain.pricing.ExpressStrategy
 import domain.pricing.FragileStrategy
 import domain.pricing.RoutePricingEngine
 import domain.pricing.decorator.PackageDecoratorComposer
+import domain.routing.BidirectionalRouter
 import domain.routing.LeastHopRouter
 import domain.routing.ShortestPathRouter
-import domain.routing.BidirectionalRouter
+import domain.usecase.FindOptimalPathUseCase
+import domain.usecase.FindFewestHopsRouteUseCase
+import domain.usecase.CalculatePricingUseCase
 import parser.FleetParser
 import parser.PackageParser
 import parser.RouteParser
@@ -27,11 +30,11 @@ import repository.csv.CsvPackageRepository
 import repository.csv.CsvRouteRepository
 import repository.csv.CsvVehicleRepository
 import repository.csv.CsvWarehouseRepository
-import validation.BidirectionalRoutingValidation
-import validation.DijkstraRoutingValidation
 import validation.LeastHopRoutingValidation
-import validation.validatePricingStrategies
 import validation.validateDomainGraph
+import validation.DijkstraRoutingValidation
+import validation.BidirectionalRoutingValidation
+import validation.validatePricingStrategies
 import validation.validateDecoratorIntegration
 import java.io.File
 import java.util.Locale
@@ -89,7 +92,7 @@ private fun createPackageRepository(): CsvPackageRepository {
     )
 }
 
-private fun createWarehouseRepository(): CsvWarehouseRepository{
+private fun createWarehouseRepository(): CsvWarehouseRepository {
 
     val warehouseParser = WarehouseParser()
 
@@ -157,11 +160,16 @@ private fun validatePricingAndDecorators(
         expressStrategy = expressStrategy,
         fragileStrategy = fragileStrategy
     )
-    val decoratorComposer = PackageDecoratorComposer()
+
+    val packageDecoratorComposer = PackageDecoratorComposer()
+
+    val calculatePricingUseCase =
+        CalculatePricingUseCase(packageDecoratorComposer)
+
     validateDecoratorIntegration(
         warehouseIndex = warehouseIndex,
-        dispatchStrategy = ecoStrategy,
-        decoratorComposer = decoratorComposer
+        calculatePricingUseCase = calculatePricingUseCase,
+        dispatchStrategy = ecoStrategy
     )
 }
 
@@ -170,17 +178,25 @@ private fun validateRoutingAlgorithms(
 ) {
     val leastHopRouter = LeastHopRouter()
 
+    val findFewestHopsRouteUseCase =
+        FindFewestHopsRouteUseCase(leastHopRouter)
+
     val routingValidation = LeastHopRoutingValidation(
         warehouseIndex = warehouseIndex,
-        router = leastHopRouter
+        findFewestHopsRouteUseCase = findFewestHopsRouteUseCase
     )
     routingValidation.validateRouting()
 
-    val shortestPathRouter = ShortestPathRouter(warehouseIndex.values.toList())
 
+    val shortestPathRouter = ShortestPathRouter(
+        warehouseIndex.values.toList()
+    )
+
+    val findOptimalPathUseCase = FindOptimalPathUseCase(shortestPathRouter = shortestPathRouter)
     val dijkstraRoutingValidation = DijkstraRoutingValidation(
         warehouseIndex = warehouseIndex,
-        router = shortestPathRouter
+        router = shortestPathRouter,
+        findOptimalPathUseCase = findOptimalPathUseCase
     )
     dijkstraRoutingValidation.validateRouting()
 
@@ -193,7 +209,6 @@ private fun validateRoutingAlgorithms(
         router = bidirectionalRouter
     )
     bidirectionalRoutingValidation.validateRouting()
-
 }
 
 private fun loadPackages(
@@ -314,9 +329,6 @@ private fun loadVehicles(
 }
 
 
-
-
-
 private fun validateQuickSort(
     warehouseIndex: Map<String, Warehouse>,
     packageQuickSorter: PackageQuickSorter
@@ -370,4 +382,5 @@ private fun printSeparator() {
     println(OUTPUT_SEPARATOR)
     println()
 }
+
 
