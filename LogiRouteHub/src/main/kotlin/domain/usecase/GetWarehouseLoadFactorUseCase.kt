@@ -1,7 +1,5 @@
 package domain.usecasePackage
 import domain.model.Warehouse
-import domain .model.Package
-import domain.model.Vehicle
 class GetWarehouseLoadFactorUseCase {
     var initialValueForTheSum =0.0
     val vehicleCapacity=0.0
