@@ -17,6 +17,7 @@ import domain.routing.LeastHopRouter
 import domain.routing.ShortestPathRouter
 import domain.usecase.FindOptimalPathUseCase
 import domain.usecase.FindFewestHopsRouteUseCase
+import domain.usecase.CalculatePricingUseCase
 import parser.FleetParser
 import parser.PackageParser
 import parser.RouteParser
@@ -159,11 +160,16 @@ private fun validatePricingAndDecorators(
         expressStrategy = expressStrategy,
         fragileStrategy = fragileStrategy
     )
-    val decoratorComposer = PackageDecoratorComposer()
+
+    val packageDecoratorComposer = PackageDecoratorComposer()
+
+    val calculatePricingUseCase =
+        CalculatePricingUseCase(packageDecoratorComposer)
+
     validateDecoratorIntegration(
         warehouseIndex = warehouseIndex,
-        dispatchStrategy = ecoStrategy,
-        decoratorComposer = decoratorComposer
+        calculatePricingUseCase = calculatePricingUseCase,
+        dispatchStrategy = ecoStrategy
     )
 }
 

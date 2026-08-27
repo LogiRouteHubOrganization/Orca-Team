@@ -2,7 +2,7 @@ package validation
 
 import domain.model.Warehouse
 import domain.pricing.DispatchStrategy
-import domain.pricing.decorator.PackageDecoratorComposer
+import domain.usecase.CalculatePricingUseCase
 import kotlin.math.abs
 
 private const val COLD_CHAIN_MULTIPLIER = 1.30
@@ -12,8 +12,8 @@ private const val RATE_TOLERANCE = 0.001
 
 fun validateDecoratorIntegration(
     warehouseIndex: Map<String, Warehouse>,
-    dispatchStrategy: DispatchStrategy,
-    decoratorComposer: PackageDecoratorComposer
+    calculatePricingUseCase: CalculatePricingUseCase,
+    dispatchStrategy: DispatchStrategy
 ) {
     val warehouse = findWarehouseForDecoratorValidation(warehouseIndex) ?: return
 
@@ -26,17 +26,17 @@ fun validateDecoratorIntegration(
         assignedVehicle,
         dispatchStrategy
     )
-    val decoratedPackage = decoratorComposer.applyOptionalDecorators(
-        logisticsPackage,
-        true,
-        true,
-        true
+
+    val decoratedRate = calculatePricingUseCase(
+        logisticsPackage = logisticsPackage,
+        selectedRoute = selectedRoute,
+        assignedVehicle = assignedVehicle,
+        dispatchStrategy = dispatchStrategy,
+        isFragile = true,
+        requiresColdChain = true,
+        needsExpressInsurance = true
     )
-    val decoratedRate = decoratedPackage.calculateTransitRate(
-        selectedRoute,
-        assignedVehicle,
-        dispatchStrategy
-    )
+
     val expectedRate = calculateExpectedDecoratedRate(baseRate)
 
     printDecoratorValidationResult(
