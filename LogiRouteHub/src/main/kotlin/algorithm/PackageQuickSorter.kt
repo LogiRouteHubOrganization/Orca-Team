@@ -32,6 +32,9 @@ class PackageQuickSorter {
             sectionEndIndex = warehouse.cargoQueue.lastIndex
         )
     }
+    fun sortCargoQueue(warehouse: Warehouse) {
+        sortWarehouseCargoQueueByDescendingWeight(warehouse)
+    }
 
     private fun quickSortCargoQueueSection(
         warehouse: Warehouse,
