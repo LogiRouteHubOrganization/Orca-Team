@@ -18,6 +18,9 @@ class PackageQuickSorter {
             )
         }
     }
+    fun sortCargoQueue(warehouse: Warehouse) {
+        sortWarehouseCargoQueueByDescendingWeight(warehouse)
+    }
 
     private fun sortWarehouseCargoQueueByDescendingWeight(
         warehouse: Warehouse
@@ -132,3 +135,5 @@ class PackageQuickSorter {
         return this.weightByKg
     }
 }
+
+
