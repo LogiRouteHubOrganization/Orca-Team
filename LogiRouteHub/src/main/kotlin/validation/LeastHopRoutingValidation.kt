@@ -2,12 +2,12 @@ package validation
 
 import domain.model.Route
 import domain.model.Warehouse
-import domain.routing.LeastHopRouter
+import domain.usecase.FindFewestHopsRouteUseCase
 
 class LeastHopRoutingValidation(
     private val warehouseIndex: Map<String, Warehouse>,
-    private val router: LeastHopRouter
-) {
+    private val findFewestHopsRouteUseCase: FindFewestHopsRouteUseCase
+){
     fun validateRouting() {
         validatePathExists()
         validateNoPath()
@@ -23,15 +23,14 @@ class LeastHopRoutingValidation(
         val startWarehouse = createWarehouse("WH-001")
         val destinationWarehouse = createWarehouse("WH-002")
 
-        startWarehouse.addRoute(
-            createRoute(
+        startWarehouse.addRoute(createRoute(
                 "RT-00001",
                 startWarehouse,
                 destinationWarehouse
             )
         )
 
-        val warehousePath = router.findLeastHopPath(
+        val warehousePath = findFewestHopsRouteUseCase(
             startWarehouse,
             destinationWarehouse
         )
@@ -47,7 +46,7 @@ class LeastHopRoutingValidation(
         val startWarehouse = createWarehouse("WH-001")
         val destinationWarehouse = createWarehouse("WH-002")
 
-        val warehousePath = router.findLeastHopPath(
+        val warehousePath = findFewestHopsRouteUseCase(
             startWarehouse,
             destinationWarehouse
         )
@@ -64,7 +63,7 @@ class LeastHopRoutingValidation(
     private fun validateSameWarehouse() {
         val warehouse = createWarehouse("WH-001")
 
-        val warehousePath = router.findLeastHopPath(
+        val warehousePath = findFewestHopsRouteUseCase(
             warehouse,
             warehouse
         )
@@ -105,7 +104,7 @@ class LeastHopRoutingValidation(
             )
         )
 
-        val warehousePath = router.findLeastHopPath(
+        val warehousePath = findFewestHopsRouteUseCase(
             startWarehouse,
             destinationWarehouse
         )
@@ -141,7 +140,7 @@ class LeastHopRoutingValidation(
         extraPathWarehouse.addRoute(
             createRoute("RT-00005", extraPathWarehouse, destinationWarehouse)
         )
-        val warehousePath = router.findLeastHopPath(
+        val warehousePath = findFewestHopsRouteUseCase(
             startWarehouse,
             destinationWarehouse
         )
@@ -162,7 +161,7 @@ class LeastHopRoutingValidation(
             return
         }
 
-        val warehousePath = router.findLeastHopPath(
+        val warehousePath = findFewestHopsRouteUseCase(
             startWarehouse,
             destinationWarehouse
         )
@@ -212,4 +211,5 @@ class LeastHopRoutingValidation(
         }
     }
 }
+
 

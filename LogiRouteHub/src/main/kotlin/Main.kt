@@ -16,6 +16,7 @@ import domain.routing.BidirectionalRouter
 import domain.routing.LeastHopRouter
 import domain.routing.ShortestPathRouter
 import domain.usecase.FindOptimalPathUseCase
+import domain.usecase.FindFewestHopsRouteUseCase
 import parser.FleetParser
 import parser.PackageParser
 import parser.RouteParser
@@ -28,9 +29,14 @@ import repository.csv.CsvPackageRepository
 import repository.csv.CsvRouteRepository
 import repository.csv.CsvVehicleRepository
 import repository.csv.CsvWarehouseRepository
-import validation.*
+import validation.LeastHopRoutingValidation
+import validation.validateDomainGraph
+import validation.DijkstraRoutingValidation
+import validation.BidirectionalRoutingValidation
+import validation.validatePricingStrategies
+import validation.validateDecoratorIntegration
 import java.io.File
-import java.util.*
+import java.util.Locale
 
 private const val PACKAGES_FILE_PATH = "src/main/resources/packages.csv"
 private const val WAREHOUSES_FILE_PATH = "src/main/resources/warehouses.csv"
@@ -166,11 +172,15 @@ private fun validateRoutingAlgorithms(
 ) {
     val leastHopRouter = LeastHopRouter()
 
+    val findFewestHopsRouteUseCase =
+        FindFewestHopsRouteUseCase(leastHopRouter)
+
     val routingValidation = LeastHopRoutingValidation(
         warehouseIndex = warehouseIndex,
-        router = leastHopRouter
+        findFewestHopsRouteUseCase = findFewestHopsRouteUseCase
     )
     routingValidation.validateRouting()
+
 
     val shortestPathRouter = ShortestPathRouter(
         warehouseIndex.values.toList()
@@ -366,4 +376,5 @@ private fun printSeparator() {
     println(OUTPUT_SEPARATOR)
     println()
 }
+
 
