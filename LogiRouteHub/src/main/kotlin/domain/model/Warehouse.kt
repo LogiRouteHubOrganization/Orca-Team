@@ -37,7 +37,4 @@ class Warehouse(
         cargoQueueList[packageIndex] = logisticsPackage
     }
 
-    fun removePackage(logisticsPackage: Package) {
-        cargoQueueList.remove(logisticsPackage)
-    }
 }
