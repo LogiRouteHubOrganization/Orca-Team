@@ -23,6 +23,7 @@ class Warehouse(
     fun addPackage(logisticsPackage: Package) {
         cargoQueueList.add(logisticsPackage)
     }
+
     fun removePackage(logisticsPackage: Package) {
         cargoQueueList.remove(logisticsPackage)
     }
@@ -39,7 +40,7 @@ class Warehouse(
         packageIndex: Int,
         logisticsPackage: Package
     ) {
-        cargoQueueList[packageIndex] =
-            logisticsPackage
+        cargoQueueList[packageIndex] = logisticsPackage
     }
 }
+
