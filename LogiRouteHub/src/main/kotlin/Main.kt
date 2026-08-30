@@ -36,6 +36,7 @@ import validation.DijkstraRoutingValidation
 import validation.BidirectionalRoutingValidation
 import validation.validatePricingStrategies
 import validation.validateDecoratorIntegration
+import validation.HubTreeValidation
 import java.io.File
 import java.util.Locale
 
@@ -82,6 +83,8 @@ fun main() {
 
     // Step 6: Validate routing algorithms.
     validateRoutingAlgorithms(warehouseIndex)
+   // Step 7:Validate HubTree
+    HubTreeValidation(warehouseIndex).validateHubTree()
 }
 
 private fun createPackageRepository(): CsvPackageRepository {
