@@ -13,15 +13,24 @@ class EstimateRouteRiskUseCase(
     private val highDelayThresholdMin: Int
 ) {
 
-    operator fun invoke(route: Route): RouteRiskLevel {
-        val hasHighDistance = route.distanceKm >= highDistanceThresholdKm
+    private val mediumRiskScoreThreshold = 1.0
+    private val highRiskScoreThreshold = 2.0
 
-        val hasHighDelay = route.typicalDelayMin >= highDelayThresholdMin
+    operator fun invoke(route: Route): RouteRiskLevel {
+        val distanceRiskScore =
+            route.distanceKm / highDistanceThresholdKm
+
+        val delayRiskScore =
+            route.typicalDelayMin.toDouble() / highDelayThresholdMin
+
+        val totalRiskScore = distanceRiskScore + delayRiskScore
 
         return when {
-            hasHighDistance && hasHighDelay -> RouteRiskLevel.HIGH
+            totalRiskScore >= highRiskScoreThreshold ->
+                RouteRiskLevel.HIGH
 
-            hasHighDistance || hasHighDelay -> RouteRiskLevel.MEDIUM
+            totalRiskScore >= mediumRiskScoreThreshold ->
+                RouteRiskLevel.MEDIUM
 
             else -> RouteRiskLevel.LOW
         }
