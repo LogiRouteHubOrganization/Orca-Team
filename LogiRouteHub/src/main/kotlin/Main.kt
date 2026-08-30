@@ -37,7 +37,7 @@ import validation.BidirectionalRoutingValidation
 import validation.validatePricingStrategies
 import validation.validateDecoratorIntegration
 import validation.HubTreeValidation
-import validation.AnalyzeTreePerformanceUseCase
+import domain.usecase.AnalyzeTreePerformanceUseCase
 import java.io.File
 import java.util.Locale
 
