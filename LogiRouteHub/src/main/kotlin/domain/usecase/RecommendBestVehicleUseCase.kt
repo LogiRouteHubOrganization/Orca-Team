@@ -12,12 +12,22 @@ class RecommendBestVehicleUseCase(
         warehouse: Warehouse,
         requiredCapacityKg: Double
     ): Vehicle? {
-        val suitableVehicles = findStationedVehiclesByCapacityUseCase(
-            warehouse = warehouse,
-            requiredCapacityKg = requiredCapacityKg
+        val suitableVehicles =
+            findStationedVehiclesByCapacityUseCase(
+                warehouse = warehouse,
+                requiredCapacityKg = requiredCapacityKg
+            )
+
+        return suitableVehicles.minWithOrNull(
+            compareBy<Vehicle> { vehicle ->
+                val currentLoadedWeightKg = vehicle.calculateTotalLoadedWeightKg()
+
+                val projectedLoadedWeightKg = currentLoadedWeightKg + requiredCapacityKg
+
+                vehicle.maxCapacityKg - projectedLoadedWeightKg
+            }.thenBy { vehicle ->
+                vehicle.costPerKm
+            }
         )
-        return suitableVehicles.minByOrNull { vehicle ->
-            vehicle.costPerKm
-        }
     }
 }
