@@ -37,6 +37,7 @@ import validation.BidirectionalRoutingValidation
 import validation.validatePricingStrategies
 import validation.validateDecoratorIntegration
 import validation.HubTreeValidation
+import validation.AnalyzeTreePerformanceUseCase
 import java.io.File
 import java.util.Locale
 
@@ -85,6 +86,8 @@ fun main() {
     validateRoutingAlgorithms(warehouseIndex)
    // Step 7:Validate HubTree
     HubTreeValidation(warehouseIndex).validateHubTree()
+
+    AnalyzeTreePerformanceUseCase()()
 }
 
 private fun createPackageRepository(): CsvPackageRepository {
