@@ -10,7 +10,11 @@ class FindStationedVehiclesByCapacityUseCase {
         requiredCapacityKg: Double
     ): List<Vehicle> {
         return warehouse.stationedVehicles.filter { vehicle ->
-            vehicle.maxCapacityKg >= requiredCapacityKg
+            val currentLoadedWeightKg = vehicle.calculateTotalLoadedWeightKg()
+
+            val availableCapacityKg = vehicle.maxCapacityKg - currentLoadedWeightKg
+
+            availableCapacityKg >= requiredCapacityKg
         }
     }
 }
