@@ -1,11 +1,7 @@
 package domain.model
 
 class Warehouse(
-    val id: String,
-    val name: String,
-    val regionalZone: String,
-    val latitude: Double,
-    val longitude: Double
+    val id: String, val name: String, val regionalZone: String, val latitude: Double, val longitude: Double
 ) {
     private val cargoQueueList = mutableListOf<Package>()
     private val outgoingRoutesList = mutableListOf<Route>()
@@ -36,10 +32,9 @@ class Warehouse(
     }
 
     fun updatePackageAtIndex(
-        packageIndex: Int,
-        logisticsPackage: Package
+        packageIndex: Int, logisticsPackage: Package
     ) {
-        cargoQueueList[packageIndex] =
-            logisticsPackage
+        cargoQueueList[packageIndex] = logisticsPackage
     }
+
 }
