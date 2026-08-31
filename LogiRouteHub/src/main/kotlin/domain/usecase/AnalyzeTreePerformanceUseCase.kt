@@ -1,12 +1,8 @@
 package domain.usecase
 
-import domain.performance.PerformanceMetrics
-import domain.performance.SequentialTrackingIdGenerator
-import domain.performance.SimulationResult
-import domain.tree.BalancedBST
-import domain.tree.UnbalancedBST
+import domain.tree.simulation.*
 
-class AnalyzeTreePerformanceUseCase{
+class AnalyzeTreePerformanceUseCase {
 
     operator fun invoke(): SimulationResult {
 
@@ -26,7 +22,7 @@ class AnalyzeTreePerformanceUseCase{
         val balancedBST = BalancedBST()
         balancedBST.build(trackingIds)
         val balancedStartTime = System.nanoTime()
-        val balancedSteps =balancedBST.searchSteps(targetTrackingId)
+        val balancedSteps = balancedBST.searchSteps(targetTrackingId)
         val balancedExecutionTime = System.nanoTime() - balancedStartTime
         val result = SimulationResult(
             unbalancedTreeMetrics = PerformanceMetrics(

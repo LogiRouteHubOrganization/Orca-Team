@@ -1,6 +1,6 @@
 package domain.usecase
 
-import algorithm.PackageQuickSorter
+import domain.algorithm.sorting.PackageQuickSorter
 import domain.model.Package
 
 

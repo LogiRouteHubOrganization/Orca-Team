@@ -1,13 +1,13 @@
 package domain.builder
 
+import data.dataholder.FleetRaw
+import data.dataholder.LogisticsPackageRaw
+import data.dataholder.RouteRaw
+import data.dataholder.WarehouseRaw
 import domain.model.Package
 import domain.model.Route
 import domain.model.Vehicle
 import domain.model.Warehouse
-import dataholder.FleetRaw
-import dataholder.LogisticsPackageRaw
-import dataholder.RouteRaw
-import dataholder.WarehouseRaw
 
 class DomainGraphBuilder(
     private val repositories: GraphBuilderInput
