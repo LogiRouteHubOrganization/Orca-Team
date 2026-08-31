@@ -1,9 +1,9 @@
 package domain.builder
 
-import repository.csv.CsvWarehouseRepository
-import repository.csv.CsvPackageRepository
-import repository.csv.CsvVehicleRepository
-import repository.csv.CsvRouteRepository
+import data.repository.csv.CsvWarehouseRepository
+import data.repository.csv.CsvPackageRepository
+import data.repository.csv.CsvVehicleRepository
+import data.repository.csv.CsvRouteRepository
 
 data class GraphBuilderInput(
     val packageRepository: CsvPackageRepository,
