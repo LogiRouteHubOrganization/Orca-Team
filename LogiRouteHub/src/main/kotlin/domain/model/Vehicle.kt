@@ -18,4 +18,11 @@ data class Vehicle(
     fun calculateTotalLoadedWeightKg(): Double {
         return packages.sumOf { it.weightByKg }
     }
+
+    fun restoreAssignedPackages(previousPackages: List<Package>) {
+        packages.clear()
+        packages.addAll(previousPackages)
+    }
+
 }
+
