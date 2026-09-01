@@ -1,7 +1,7 @@
 package domain.tree.hierarchy
 
 import domain.model.Warehouse
-import domain.model.WarehouseLevel
+import domain.model.request.WarehouseLevel
 
 class HubTreeWarehouseNode(
     val warehouse: Warehouse,

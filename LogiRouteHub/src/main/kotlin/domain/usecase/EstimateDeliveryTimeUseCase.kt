@@ -1,7 +1,7 @@
 package domain.usecase
 
 import domain.model.Route
-import domain.request.EstimateDeliveryTimeRequest
+import domain.model.request.EstimateDeliveryTimeRequest
 
 class EstimateDeliveryTimeUseCase(
     private val estimateRouteRiskUseCase: EstimateRouteRiskUseCase,

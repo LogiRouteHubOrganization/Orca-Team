@@ -1,8 +1,8 @@
 package domain.usecase
 
 import domain.model.Route
-import domain.model.RouteRiskLevel
-import domain.model.config.RouteRiskConfig
+import domain.model.request.RouteRiskLevel
+import domain.model.request.RouteRiskConfig
 
 class EstimateRouteRiskUseCase(
     private val config: RouteRiskConfig
