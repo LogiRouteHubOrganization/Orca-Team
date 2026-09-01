@@ -86,7 +86,7 @@ fun main() {
     AnalyzeTreePerformanceUseCase()()
 }
 
-private fun createPackageRepository(): CsvPackageRepository {
+private fun createPackageRepository(): PackageRepository {
     val packageParser = PackageParser()
     return CsvPackageRepository(
         packageFile = File(PACKAGES_FILE_PATH),
@@ -94,7 +94,7 @@ private fun createPackageRepository(): CsvPackageRepository {
     )
 }
 
-private fun createWarehouseRepository(): CsvWarehouseRepository {
+private fun createWarehouseRepository(): WarehouseRepository {
 
     val warehouseParser = WarehouseParser()
 
@@ -104,7 +104,7 @@ private fun createWarehouseRepository(): CsvWarehouseRepository {
     )
 }
 
-private fun createRouteRepository(): CsvRouteRepository {
+private fun createRouteRepository(): RouteRepository {
 
     val routeParser = RouteParser()
 
@@ -114,7 +114,7 @@ private fun createRouteRepository(): CsvRouteRepository {
     )
 }
 
-private fun createVehicleRepository(): CsvVehicleRepository {
+private fun createVehicleRepository(): VehicleRepository {
 
     val fleetParser = FleetParser()
 
@@ -194,13 +194,18 @@ private fun validateRoutingAlgorithms(
         warehouseIndex.values.toList()
     )
 
-    val findOptimalPathUseCase = FindOptimalPathUseCase(shortestPathRouter = shortestPathRouter)
+    val findOptimalPathUseCase = FindOptimalPathUseCase(
+        shortestPathFinder = shortestPathRouter
+    )
+
     val dijkstraRoutingValidation = DijkstraRoutingValidation(
         warehouseIndex = warehouseIndex,
         router = shortestPathRouter,
         findOptimalPathUseCase = findOptimalPathUseCase
     )
     dijkstraRoutingValidation.validateRouting()
+
+
 
     val bidirectionalRouter = BidirectionalRouter(
         warehouseIndex.values.toList()
