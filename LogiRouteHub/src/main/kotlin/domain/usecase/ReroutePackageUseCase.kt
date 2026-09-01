@@ -2,12 +2,21 @@ package domain.usecase
 
 import domain.model.Package
 import domain.model.request.ReroutePackageRequest
+import domain.repository.WarehouseRepository
 
-class ReroutePackageUseCase {
+class ReroutePackageUseCase(
+    private val warehouseRepository: WarehouseRepository
+) {
 
-    operator fun invoke(input: ReroutePackageRequest): Package? {
+    operator fun invoke(
+        input: ReroutePackageRequest
+    ): Package? {
 
-        val indexedPackage = input.warehouse.cargoQueue
+        val warehouse = warehouseRepository.findById(
+            input.warehouseId
+        ) ?: return null
+
+        val indexedPackage = warehouse.cargoQueue
             .withIndex()
             .find { indexedValue ->
                 indexedValue.value.id == input.packageId
@@ -17,10 +26,12 @@ class ReroutePackageUseCase {
             destinationWarehouse = input.newDestinationWarehouse
         )
 
-        input.warehouse.updatePackageAtIndex(
+        warehouse.updatePackageAtIndex(
             packageIndex = indexedPackage.index,
             logisticsPackage = reroutedPackage
         )
+
+        warehouseRepository.update(warehouse)
 
         return reroutedPackage
     }
