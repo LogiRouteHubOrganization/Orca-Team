@@ -1,4 +1,4 @@
-package domain.request
+package domain.model.request
 
 import domain.model.Route
 

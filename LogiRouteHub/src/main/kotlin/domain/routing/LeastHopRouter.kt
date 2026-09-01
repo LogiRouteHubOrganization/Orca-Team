@@ -2,9 +2,9 @@ package domain.routing
 
 import domain.model.Warehouse
 
-class LeastHopRouter {
+class LeastHopRouter : LeastHopPathFinder {
 
-    fun findLeastHopPath(
+   override fun findLeastHopPath(
         startWarehouse: Warehouse,
         destinationWarehouse: Warehouse
     ): List<Warehouse> {

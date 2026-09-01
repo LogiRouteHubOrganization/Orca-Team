@@ -1,35 +1,24 @@
 package domain.usecase
 
-import domain.model.Package
-import domain.model.Route
-import domain.model.Vehicle
-import domain.pricing.DispatchStrategy
 import domain.pricing.decorator.PackageDecoratorComposer
+import domain.model.request.CalculatePricingRequest
 
 class CalculatePricingUseCase(
     private val packageDecoratorComposer: PackageDecoratorComposer
 ) {
-    operator fun invoke(
-        logisticsPackage: Package,
-        selectedRoute: Route,
-        assignedVehicle: Vehicle,
-        dispatchStrategy: DispatchStrategy,
-        isFragile: Boolean,
-        requiresColdChain: Boolean,
-        needsExpressInsurance: Boolean
-    ): Double {
+    operator fun invoke(request: CalculatePricingRequest): Double {
+
         val decoratedPackage = packageDecoratorComposer.applyOptionalDecorators(
-            packageComponent = logisticsPackage,
-            isFragile = isFragile,
-            requiresColdChain = requiresColdChain,
-            needsExpressInsurance = needsExpressInsurance
+            packageComponent = request.logisticsPackage,
+            isFragile = request.isFragile,
+            requiresColdChain = request.requiresColdChain,
+            needsExpressInsurance = request.needsExpressInsurance
         )
 
         return decoratedPackage.calculateTransitRate(
-            selectedRoute = selectedRoute,
-            assignedVehicle = assignedVehicle,
-            dispatchStrategy = dispatchStrategy
+            selectedRoute = request.selectedRoute,
+            assignedVehicle = request.assignedVehicle,
+            dispatchStrategy = request.dispatchStrategy
         )
     }
 }
-

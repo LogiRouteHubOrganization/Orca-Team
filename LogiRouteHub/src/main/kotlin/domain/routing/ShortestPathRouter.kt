@@ -28,9 +28,9 @@ import domain.model.Warehouse
 
 class ShortestPathRouter(
     private val warehouses: List<Warehouse>
-) {
+) : ShortestPathFinder {
 
-    fun findShortestPath(
+   override fun findShortestPath(
         startWarehouse: Warehouse,
         destinationWarehouse: Warehouse
     ): List<Warehouse> {

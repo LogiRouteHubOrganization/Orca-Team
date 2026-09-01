@@ -1,16 +1,16 @@
 package domain.usecase
 
 import domain.model.Warehouse
-import domain.routing.ShortestPathRouter
+import domain.routing.ShortestPathFinder
 
 class FindOptimalPathUseCase(
-    private val shortestPathRouter: ShortestPathRouter
+    private val shortestPathFinder: ShortestPathFinder
 ) {
     operator fun invoke(
         startWarehouse: Warehouse,
         destinationWarehouse: Warehouse
     ): List<Warehouse> {
-        return shortestPathRouter.findShortestPath(
+        return shortestPathFinder.findShortestPath(
             startWarehouse = startWarehouse,
             destinationWarehouse = destinationWarehouse
         )
