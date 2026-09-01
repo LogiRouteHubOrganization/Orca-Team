@@ -1,12 +1,13 @@
 package domain.usecase
 
 import domain.model.Route
-import domain.request.EstimateDeliveryTimeRequest
+import domain.model.request.RouteRiskLevel
+import domain.model.request.EstimateDeliveryTimeRequest
 
 class EstimateDeliveryTimeUseCase(
     private val estimateRouteRiskUseCase: EstimateRouteRiskUseCase,
-    private val mediumRiskBufferMin: Double,
-    private val highRiskBufferMin: Double
+    private val mediumRiskBufferMinutes: Double,
+    private val highRiskBufferMinutes: Double
 ) {
 
     private val minutesPerHour = 60.0
@@ -70,9 +71,9 @@ class EstimateDeliveryTimeUseCase(
         return when (routeRiskLevel) {
             RouteRiskLevel.LOW -> zeroTime
 
-            RouteRiskLevel.MEDIUM -> mediumRiskBufferMin
+            RouteRiskLevel.MEDIUM -> mediumRiskBufferMinutes
 
-            RouteRiskLevel.HIGH -> highRiskBufferMin
+            RouteRiskLevel.HIGH -> highRiskBufferMinutes
         }
     }
 
@@ -89,4 +90,5 @@ class EstimateDeliveryTimeUseCase(
     ): Double {
         return routeDeliveryTimes.sum()
     }
+
 }
