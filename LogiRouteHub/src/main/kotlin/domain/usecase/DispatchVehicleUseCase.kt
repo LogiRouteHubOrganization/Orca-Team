@@ -1,15 +1,22 @@
 package domain.usecase
 
 import domain.model.Package
-import domain.model.Vehicle
-import domain.model.Warehouse
+import domain.model.request.DispatchVehicleRequest
+import domain.repository.VehicleRepository
+import domain.repository.WarehouseRepository
 
-class DispatchVehicleUseCase {
+class DispatchVehicleUseCase(
+    private val vehicleRepository: VehicleRepository,
+    private val warehouseRepository: WarehouseRepository
+) {
 
-    operator fun invoke(
-        vehicle: Vehicle,
-        warehouse: Warehouse
-    ): List<Package> {
+    operator fun invoke(input: DispatchVehicleRequest): List<Package> {
+
+        val vehicle = vehicleRepository.findById(input.vehicleId)
+            ?: return emptyList()
+
+        val warehouse = warehouseRepository.findById(input.warehouseId)
+            ?: return emptyList()
 
         val availableCapacity =
             vehicle.maxCapacityKg -
@@ -27,11 +34,17 @@ class DispatchVehicleUseCase {
             } else {
                 selectedPackages to remainingCapacity
             }
+
         }.first
+
         packagesToDispatch.forEach { logisticsPackage ->
             vehicle.addPackage(logisticsPackage)
             warehouse.removePackage(logisticsPackage)
         }
+
+        vehicleRepository.update(vehicle)
+        warehouseRepository.update(warehouse)
+
         return packagesToDispatch
     }
 }
