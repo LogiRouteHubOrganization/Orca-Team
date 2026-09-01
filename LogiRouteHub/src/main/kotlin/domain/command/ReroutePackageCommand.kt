@@ -5,18 +5,22 @@ import domain.model.request.ReroutePackageRequest
 import domain.repository.WarehouseRepository
 import domain.usecase.ReroutePackageUseCase
 
+
+data class ReroutePackageCommandDependencies(
+    val reroutePackageUseCase: ReroutePackageUseCase,
+    val warehouseRepository: WarehouseRepository
+)
+
 class ReroutePackageCommand(
-    private val useCase: ReroutePackageUseCase,
-    private val warehouseRepository: WarehouseRepository,
+    private val dependencies: ReroutePackageCommandDependencies,
     private val input: ReroutePackageRequest
 ) : Command {
 
-    private var previousPackage: Package? = null
+    private var previousPackageState: Package? = null
     private var previousIndex: Int? = null
 
     override fun execute(): Boolean {
-
-        val warehouse = warehouseRepository.findById(input.warehouseId)
+        val warehouse = dependencies.warehouseRepository.findById(input.warehouseId)
             ?: return false
 
         val indexedPackage = warehouse.cargoQueue
@@ -24,30 +28,29 @@ class ReroutePackageCommand(
             .find { it.value.id == input.packageId }
             ?: return false
 
-        previousPackage = indexedPackage.value
+
+        previousPackageState = indexedPackage.value.copy()
         previousIndex = indexedPackage.index
 
-        val reroutedPackage = useCase(input)
+
+        val reroutedPackage = dependencies.reroutePackageUseCase(input)
 
         return reroutedPackage != null
     }
 
     override fun undo() {
-
-        val warehouse = warehouseRepository.findById(input.warehouseId)
+        val warehouse = dependencies.warehouseRepository.findById(input.warehouseId)
             ?: return
 
-        val oldPackage = previousPackage
-            ?: return
+        val oldPackage = previousPackageState ?: return
+        val oldIndex = previousIndex ?: return
 
-        val oldIndex = previousIndex
-            ?: return
 
         warehouse.updatePackageAtIndex(
             packageIndex = oldIndex,
             logisticsPackage = oldPackage
         )
 
-        warehouseRepository.update(warehouse)
+        dependencies.warehouseRepository.update(warehouse)
     }
 }
