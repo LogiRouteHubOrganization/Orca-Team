@@ -21,6 +21,7 @@ import domain.algorithm.sorting.sortPackages
 import domain.builder.DomainGraphBuilder
 import domain.builder.GraphBuilderInput
 import domain.model.Warehouse
+import domain.model.request.AnalyzeTreePerformanceRequest
 import domain.pricing.EcoStrategy
 import domain.pricing.ExpressStrategy
 import domain.pricing.FragileStrategy
@@ -29,6 +30,7 @@ import domain.pricing.decorator.PackageDecoratorComposer
 import domain.routing.BidirectionalRouter
 import domain.routing.LeastHopRouter
 import domain.routing.ShortestPathRouter
+import domain.tree.simulation.*
 import domain.usecase.AnalyzeTreePerformanceUseCase
 import domain.usecase.CalculatePricingUseCase
 import domain.usecase.FindFewestHopsRouteUseCase
@@ -83,7 +85,27 @@ fun main() {
     // Step 7:Validate HubTree
     HubTreeValidation(warehouseIndex).validateHubTree()
 
-    AnalyzeTreePerformanceUseCase()()
+    val trackingIdGenerator = SequentialTrackingIdGenerator()
+
+    val unbalancedBST = UnbalancedBST()
+
+    val balancedBST = BalancedBST()
+
+    val analyzeTreePerformanceUseCase =
+        AnalyzeTreePerformanceUseCase(
+            generator = trackingIdGenerator,
+            unbalancedBST = unbalancedBST,
+            balancedBST = balancedBST
+        )
+    val analyzeTreePerformanceRequest =
+        AnalyzeTreePerformanceRequest(
+            numberOfTrackingIds = 1000,
+            nanoTimeProvider = System::nanoTime
+        )
+
+    val simulationResult = analyzeTreePerformanceUseCase(analyzeTreePerformanceRequest)
+
+    displayTreePerformanceResult(simulationResult)
 }
 
 private fun createPackageRepository(): PackageRepository {
@@ -204,7 +226,6 @@ private fun validateRoutingAlgorithms(
         findOptimalPathUseCase = findOptimalPathUseCase
     )
     dijkstraRoutingValidation.validateRouting()
-
 
 
     val bidirectionalRouter = BidirectionalRouter(
@@ -390,4 +411,27 @@ private fun printSeparator() {
     println()
 }
 
+private fun displayTreePerformanceResult(
+    result: SimulationResult
+) {
+    println("===== TREE PERFORMANCE ANALYSIS =====")
 
+    println()
+    println(getTreeTypeDisplayName(result.unbalancedTreeMetrics.treeType))
+    println("Steps: ${result.unbalancedTreeMetrics.searchSteps}")
+    println("Time: ${result.unbalancedTreeMetrics.executionTimeNanos} ns")
+
+    println()
+    println(getTreeTypeDisplayName(result.balancedTreeMetrics.treeType))
+    println("Steps: ${result.balancedTreeMetrics.searchSteps}")
+    println("Time: ${result.balancedTreeMetrics.executionTimeNanos} ns")
+}
+
+private fun getTreeTypeDisplayName(
+    treeType: TreeType
+): String {
+    return when (treeType) {
+        TreeType.UNBALANCED_BST -> "Unbalanced BST"
+        TreeType.BALANCED_BST -> "Balanced BST"
+    }
+}

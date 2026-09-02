@@ -1,7 +1,7 @@
 package domain.tree.simulation
 
 data class PerformanceMetrics(
-    val treeType: String,
+    val treeType: TreeType,
     val searchSteps: Int,
     val executionTimeNanos: Long
 )
