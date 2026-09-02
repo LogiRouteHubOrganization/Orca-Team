@@ -29,7 +29,7 @@ class ReroutePackageCommand(
             ?: return false
 
 
-        previousPackageState = indexedPackage.value.copy()
+        previousPackageState = indexedPackage.value
         previousIndex = indexedPackage.index
 
 
