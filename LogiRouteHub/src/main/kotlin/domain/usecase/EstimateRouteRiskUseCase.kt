@@ -1,16 +1,17 @@
 package domain.usecase
 
 import domain.model.Route
-import domain.model.RouteRiskLevel
-import domain.model.config.RouteRiskConfig
+import domain.model.request.RouteRiskLevel
+import domain.model.request.RouteRiskConfig
 
 class EstimateRouteRiskUseCase(
-    private val config: RouteRiskConfig
+    private val input: RouteRiskConfig
 ) {
 
     operator fun invoke(route: Route): RouteRiskLevel {
         val distanceRiskScore = calculateDistanceRiskScore(route)
         val delayRiskScore = calculateDelayRiskScore(route)
+
         val totalRiskScore = calculateTotalRiskScore(
             distanceRiskScore = distanceRiskScore,
             delayRiskScore = delayRiskScore
@@ -22,13 +23,13 @@ class EstimateRouteRiskUseCase(
     private fun calculateDistanceRiskScore(
         route: Route
     ): Double {
-        return route.distanceKm / config.highDistanceThresholdKm
+        return route.distanceKm / input.highDistanceThresholdKm
     }
 
     private fun calculateDelayRiskScore(
         route: Route
     ): Double {
-        return route.typicalDelayMin.toDouble() / config.highDelayThresholdMin
+        return route.typicalDelayMin.toDouble() / input.highDelayThresholdMin
     }
 
     private fun calculateTotalRiskScore(
@@ -42,10 +43,10 @@ class EstimateRouteRiskUseCase(
         totalRiskScore: Double
     ): RouteRiskLevel {
         return when {
-            totalRiskScore >= config.highRiskScoreThreshold ->
+            totalRiskScore >= input.highRiskScoreThreshold ->
                 RouteRiskLevel.HIGH
 
-            totalRiskScore >= config.mediumRiskScoreThreshold ->
+            totalRiskScore >= input.mediumRiskScoreThreshold ->
                 RouteRiskLevel.MEDIUM
 
             else -> RouteRiskLevel.LOW
