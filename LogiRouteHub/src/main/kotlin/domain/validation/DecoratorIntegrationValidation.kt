@@ -28,13 +28,15 @@ fun validateDecoratorIntegration(
     )
 
     val decoratedRate = calculatePricingUseCase(
-        logisticsPackage = logisticsPackage,
-        selectedRoute = selectedRoute,
-        assignedVehicle = assignedVehicle,
-        dispatchStrategy = dispatchStrategy,
-        isFragile = true,
-        requiresColdChain = true,
-        needsExpressInsurance = true
+        domain.model.request.CalculatePricingRequest(
+            logisticsPackage = logisticsPackage,
+            selectedRoute = selectedRoute,
+            assignedVehicle = assignedVehicle,
+            dispatchStrategy = dispatchStrategy,
+            isFragile = true,
+            requiresColdChain = true,
+            needsExpressInsurance = true
+        )
     )
 
     val expectedRate = calculateExpectedDecoratedRate(baseRate)
