@@ -1,6 +1,6 @@
 package domain.tree.hierarchy
 
-import domain.model.WarehouseLevel
+import domain.model.request.WarehouseLevel
 
 class HubLineageTracer {
 

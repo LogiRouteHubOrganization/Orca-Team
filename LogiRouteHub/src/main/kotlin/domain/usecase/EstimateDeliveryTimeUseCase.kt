@@ -66,13 +66,12 @@ class EstimateDeliveryTimeUseCase(
     private fun getRiskBuffer(
         route: Route
     ): Double {
+
         val routeRiskLevel = estimateRouteRiskUseCase(route)
 
         return when (routeRiskLevel) {
             RouteRiskLevel.LOW -> zeroTime
-
             RouteRiskLevel.MEDIUM -> mediumRiskBufferMinutes
-
             RouteRiskLevel.HIGH -> highRiskBufferMinutes
         }
     }

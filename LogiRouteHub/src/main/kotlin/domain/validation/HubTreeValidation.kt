@@ -1,7 +1,7 @@
 package domain.validation
 
 import domain.model.Warehouse
-import domain.model.WarehouseLevel
+import domain.model.request.WarehouseLevel
 import domain.tree.hierarchy.HubHierarchyInput
 import domain.tree.hierarchy.HubLineageTracer
 import domain.tree.hierarchy.HubTreeBuilder
