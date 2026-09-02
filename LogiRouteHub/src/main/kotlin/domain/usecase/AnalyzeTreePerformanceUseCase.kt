@@ -1,59 +1,54 @@
 package domain.usecase
 
+import domain.model.request.AnalyzeTreePerformanceRequest
 import domain.tree.simulation.*
 
-class AnalyzeTreePerformanceUseCase {
+class AnalyzeTreePerformanceUseCase(
+    private val generator: SequentialTrackingIdGenerator,
+    private val unbalancedBST: UnbalancedBST,
+    private val balancedBST: BalancedBST
+) {
 
-    operator fun invoke(): SimulationResult {
+    operator fun invoke(
+        input: AnalyzeTreePerformanceRequest
+    ): SimulationResult {
 
-        val numberOfTrackingIds = 1000
-        val generator = SequentialTrackingIdGenerator()
-        val trackingIds = generator.generatePackageTrackingIds(numberOfTrackingIds)
+        val trackingIds =
+            generator.generatePackageTrackingIds(
+                input.numberOfTrackingIds
+            )
+
         val targetTrackingId = trackingIds.last()
-        val unbalancedBST = UnbalancedBST()
 
         trackingIds.forEach { trackingId ->
             unbalancedBST.insert(trackingId)
         }
 
-        val unbalancedStartTime = System.nanoTime()
+        val unbalancedStartTime = input.nanoTimeProvider()
+
         val unbalancedSteps = unbalancedBST.searchSteps(targetTrackingId)
-        val unbalancedExecutionTime = System.nanoTime() - unbalancedStartTime
-        val balancedBST = BalancedBST()
+
+        val unbalancedExecutionTime = input.nanoTimeProvider() - unbalancedStartTime
+
         balancedBST.build(trackingIds)
-        val balancedStartTime = System.nanoTime()
+
+        val balancedStartTime = input.nanoTimeProvider()
+
         val balancedSteps = balancedBST.searchSteps(targetTrackingId)
-        val balancedExecutionTime = System.nanoTime() - balancedStartTime
-        val result = SimulationResult(
+
+        val balancedExecutionTime = input.nanoTimeProvider() - balancedStartTime
+
+        return SimulationResult(
             unbalancedTreeMetrics = PerformanceMetrics(
-                treeType = "Unbalanced BST",
+                treeType = TreeType.UNBALANCED_BST,
                 searchSteps = unbalancedSteps,
                 executionTimeNanos = unbalancedExecutionTime
             ),
             balancedTreeMetrics = PerformanceMetrics(
-                treeType = "Balanced BST",
+                treeType = TreeType.BALANCED_BST,
                 searchSteps = balancedSteps,
                 executionTimeNanos = balancedExecutionTime
             )
-        )
-        printResult(result)
-        return result
-    }
-
-    private fun printResult(result: SimulationResult) {
-
-        println("===== TREE PERFORMANCE ANALYSIS =====")
-
-        println("\n${result.unbalancedTreeMetrics.treeType}")
-        println("Steps: ${result.unbalancedTreeMetrics.searchSteps}")
-        println(
-            "Time: ${result.unbalancedTreeMetrics.executionTimeNanos} ns"
-        )
-
-        println("\n${result.balancedTreeMetrics.treeType}")
-        println("Steps: ${result.balancedTreeMetrics.searchSteps}")
-        println(
-            "Time: ${result.balancedTreeMetrics.executionTimeNanos} ns"
         )
     }
 }

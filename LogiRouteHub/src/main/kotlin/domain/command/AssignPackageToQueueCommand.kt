@@ -12,28 +12,28 @@ data class AssignPackageToQueueCommandDependencies(
 
 class AssignPackageToQueueCommand(
     private val logisticsPackage: Package,
-    private val dependencies: AssignPackageToQueueCommandDependencies,
+    private val dependencies: AssignPackageToQueueCommandDependencies
 ) : Command {
 
     private var warehouse: Warehouse? = null
     private var previousWarehouseQueue: List<Package>? = null
 
     override fun execute(): Boolean {
+        val currentWarehouse = logisticsPackage.originWarehouse
 
-        warehouse = logisticsPackage.originWarehouse
-        previousWarehouseQueue = warehouse?.cargoQueue?.toList()
+        warehouse = currentWarehouse
+        previousWarehouseQueue = currentWarehouse.cargoQueue.toList()
 
         dependencies.assignPackageToCargoQueueUseCase(logisticsPackage)
 
-        return true
+        return currentWarehouse.cargoQueue != previousWarehouseQueue
     }
 
     override fun undo() {
+        val executedWarehouse = warehouse ?: return
+        val oldQueue = previousWarehouseQueue ?: return
 
-        val currentWarehouse = warehouse ?: return
-        val previousQueue = previousWarehouseQueue ?: return
-
-        currentWarehouse.restoreCargoQueue(previousQueue)
-        dependencies.warehouseRepository.update(currentWarehouse)
+        executedWarehouse.restoreCargoQueue(oldQueue)
+        dependencies.warehouseRepository.update(executedWarehouse)
     }
 }
