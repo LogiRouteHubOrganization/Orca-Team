@@ -1,3 +1,5 @@
+package domain.command
+
 import domain.command.Command
 import domain.model.Package
 import domain.model.Vehicle
