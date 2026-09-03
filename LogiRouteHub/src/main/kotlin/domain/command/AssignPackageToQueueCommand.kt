@@ -36,4 +36,10 @@ class AssignPackageToQueueCommand(
         executedWarehouse.restoreCargoQueue(oldQueue)
         dependencies.warehouseRepository.update(executedWarehouse)
     }
+
+    override fun redo() {
+        if (warehouse == null || previousWarehouseQueue == null) return
+
+        dependencies.assignPackageToCargoQueueUseCase(logisticsPackage)
+    }
 }

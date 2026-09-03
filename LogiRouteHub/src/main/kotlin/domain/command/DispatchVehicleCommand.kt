@@ -52,4 +52,10 @@ class DispatchVehicleCommand(
         dependencies.vehicleRepository.update(executedVehicle)
         dependencies.warehouseRepository.update(executedWarehouse)
     }
+
+    override fun redo() {
+        if (vehicle == null || warehouse == null) return
+
+        dependencies.dispatchVehicleUseCase(request)
+    }
 }

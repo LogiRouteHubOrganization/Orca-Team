@@ -45,12 +45,17 @@ class ReroutePackageCommand(
         val oldPackage = previousPackageState ?: return
         val oldIndex = previousIndex ?: return
 
-
         warehouse.updatePackageAtIndex(
             packageIndex = oldIndex,
             logisticsPackage = oldPackage
         )
 
         dependencies.warehouseRepository.update(warehouse)
+    }
+
+    override fun redo() {
+        if (previousPackageState == null || previousIndex == null) return
+
+        dependencies.reroutePackageUseCase(input)
     }
 }
