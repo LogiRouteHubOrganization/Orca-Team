@@ -3,6 +3,7 @@ package domain.validation
 import domain.model.Warehouse
 import domain.pricing.DispatchStrategy
 import domain.usecase.CalculatePricingUseCase
+import domain.model.request.CalculatePricingRequest
 import kotlin.math.abs
 
 private const val COLD_CHAIN_MULTIPLIER = 1.30
@@ -27,7 +28,7 @@ fun validateDecoratorIntegration(
         dispatchStrategy
     )
 
-    val decoratedRate = calculatePricingUseCase(
+    val pricingRequest = CalculatePricingRequest(
         logisticsPackage = logisticsPackage,
         selectedRoute = selectedRoute,
         assignedVehicle = assignedVehicle,
@@ -37,12 +38,14 @@ fun validateDecoratorIntegration(
         needsExpressInsurance = true
     )
 
+    val decoratedRate = calculatePricingUseCase(pricingRequest)
+
     val expectedRate = calculateExpectedDecoratedRate(baseRate)
 
     printDecoratorValidationResult(
-        baseRate,
-        decoratedRate,
-        expectedRate
+        baseRate = baseRate,
+        decoratedRate = decoratedRate,
+        expectedRate = expectedRate
     )
 }
 

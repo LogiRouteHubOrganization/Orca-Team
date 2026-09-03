@@ -16,7 +16,7 @@ import data.repository.csv.CsvPackageRepository
 import data.repository.csv.CsvRouteRepository
 import data.repository.csv.CsvVehicleRepository
 import data.repository.csv.CsvWarehouseRepository
-import domain.algorithm.sorting.PackageQuickSorter
+import domain.usecase.SortingCargoQueueUseCase
 import domain.algorithm.sorting.sortPackages
 import domain.builder.DomainGraphBuilder
 import domain.builder.GraphBuilderInput
@@ -39,10 +39,10 @@ import domain.validation.*
 import java.io.File
 import java.util.*
 
-private const val PACKAGES_FILE_PATH = "src/presentation.main/resources/packages.csv"
-private const val WAREHOUSES_FILE_PATH = "src/presentation.main/resources/warehouses.csv"
-private const val ROUTES_FILE_PATH = "src/presentation.main/resources/routes.csv"
-private const val FLEET_FILE_PATH = "src/presentation.main/resources/fleet.csv"
+private const val PACKAGES_FILE_PATH = "src/main/resources/packages.csv"
+private const val WAREHOUSES_FILE_PATH = "src/main/resources/warehouses.csv"
+private const val ROUTES_FILE_PATH = "src/main/resources/routes.csv"
+private const val FLEET_FILE_PATH = "src/main/resources/fleet.csv"
 
 private const val TOP_PACKAGE_COUNT = 3
 private const val DISPLAY_POSITION_OFFSET = 1
@@ -158,13 +158,13 @@ private fun buildProjectDomainGraph(
 private fun validateGraphAndSorting(
     warehouseIndex: Map<String, Warehouse>
 ) {
-
     validateDomainGraph(warehouseIndex)
-    val packageQuickSorter = PackageQuickSorter()
+
+    val sortCargoQueueUseCase = SortingCargoQueueUseCase()
 
     validateQuickSort(
         warehouseIndex = warehouseIndex,
-        packageQuickSorter = packageQuickSorter
+        sortCargoQueueUseCase = sortCargoQueueUseCase
     )
 }
 
@@ -359,16 +359,15 @@ private fun loadVehicles(
 
 private fun validateQuickSort(
     warehouseIndex: Map<String, Warehouse>,
-    packageQuickSorter: PackageQuickSorter
+    sortCargoQueueUseCase: SortingCargoQueueUseCase
 ) {
-
     println()
     println("=== QuickSort Validation ===")
 
     val firstWarehouse = warehouseIndex.values.firstOrNull()
 
     if (firstWarehouse == null) {
-        println("QuickSort validation skipped: " + "No warehouses were built.")
+        println("QuickSort validation skipped: No warehouses were built.")
         printSeparator()
         return
     }
@@ -377,7 +376,12 @@ private fun validateQuickSort(
     println()
     println("Cargo Queue Before Sorting:")
     printCargoQueue(firstWarehouse)
-    packageQuickSorter.sortAllCargoQueuesByDescendingWeight(warehouseIndex)
+
+
+    warehouseIndex.values.forEach { warehouse ->
+        sortCargoQueueUseCase(warehouse)
+    }
+
     println()
     println("Cargo Queue After Sorting:")
     printCargoQueue(firstWarehouse)
@@ -435,3 +439,4 @@ private fun getTreeTypeDisplayName(
         TreeType.BALANCED_BST -> "Balanced BST"
     }
 }
+
