@@ -85,6 +85,9 @@ fun main() {
     // Step 7:Validate HubTree
     HubTreeValidation(warehouseIndex).validateHubTree()
 
+   // Step 8: Validate Command Pattern
+    validateCommandPattern(warehouseIndex)
+
     val trackingIdGenerator = SequentialTrackingIdGenerator()
 
     val unbalancedBST = UnbalancedBST()
