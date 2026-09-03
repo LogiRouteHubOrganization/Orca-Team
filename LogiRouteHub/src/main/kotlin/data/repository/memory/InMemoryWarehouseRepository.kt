@@ -13,6 +13,10 @@ class InMemoryWarehouseRepository(
         return warehouses.find { it.id == warehouseId }
     }
 
+    override fun findAll(): List<Warehouse> {
+        return warehouses
+    }
+
     override fun update(warehouse: Warehouse) {
 
         val notFoundIndex = -1
