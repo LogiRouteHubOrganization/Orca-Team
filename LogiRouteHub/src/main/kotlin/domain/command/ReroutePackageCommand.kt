@@ -4,10 +4,12 @@ import domain.model.Package
 import domain.model.request.ReroutePackageRequest
 import domain.repository.WarehouseRepository
 import domain.usecase.ReroutePackageUseCase
+import domain.command.telemetry.CommandTelemetry
 
 data class ReroutePackageCommandDependencies(
     val reroutePackageUseCase: ReroutePackageUseCase,
-    val warehouseRepository: WarehouseRepository
+    val warehouseRepository: WarehouseRepository,
+    val telemetry: CommandTelemetry
 )
 
 class ReroutePackageCommand(
@@ -18,6 +20,8 @@ class ReroutePackageCommand(
     private var previousPackageState: Package? = null
     private var previousIndex: Int? = null
     private var afterPackageState: Package? = null
+
+    override val commandType = "ReroutePackageCommand"
 
     override fun execute(): Boolean {
         val warehouse = dependencies.warehouseRepository.findById(input.warehouseId)
@@ -36,14 +40,22 @@ class ReroutePackageCommand(
 
         afterPackageState = reroutedPackage
 
+        dependencies.telemetry.recordStateTransition(
+            commandType = commandType,
+            beforeState = previousPackageState.toString(),
+            afterState = afterPackageState.toString()
+        )
+
         return true
     }
 
     override fun undo() {
-        val warehouse = dependencies.warehouseRepository.findById(input.warehouseId)
-            ?: return
+        val warehouse =
+            dependencies.warehouseRepository.findById(input.warehouseId)
+                ?: return
 
         val oldPackage = previousPackageState ?: return
+        val newPackage = afterPackageState ?: return
         val oldIndex = previousIndex ?: return
 
         warehouse.updatePackageAtIndex(
@@ -52,12 +64,20 @@ class ReroutePackageCommand(
         )
 
         dependencies.warehouseRepository.update(warehouse)
+
+        dependencies.telemetry.recordStateTransition(
+            commandType = commandType,
+            beforeState = newPackage.toString(),
+            afterState = oldPackage.toString()
+        )
     }
 
     override fun redo() {
-        val warehouse = dependencies.warehouseRepository.findById(input.warehouseId)
-            ?: return
+        val warehouse =
+            dependencies.warehouseRepository.findById(input.warehouseId)
+                ?: return
 
+        val oldPackage = previousPackageState ?: return
         val newPackage = afterPackageState ?: return
         val index = previousIndex ?: return
 
@@ -67,5 +87,11 @@ class ReroutePackageCommand(
         )
 
         dependencies.warehouseRepository.update(warehouse)
+
+        dependencies.telemetry.recordStateTransition(
+            commandType = commandType,
+            beforeState = oldPackage.toString(),
+            afterState = newPackage.toString()
+        )
     }
 }
