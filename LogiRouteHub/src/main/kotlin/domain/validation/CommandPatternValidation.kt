@@ -27,6 +27,10 @@ private class ValidationWarehouseRepository(
         return warehouseIndex[warehouseId]
     }
 
+    override fun findAll(): List<Warehouse> {
+        return warehouseIndex.values.toList()
+    }
+
     override fun update(warehouse: Warehouse) {
     }
 
@@ -154,6 +158,9 @@ private fun validateAssignPackageCommand(
 
     invoker.execute(command)
 
+    val executedQueue =
+        warehouse.cargoQueue.toList()
+
     val executed =
         warehouse.cargoQueue.size ==
                 originalQueue.size + 1
@@ -163,10 +170,18 @@ private fun validateAssignPackageCommand(
     val undone =
         warehouse.cargoQueue == originalQueue
 
+    invoker.redo()
+
+    val redone =
+        warehouse.cargoQueue == executedQueue
+
+    invoker.undo()
+
     printCommandResult(
         commandName = "Assign Package Command",
         executed = executed,
-        undone = undone
+        undone = undone,
+        redone = redone
     )
 }
 
@@ -244,10 +259,25 @@ private fun validateReroutePackageCommand(
         restoredPackage?.destinationWarehouse ==
                 originalDestination
 
+    invoker.redo()
+
+    val redonePackage =
+        warehouse.cargoQueue
+            .firstOrNull {
+                it.id == packageToReroute.id
+            }
+
+    val redone =
+        redonePackage?.destinationWarehouse ==
+                destinationWarehouse
+
+    invoker.undo()
+
     printCommandResult(
         commandName = "Reroute Package Command",
         executed = executed,
-        undone = undone
+        undone = undone,
+        redone = redone
     )
 }
 
@@ -302,6 +332,12 @@ private fun validateDispatchVehicleCommand(
 
     invoker.execute(command)
 
+    val executedPackages =
+        vehicle.assignedPackages.toList()
+
+    val executedQueue =
+        warehouse.cargoQueue.toList()
+
     val executed =
         vehicle.assignedPackages != originalPackages ||
                 warehouse.cargoQueue != originalQueue
@@ -312,17 +348,27 @@ private fun validateDispatchVehicleCommand(
         vehicle.assignedPackages == originalPackages &&
                 warehouse.cargoQueue == originalQueue
 
+    invoker.redo()
+
+    val redone =
+        vehicle.assignedPackages == executedPackages &&
+                warehouse.cargoQueue == executedQueue
+
+    invoker.undo()
+
     printCommandResult(
         commandName = "Dispatch Vehicle Command",
         executed = executed,
-        undone = undone
+        undone = undone,
+        redone = redone
     )
 }
 
 private fun printCommandResult(
     commandName: String,
     executed: Boolean,
-    undone: Boolean
+    undone: Boolean,
+    redone: Boolean
 ) {
     println(commandName)
     println(
@@ -332,5 +378,9 @@ private fun printCommandResult(
     println(
         "  Undo: " +
                 if (undone) "Passed" else "Failed"
+    )
+    println(
+        "  Redo: " +
+                if (redone) "Passed" else "Failed"
     )
 }
