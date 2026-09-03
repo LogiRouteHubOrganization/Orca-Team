@@ -25,18 +25,30 @@ class DispatchVehicleCommand(
     private var previousVehiclePackages: List<Package>? = null
     private var previousWarehouseQueue: List<Package>? = null
 
+    private var afterVehiclePackages: List<Package>? = null
+    private var afterWarehouseQueue: List<Package>? = null
+
     override fun execute(): Boolean {
         val currentVehicle =
             dependencies.vehicleRepository.findById(request.vehicleId) ?: return false
         val currentWarehouse =
             dependencies.warehouseRepository.findById(request.warehouseId) ?: return false
+
         vehicle = currentVehicle
         warehouse = currentWarehouse
 
         previousVehiclePackages = currentVehicle.assignedPackages.toList()
         previousWarehouseQueue = currentWarehouse.cargoQueue.toList()
-        val dispatchedPackages = dependencies.dispatchVehicleUseCase(request)
-        return dispatchedPackages.isNotEmpty()
+
+        val dispatchedPackages =
+            dependencies.dispatchVehicleUseCase(request)
+
+        if (dispatchedPackages.isEmpty()) return false
+
+        afterVehiclePackages = currentVehicle.assignedPackages.toList()
+        afterWarehouseQueue = currentWarehouse.cargoQueue.toList()
+
+        return true
     }
 
     override fun undo() {
@@ -48,6 +60,20 @@ class DispatchVehicleCommand(
 
         executedVehicle.restoreAssignedPackages(oldVehiclePackages)
         executedWarehouse.restoreCargoQueue(oldWarehouseQueue)
+
+        dependencies.vehicleRepository.update(executedVehicle)
+        dependencies.warehouseRepository.update(executedWarehouse)
+    }
+
+    override fun redo() {
+        val executedVehicle = vehicle ?: return
+        val executedWarehouse = warehouse ?: return
+
+        val newVehiclePackages = afterVehiclePackages ?: return
+        val newWarehouseQueue = afterWarehouseQueue ?: return
+
+        executedVehicle.restoreAssignedPackages(newVehiclePackages)
+        executedWarehouse.restoreCargoQueue(newWarehouseQueue)
 
         dependencies.vehicleRepository.update(executedVehicle)
         dependencies.warehouseRepository.update(executedWarehouse)

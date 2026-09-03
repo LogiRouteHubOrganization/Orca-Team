@@ -149,6 +149,13 @@ private fun validateAssignPackageCommand(
 
     val undone = warehouse.cargoQueue == originalQueue
 
+    invoker.redo()
+
+    val redone =
+        warehouse.cargoQueue == executedQueue
+
+    invoker.undo()
+
     printCommandResult(
         commandName = "Assign Package Command",
         executed = executed,
@@ -206,7 +213,8 @@ private fun validateReroutePackageCommand(
 
     printCommandResult(commandName = "Reroute Package Command",
         executed = executed,
-        undone = undone
+        undone = undone,
+        redone = redone
     )
 }
 
@@ -258,14 +266,16 @@ private fun validateDispatchVehicleCommand(
 
     printCommandResult(commandName = "Dispatch Vehicle Command",
         executed = executed,
-        undone = undone
+        undone = undone,
+        redone = redone
     )
 }
 
 private fun printCommandResult(
     commandName: String,
     executed: Boolean,
-    undone: Boolean
+    undone: Boolean,
+    redone: Boolean
 ) {
     println(commandName)
     println("Execute:" + if (executed) "Passed" else "Failed")
