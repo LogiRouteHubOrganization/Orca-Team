@@ -1,29 +1,30 @@
 package domain.usecase
 
 import domain.model.Route
-import domain.model.request.RouteRiskLevel
 import domain.model.request.EstimateDeliveryTimeRequest
+import domain.model.request.RouteRiskLevel
 
 class EstimateDeliveryTimeUseCase(
-    private val estimateRouteRiskUseCase: EstimateRouteRiskUseCase,
-    private val mediumRiskBufferMinutes: Double,
-    private val highRiskBufferMinutes: Double
+    private val estimateRouteRiskUseCase: EstimateRouteRiskUseCase
 ) {
-
-    private val minutesPerHour = 60.0
-    private val zeroTime = 0.0
 
     operator fun invoke(
         request: EstimateDeliveryTimeRequest
     ): Double {
-        if (hasInvalidAverageSpeed(request.averageSpeedKmH)) {
-            return zeroTime
+
+        if (
+            hasInvalidAverageSpeed(
+                averageSpeedKmH = request.averageSpeedKmH,
+                zeroTime = request.zeroTime
+            )
+        ) {
+            return request.zeroTime
         }
 
         val routeDeliveryTimes = request.routes.map { route ->
             calculateRouteDeliveryTime(
                 route = route,
-                averageSpeedKmH = request.averageSpeedKmH
+                request = request
             )
         }
 
@@ -31,21 +32,27 @@ class EstimateDeliveryTimeUseCase(
     }
 
     private fun hasInvalidAverageSpeed(
-        averageSpeedKmH: Double
+        averageSpeedKmH: Double,
+        zeroTime: Double
     ): Boolean {
         return averageSpeedKmH <= zeroTime
     }
 
     private fun calculateRouteDeliveryTime(
         route: Route,
-        averageSpeedKmH: Double
+        request: EstimateDeliveryTimeRequest
     ): Double {
+
         val travelTimeMin = calculateTravelTime(
             route = route,
-            averageSpeedKmH = averageSpeedKmH
+            averageSpeedKmH = request.averageSpeedKmH,
+            minutesPerHour = request.minutesPerHour
         )
 
-        val riskBufferMin = getRiskBuffer(route)
+        val riskBufferMin = getRiskBuffer(
+            route = route,
+            request = request
+        )
 
         return addRouteTimeComponents(
             travelTimeMin = travelTimeMin,
@@ -56,23 +63,28 @@ class EstimateDeliveryTimeUseCase(
 
     private fun calculateTravelTime(
         route: Route,
-        averageSpeedKmH: Double
+        averageSpeedKmH: Double,
+        minutesPerHour: Double
     ): Double {
+
         val travelTimeHours = route.distanceKm / averageSpeedKmH
 
         return travelTimeHours * minutesPerHour
     }
 
     private fun getRiskBuffer(
-        route: Route
+        route: Route,
+        request: EstimateDeliveryTimeRequest
     ): Double {
 
         val routeRiskLevel = estimateRouteRiskUseCase(route)
 
         return when (routeRiskLevel) {
-            RouteRiskLevel.LOW -> zeroTime
-            RouteRiskLevel.MEDIUM -> mediumRiskBufferMinutes
-            RouteRiskLevel.HIGH -> highRiskBufferMinutes
+            RouteRiskLevel.LOW -> request.zeroTime
+
+            RouteRiskLevel.MEDIUM -> request.mediumRiskBufferMinutes
+
+            RouteRiskLevel.HIGH -> request.highRiskBufferMinutes
         }
     }
 
@@ -89,5 +101,4 @@ class EstimateDeliveryTimeUseCase(
     ): Double {
         return routeDeliveryTimes.sum()
     }
-
 }
