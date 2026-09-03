@@ -1,27 +1,33 @@
-package domain.usecasePackage
+package domain.usecase
 
-import domain.model.Vehicle
 import domain.model.Warehouse
+import domain.model.Vehicle
+import domain.repository.WarehouseRepository
+import domain.model.request.FleetRebalancingConfig
+import domain.usecasePackage.GetWarehouseLoadFactorUseCase
+
 
 class TriggerFleetRebalancingUseCase(
+    private val warehouseRepository: WarehouseRepository,
     private val getWarehouseLoadFactorUseCase: GetWarehouseLoadFactorUseCase
 ) {
 
     operator fun invoke(
-        warehouses: List<Warehouse>,
-        highLoadFactorThreshold: Double = 1.5,
-        lowLoadFactorThreshold: Double = 0.5,
-        maximumVehiclesToRebalance: Int = 1
+        config: FleetRebalancingConfig
     ): List<FleetRebalancingPlan> {
+
+        val warehouses = warehouseRepository.findAll()
 
         val overloadedWarehouses = warehouses
             .filter { warehouse ->
-                getWarehouseLoadFactorUseCase(warehouse) >= highLoadFactorThreshold
+                getWarehouseLoadFactorUseCase(warehouse) >=
+                        config.highLoadFactorThreshold
             }
 
         val underutilizedWarehouses = warehouses
             .filter { warehouse ->
-                getWarehouseLoadFactorUseCase(warehouse) <= lowLoadFactorThreshold
+                getWarehouseLoadFactorUseCase(warehouse) <=
+                        config.lowLoadFactorThreshold
             }
 
         return underutilizedWarehouses.flatMap { sourceWarehouse ->
@@ -33,7 +39,8 @@ class TriggerFleetRebalancingUseCase(
                     buildFleetRebalancingPlan(
                         sourceWarehouse = sourceWarehouse,
                         overloadedWarehouse = targetWarehouse,
-                        maximumVehiclesToRebalance = maximumVehiclesToRebalance
+                        maximumVehiclesToRebalance =
+                            config.maximumVehiclesToRebalance
                     )
                 }
         }
@@ -68,4 +75,3 @@ data class FleetRebalancingPlan(
     val overloadedWarehouse: Warehouse,
     val vehiclesToMove: List<Vehicle>
 )
-

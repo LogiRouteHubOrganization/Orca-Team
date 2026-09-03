@@ -2,15 +2,18 @@ package domain.usecase
 
 import domain.model.Package
 import domain.model.Warehouse
+import domain.model.request.PackagePriorityLevels
+import domain.repository.WarehouseRepository
 
-private const val URGENT_PRIORITY_LEVEL = 3
-private const val STANDARD_PRIORITY_LEVEL = 2
-private const val LOW_PRIORITY_LEVEL = 1
-private const val UNKNOWN_PRIORITY_LEVEL = 0
+class PrioritizeDispatchQueueUseCase(
+    private val warehouseRepository: WarehouseRepository,
+    private val priorityLevels: PackagePriorityLevels
+) {
 
-class PrioritizeDispatchQueueUseCase {
+    operator fun invoke(warehouseId: String): Warehouse? {
 
-    operator fun invoke(warehouse: Warehouse) {
+        val warehouse = warehouseRepository.findById(warehouseId)
+            ?: return null
 
         val prioritizedPackages = warehouse.cargoQueue
             .sortedWith(
@@ -20,21 +23,22 @@ class PrioritizeDispatchQueueUseCase {
                     it.weightByKg
                 }
             )
-
         prioritizedPackages.forEachIndexed { index, logisticsPackage ->
             warehouse.updatePackageAtIndex(
                 packageIndex = index,
                 logisticsPackage = logisticsPackage
             )
         }
+        warehouseRepository.update(warehouse)
+        return warehouse
     }
 
     private fun getPriorityLevel(priority: String): Int {
         return when (priority.uppercase()) {
-            "URGENT" -> URGENT_PRIORITY_LEVEL
-            "STANDARD" -> STANDARD_PRIORITY_LEVEL
-            "LOW" -> LOW_PRIORITY_LEVEL
-            else -> UNKNOWN_PRIORITY_LEVEL
+            "URGENT" -> priorityLevels.urgent
+            "STANDARD" -> priorityLevels.standard
+            "LOW" -> priorityLevels.low
+            else -> priorityLevels.unknown
         }
     }
 }
