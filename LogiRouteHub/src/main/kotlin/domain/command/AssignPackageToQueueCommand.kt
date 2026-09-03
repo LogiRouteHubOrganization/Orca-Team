@@ -17,6 +17,7 @@ class AssignPackageToQueueCommand(
 
     private var warehouse: Warehouse? = null
     private var previousWarehouseQueue: List<Package>? = null
+    private var afterWarehouseQueue: List<Package>? = null
 
     override fun execute(): Boolean {
         val currentWarehouse = logisticsPackage.originWarehouse
@@ -25,6 +26,8 @@ class AssignPackageToQueueCommand(
         previousWarehouseQueue = currentWarehouse.cargoQueue.toList()
 
         dependencies.assignPackageToCargoQueueUseCase(logisticsPackage)
+
+        afterWarehouseQueue = currentWarehouse.cargoQueue.toList()
 
         return currentWarehouse.cargoQueue != previousWarehouseQueue
     }
@@ -38,8 +41,10 @@ class AssignPackageToQueueCommand(
     }
 
     override fun redo() {
-        if (warehouse == null || previousWarehouseQueue == null) return
+        val executedWarehouse = warehouse ?: return
+        val newQueue = afterWarehouseQueue ?: return
 
-        dependencies.assignPackageToCargoQueueUseCase(logisticsPackage)
+        executedWarehouse.restoreCargoQueue(newQueue)
+        dependencies.warehouseRepository.update(executedWarehouse)
     }
 }

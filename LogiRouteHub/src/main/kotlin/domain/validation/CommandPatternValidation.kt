@@ -158,6 +158,9 @@ private fun validateAssignPackageCommand(
 
     invoker.execute(command)
 
+    val executedQueue =
+        warehouse.cargoQueue.toList()
+
     val executed =
         warehouse.cargoQueue.size ==
                 originalQueue.size + 1
@@ -170,8 +173,7 @@ private fun validateAssignPackageCommand(
     invoker.redo()
 
     val redone =
-        warehouse.cargoQueue.size ==
-                originalQueue.size + 1
+        warehouse.cargoQueue == executedQueue
 
     invoker.undo()
 
@@ -330,6 +332,12 @@ private fun validateDispatchVehicleCommand(
 
     invoker.execute(command)
 
+    val executedPackages =
+        vehicle.assignedPackages.toList()
+
+    val executedQueue =
+        warehouse.cargoQueue.toList()
+
     val executed =
         vehicle.assignedPackages != originalPackages ||
                 warehouse.cargoQueue != originalQueue
@@ -343,8 +351,8 @@ private fun validateDispatchVehicleCommand(
     invoker.redo()
 
     val redone =
-        vehicle.assignedPackages != originalPackages ||
-                warehouse.cargoQueue != originalQueue
+        vehicle.assignedPackages == executedPackages &&
+                warehouse.cargoQueue == executedQueue
 
     invoker.undo()
 
