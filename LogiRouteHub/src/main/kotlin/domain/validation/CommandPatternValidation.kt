@@ -27,6 +27,10 @@ private class ValidationWarehouseRepository(
         return warehouseIndex[warehouseId]
     }
 
+    override fun findAll(): List<Warehouse> {
+        return warehouseIndex.values.toList()
+    }
+
     override fun update(warehouse: Warehouse) {
     }
 
@@ -82,9 +86,7 @@ fun validateCommandPattern(
         )
 
     val reroutePackageUseCase =
-        ReroutePackageUseCase(
-            warehouseRepository = warehouseRepository
-        )
+        ReroutePackageUseCase(warehouseRepository = warehouseRepository)
 
     validateAssignPackageCommand(
         warehouseIndex = warehouseIndex,
@@ -105,7 +107,6 @@ fun validateCommandPattern(
         vehicleRepository = vehicleRepository,
         dispatchVehicleUseCase = dispatchVehicleUseCase
     )
-
     println("Command pattern validation completed.")
 }
 
@@ -114,19 +115,16 @@ private fun validateAssignPackageCommand(
     warehouseRepository: WarehouseRepository,
     assignPackageToCargoQueueUseCase: AssignPackageToCargoQueueUseCase
 ) {
-    val warehouse =
-        warehouseIndex.values.firstOrNull()
+    val warehouse = warehouseIndex.values.firstOrNull()
 
     if (warehouse == null) {
         println("Assign Package Command validation skipped.")
         return
     }
 
-    val originalQueue =
-        warehouse.cargoQueue.toList()
+    val originalQueue = warehouse.cargoQueue.toList()
 
-    val originalPackage =
-        warehouse.cargoQueue.firstOrNull()
+    val originalPackage = warehouse.cargoQueue.firstOrNull()
 
     if (originalPackage == null) {
         println("Assign Package Command validation skipped.")
@@ -134,40 +132,27 @@ private fun validateAssignPackageCommand(
     }
 
     val packageToAssign =
-        originalPackage.copy(
-            id = "${originalPackage.id}-command-test"
-        )
+        originalPackage.copy(id = "${originalPackage.id}-command-test")
 
-    val command =
-        AssignPackageToQueueCommand(
+    val command = AssignPackageToQueueCommand(
             logisticsPackage = packageToAssign,
-            dependencies =
-                AssignPackageToQueueCommandDependencies(
-                    assignPackageToCargoQueueUseCase =
-                        assignPackageToCargoQueueUseCase,
-                    warehouseRepository =
-                        warehouseRepository
-                )
+            dependencies = AssignPackageToQueueCommandDependencies(
+            assignPackageToCargoQueueUseCase = assignPackageToCargoQueueUseCase,
+            warehouseRepository = warehouseRepository)
         )
 
     val invoker = CommandInvoker()
-
     invoker.execute(command)
 
-    val executed =
-        warehouse.cargoQueue.size ==
-                originalQueue.size + 1
-
+    val executed = warehouse.cargoQueue.size == originalQueue.size + 1
     invoker.undo()
 
-    val undone =
-        warehouse.cargoQueue == originalQueue
+    val undone = warehouse.cargoQueue == originalQueue
 
     printCommandResult(
         commandName = "Assign Package Command",
         executed = executed,
-        undone = undone
-    )
+        undone = undone)
 }
 
 private fun validateReroutePackageCommand(
@@ -175,46 +160,31 @@ private fun validateReroutePackageCommand(
     warehouseRepository: WarehouseRepository,
     reroutePackageUseCase: ReroutePackageUseCase
 ) {
-    val warehouse =
-        warehouseIndex.values
-            .firstOrNull {
-                it.cargoQueue.isNotEmpty()
-            }
+    val warehouse = warehouseIndex.values
+            .firstOrNull { it.cargoQueue.isNotEmpty() }
 
-    val destinationWarehouse =
-        warehouseIndex.values
-            .firstOrNull {
-                it.id != warehouse?.id
-            }
+    val destinationWarehouse = warehouseIndex.values
+            .firstOrNull { it.id != warehouse?.id }
 
-    if (warehouse == null ||
-        destinationWarehouse == null
-    ) {
+    if (warehouse == null || destinationWarehouse == null) {
         println("Reroute Package Command validation skipped.")
         return
     }
 
-    val packageToReroute =
-        warehouse.cargoQueue.first()
+    val packageToReroute = warehouse.cargoQueue.first()
 
     val originalDestination =
         packageToReroute.destinationWarehouse
 
-    val command =
-        ReroutePackageCommand(
-            dependencies =
-                ReroutePackageCommandDependencies(
-                    reroutePackageUseCase =
-                        reroutePackageUseCase,
-                    warehouseRepository =
-                        warehouseRepository
-                ),
-            input =
-                ReroutePackageRequest(
+    val command = ReroutePackageCommand(
+            dependencies = ReroutePackageCommandDependencies(
+                    reroutePackageUseCase = reroutePackageUseCase,
+                    warehouseRepository = warehouseRepository),
+
+            input = ReroutePackageRequest(
                     warehouseId = warehouse.id,
                     packageId = packageToReroute.id,
-                    newDestinationWarehouse =
-                        destinationWarehouse
+                    newDestinationWarehouse = destinationWarehouse
                 )
         )
 
@@ -222,30 +192,19 @@ private fun validateReroutePackageCommand(
 
     invoker.execute(command)
 
-    val updatedPackage =
-        warehouse.cargoQueue
-            .firstOrNull {
-                it.id == packageToReroute.id
-            }
+    val updatedPackage = warehouse.cargoQueue
+            .firstOrNull { it.id == packageToReroute.id }
 
-    val executed =
-        updatedPackage?.destinationWarehouse ==
-                destinationWarehouse
+    val executed = updatedPackage?.destinationWarehouse == destinationWarehouse
 
     invoker.undo()
 
-    val restoredPackage =
-        warehouse.cargoQueue
-            .firstOrNull {
-                it.id == packageToReroute.id
-            }
+    val restoredPackage = warehouse.cargoQueue
+            .firstOrNull { it.id == packageToReroute.id }
 
-    val undone =
-        restoredPackage?.destinationWarehouse ==
-                originalDestination
+    val undone = restoredPackage?.destinationWarehouse == originalDestination
 
-    printCommandResult(
-        commandName = "Reroute Package Command",
+    printCommandResult(commandName = "Reroute Package Command",
         executed = executed,
         undone = undone
     )
@@ -257,44 +216,31 @@ private fun validateDispatchVehicleCommand(
     vehicleRepository: VehicleRepository,
     dispatchVehicleUseCase: DispatchVehicleUseCase
 ) {
-    val warehouse =
-        warehouseIndex.values
-            .firstOrNull {
-                it.cargoQueue.isNotEmpty() &&
-                        it.stationedVehicles.isNotEmpty()
-            }
+    val warehouse = warehouseIndex.values
+            .firstOrNull {it.cargoQueue.isNotEmpty() &&
+                        it.stationedVehicles.isNotEmpty() }
 
     if (warehouse == null) {
         println("Dispatch Vehicle Command validation skipped.")
         return
     }
 
-    val vehicle =
-        warehouse.stationedVehicles.first()
+    val vehicle = warehouse.stationedVehicles.first()
 
-    val originalPackages =
-        vehicle.assignedPackages.toList()
+    val originalPackages = vehicle.assignedPackages.toList()
 
-    val originalQueue =
-        warehouse.cargoQueue.toList()
+    val originalQueue = warehouse.cargoQueue.toList()
 
-    val request =
-        DispatchVehicleRequest(
+    val request = DispatchVehicleRequest(
             vehicleId = vehicle.id,
-            warehouseId = warehouse.id
-        )
+            warehouseId = warehouse.id)
 
-    val command =
-        DispatchVehicleCommand(
-            dependencies =
-                DispatchVehicleCommandDependencies(
-                    dispatchVehicleUseCase =
-                        dispatchVehicleUseCase,
-                    vehicleRepository =
-                        vehicleRepository,
-                    warehouseRepository =
-                        warehouseRepository
-                ),
+    val command = DispatchVehicleCommand(
+            dependencies = DispatchVehicleCommandDependencies(
+                    dispatchVehicleUseCase = dispatchVehicleUseCase,
+                    vehicleRepository = vehicleRepository,
+                    warehouseRepository = warehouseRepository),
+
             request = request
         )
 
@@ -302,18 +248,15 @@ private fun validateDispatchVehicleCommand(
 
     invoker.execute(command)
 
-    val executed =
-        vehicle.assignedPackages != originalPackages ||
+    val executed = vehicle.assignedPackages != originalPackages ||
                 warehouse.cargoQueue != originalQueue
 
     invoker.undo()
 
-    val undone =
-        vehicle.assignedPackages == originalPackages &&
+    val undone = vehicle.assignedPackages == originalPackages &&
                 warehouse.cargoQueue == originalQueue
 
-    printCommandResult(
-        commandName = "Dispatch Vehicle Command",
+    printCommandResult(commandName = "Dispatch Vehicle Command",
         executed = executed,
         undone = undone
     )
@@ -325,12 +268,7 @@ private fun printCommandResult(
     undone: Boolean
 ) {
     println(commandName)
-    println(
-        "  Execute: " +
-                if (executed) "Passed" else "Failed"
-    )
-    println(
-        "  Undo: " +
-                if (undone) "Passed" else "Failed"
-    )
+    println("Execute:" + if (executed) "Passed" else "Failed")
+
+    println("Undo:" + if (undone) "Passed" else "Failed")
 }
