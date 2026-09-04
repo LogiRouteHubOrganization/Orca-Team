@@ -16,7 +16,6 @@ import data.repository.csv.CsvPackageRepository
 import data.repository.csv.CsvRouteRepository
 import data.repository.csv.CsvVehicleRepository
 import data.repository.csv.CsvWarehouseRepository
-import domain.usecase.SortingCargoQueueUseCase
 import domain.algorithm.sorting.sortPackages
 import domain.builder.DomainGraphBuilder
 import domain.builder.GraphBuilderInput
@@ -31,10 +30,7 @@ import domain.routing.BidirectionalRouter
 import domain.routing.LeastHopRouter
 import domain.routing.ShortestPathRouter
 import domain.tree.simulation.*
-import domain.usecase.AnalyzeTreePerformanceUseCase
-import domain.usecase.CalculatePricingUseCase
-import domain.usecase.FindFewestHopsRouteUseCase
-import domain.usecase.FindOptimalPathUseCase
+import domain.usecase.*
 import domain.validation.*
 
 import java.io.File
@@ -92,25 +88,22 @@ fun main() {
 
     val balancedBST = BalancedBST()
 
-    val analyzeTreePerformanceUseCase =
-        AnalyzeTreePerformanceUseCase(
-            generator = trackingIdGenerator,
-            unbalancedBST = unbalancedBST,
-            balancedBST = balancedBST
-        )
-    val analyzeTreePerformanceRequest =
-        AnalyzeTreePerformanceRequest(
-            numberOfTrackingIds = 1000,
-            nanoTimeProvider = System::nanoTime
-        )
-
+    val analyzeTreePerformanceUseCase = AnalyzeTreePerformanceUseCase(
+        generator = trackingIdGenerator,
+        unbalancedBST = unbalancedBST,
+        balancedBST = balancedBST
+    )
+    val analyzeTreePerformanceRequest = AnalyzeTreePerformanceRequest(
+        numberOfTrackingIds = 1000,
+        nanoTimeProvider = System::nanoTime
+    )
     val simulationResult = analyzeTreePerformanceUseCase(analyzeTreePerformanceRequest)
 
     displayTreePerformanceResult(simulationResult)
-    // Step 9: Validate Command Pattern
+ 
+
+    // Step 8: Validate Command Pattern
     validateCommandPattern(warehouseIndex)
-
-
     CommandHistoryValidation()
 
 

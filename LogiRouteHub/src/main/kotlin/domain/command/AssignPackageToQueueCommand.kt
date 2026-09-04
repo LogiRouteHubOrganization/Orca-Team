@@ -1,10 +1,10 @@
 package domain.command
 
+import domain.command.telemetry.CommandTelemetry
 import domain.model.Package
 import domain.model.Warehouse
 import domain.repository.WarehouseRepository
 import domain.usecase.AssignPackageToCargoQueueUseCase
-import domain.command.telemetry.CommandTelemetry
 
 data class AssignPackageToQueueCommandDependencies(
     val assignPackageToCargoQueueUseCase: AssignPackageToCargoQueueUseCase,
@@ -38,8 +38,11 @@ class AssignPackageToQueueCommand(
         if (isQueueChanged) {
             dependencies.telemetry.recordStateTransition(
                 commandType = commandType,
-                beforeState = previousWarehouseQueue.toString(),
-                afterState = afterWarehouseQueue.toString()
+                beforeState =
+                    "Warehouse queue: ${previousWarehouseQueue?.map { it.id }}",
+
+                afterState =
+                    "Warehouse queue: ${afterWarehouseQueue?.map { it.id }}"
             )
         }
         return isQueueChanged
@@ -55,8 +58,11 @@ class AssignPackageToQueueCommand(
 
         dependencies.telemetry.recordStateTransition(
             commandType = commandType,
-            beforeState = newQueue.toString(),
-            afterState = oldQueue.toString()
+            beforeState =
+                "Warehouse queue: ${newQueue.map { it.id }}",
+
+            afterState =
+                "Warehouse queue: ${oldQueue.map { it.id }}"
         )
     }
 
@@ -70,8 +76,11 @@ class AssignPackageToQueueCommand(
 
         dependencies.telemetry.recordStateTransition(
             commandType = commandType,
-            beforeState = oldQueue.toString(),
-            afterState = newQueue.toString()
+            beforeState =
+                "Warehouse queue: ${oldQueue.map { it.id }}",
+
+            afterState =
+                "Warehouse queue: ${newQueue.map { it.id }}"
         )
     }
 }
