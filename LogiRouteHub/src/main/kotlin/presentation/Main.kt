@@ -36,6 +36,7 @@ import domain.usecase.CalculatePricingUseCase
 import domain.usecase.FindFewestHopsRouteUseCase
 import domain.usecase.FindOptimalPathUseCase
 import domain.validation.*
+
 import java.io.File
 import java.util.*
 
@@ -85,9 +86,6 @@ fun main() {
     // Step 7:Validate HubTree
     HubTreeValidation(warehouseIndex).validateHubTree()
 
-   // Step 8: Validate Command Pattern
-    validateCommandPattern(warehouseIndex)
-
     val trackingIdGenerator = SequentialTrackingIdGenerator()
 
     val unbalancedBST = UnbalancedBST()
@@ -109,6 +107,12 @@ fun main() {
     val simulationResult = analyzeTreePerformanceUseCase(analyzeTreePerformanceRequest)
 
     displayTreePerformanceResult(simulationResult)
+    // Step 9: Validate Command Pattern
+   // validateCommandPattern(warehouseIndex)
+
+    CommandHistoryValidation()
+
+
 }
 
 private fun createPackageRepository(): PackageRepository {
