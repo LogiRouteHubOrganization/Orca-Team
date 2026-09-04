@@ -1,9 +1,9 @@
 package domain.builder
 
-import repository.WarehouseRepository
-import repository.PackageRepository
-import repository.VehicleRepository
-import repository.RouteRepository
+import data.repository.PackageRepository
+import data.repository.WarehouseRepository
+import data.repository.RouteRepository
+import data.repository.VehicleRepository
 
 data class GraphBuilderInput(
     val packageRepository: PackageRepository,
@@ -11,5 +11,4 @@ data class GraphBuilderInput(
     val vehicleRepository: VehicleRepository,
     val routeRepository: RouteRepository
 )
-
 
