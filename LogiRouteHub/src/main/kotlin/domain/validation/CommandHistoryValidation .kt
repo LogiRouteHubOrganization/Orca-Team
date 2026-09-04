@@ -3,7 +3,6 @@ package domain.validation
 import domain.command.Command
 import domain.command.CommandInvoker
 import domain.command.telemetry.ConsoleTelemetry
-
 data class CommandHistory(
     val AssignPackageToQueueCommand: Command,
     val DispatchVehicleCommand: Command,

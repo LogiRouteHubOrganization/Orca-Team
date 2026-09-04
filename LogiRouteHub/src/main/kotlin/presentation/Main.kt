@@ -108,7 +108,8 @@ fun main() {
 
     displayTreePerformanceResult(simulationResult)
     // Step 9: Validate Command Pattern
-   // validateCommandPattern(warehouseIndex)
+    validateCommandPattern(warehouseIndex)
+
 
     CommandHistoryValidation()
 
