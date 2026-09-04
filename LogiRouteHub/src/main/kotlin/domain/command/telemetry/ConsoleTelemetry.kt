@@ -7,9 +7,12 @@ class ConsoleTelemetry : CommandTelemetry {
         undoStackSize: Int,
         redoStackSize: Int
     ) {
-        println("Command executed: $commandType | " +
-                    "undoStack=$undoStackSize | " +
-                    "redoStack=$redoStackSize")
+        printHistoryEvent(
+            action = "EXECUTE",
+            commandType = commandType,
+            undoStackSize = undoStackSize,
+            redoStackSize = redoStackSize
+        )
     }
 
     override fun recordUndo(
@@ -17,9 +20,12 @@ class ConsoleTelemetry : CommandTelemetry {
         undoStackSize: Int,
         redoStackSize: Int
     ) {
-        println("Undo: $commandType | " +
-                    "undoStack=$undoStackSize | " +
-                    "redoStack=$redoStackSize")
+        printHistoryEvent(
+            action = "UNDO",
+            commandType = commandType,
+            undoStackSize = undoStackSize,
+            redoStackSize = redoStackSize
+        )
     }
 
     override fun recordRedo(
@@ -27,9 +33,12 @@ class ConsoleTelemetry : CommandTelemetry {
         undoStackSize: Int,
         redoStackSize: Int
     ) {
-        println("Redo: $commandType | " +
-                    "undoStack=$undoStackSize | " +
-                    "redoStack=$redoStackSize")
+        printHistoryEvent(
+            action = "REDO",
+            commandType = commandType,
+            undoStackSize = undoStackSize,
+            redoStackSize = redoStackSize
+        )
     }
 
     override fun recordStateTransition(
@@ -37,9 +46,35 @@ class ConsoleTelemetry : CommandTelemetry {
         beforeState: String,
         afterState: String
     ) {
-        println("State transition: $commandType\n" +
-                    "Before: $beforeState\n" +
-                    "After: $afterState"
+        println()
+        println("  STATE CHANGE | $commandType")
+        println("  Before:")
+        printIndentedState(beforeState)
+
+        println("  After:")
+        printIndentedState(afterState)
+    }
+
+    private fun printHistoryEvent(
+        action: String,
+        commandType: String,
+        undoStackSize: Int,
+        redoStackSize: Int
+    ) {
+        println()
+        println("  [$action] $commandType")
+        println(
+            "  History -> " +
+                    "Undo Stack: $undoStackSize | " +
+                    "Redo Stack: $redoStackSize"
         )
+    }
+
+    private fun printIndentedState(
+        state: String
+    ) {
+        state.lines().forEach { line ->
+            println("    $line")
+        }
     }
 }
