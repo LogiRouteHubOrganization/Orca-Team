@@ -1,5 +1,6 @@
 package domain.command
 
+import domain.command.telemetry.CommandTelemetry
 import domain.model.Package
 import domain.model.Vehicle
 import domain.model.Warehouse
@@ -7,7 +8,6 @@ import domain.model.request.DispatchVehicleRequest
 import domain.repository.VehicleRepository
 import domain.repository.WarehouseRepository
 import domain.usecase.DispatchVehicleUseCase
-import domain.command.telemetry.CommandTelemetry
 
 data class DispatchVehicleCommandDependencies(
     val dispatchVehicleUseCase: DispatchVehicleUseCase,
@@ -54,10 +54,13 @@ class DispatchVehicleCommand(
 
         dependencies.telemetry.recordStateTransition(
             commandType = commandType,
-            beforeState = "Vehicle packages: $previousVehiclePackages\n" +
-                          "Warehouse queue: $previousWarehouseQueue",
-            afterState = "Vehicle packages: $afterVehiclePackages\n" +
-                         "Warehouse queue: $afterWarehouseQueue"
+            beforeState =
+                "Vehicle packages: ${previousVehiclePackages?.map { it.id }}\n" +
+                        "Warehouse queue: ${previousWarehouseQueue?.map { it.id }}",
+
+            afterState =
+                "Vehicle packages: ${afterVehiclePackages?.map { it.id }}\n" +
+                        "Warehouse queue: ${afterWarehouseQueue?.map { it.id }}"
         )
         return true
     }
@@ -80,10 +83,13 @@ class DispatchVehicleCommand(
 
         dependencies.telemetry.recordStateTransition(
             commandType = commandType,
-            beforeState = "Vehicle packages: $newVehiclePackages\n" +
-                         "Warehouse queue: $newWarehouseQueue",
-            afterState = "Vehicle packages: $oldVehiclePackages\n" +
-                         "Warehouse queue: $oldWarehouseQueue"
+            beforeState =
+                "Vehicle packages: ${previousVehiclePackages?.map { it.id }}\n" +
+                        "Warehouse queue: ${previousWarehouseQueue?.map { it.id }}",
+
+            afterState =
+                "Vehicle packages: ${afterVehiclePackages?.map { it.id }}\n" +
+                        "Warehouse queue: ${afterWarehouseQueue?.map { it.id }}"
         )
     }
 
@@ -105,10 +111,13 @@ class DispatchVehicleCommand(
 
         dependencies.telemetry.recordStateTransition(
             commandType = commandType,
-            beforeState = "Vehicle packages: $oldVehiclePackages\n" +
-                         "Warehouse queue: $oldWarehouseQueue",
-            afterState = "Vehicle packages: $newVehiclePackages\n" +
-                         "Warehouse queue: $newWarehouseQueue"
+            beforeState =
+                "Vehicle packages: ${previousVehiclePackages?.map { it.id }}\n" +
+                        "Warehouse queue: ${previousWarehouseQueue?.map { it.id }}",
+
+            afterState =
+                "Vehicle packages: ${afterVehiclePackages?.map { it.id }}\n" +
+                        "Warehouse queue: ${afterWarehouseQueue?.map { it.id }}"
         )
     }
 }

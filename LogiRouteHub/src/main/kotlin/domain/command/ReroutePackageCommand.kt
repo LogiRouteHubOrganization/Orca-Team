@@ -1,10 +1,10 @@
 package domain.command
 
+import domain.command.telemetry.CommandTelemetry
 import domain.model.Package
 import domain.model.request.ReroutePackageRequest
 import domain.repository.WarehouseRepository
 import domain.usecase.ReroutePackageUseCase
-import domain.command.telemetry.CommandTelemetry
 
 data class ReroutePackageCommandDependencies(
     val reroutePackageUseCase: ReroutePackageUseCase,
@@ -42,8 +42,15 @@ class ReroutePackageCommand(
 
         dependencies.telemetry.recordStateTransition(
             commandType = commandType,
-            beforeState = previousPackageState.toString(),
-            afterState = afterPackageState.toString()
+            beforeState =
+                "Package: ${previousPackageState?.id}, " +
+                        "Destination: ${previousPackageState?.destinationWarehouse?.id}, " +
+                        "Index: $previousIndex",
+
+            afterState =
+                "Package: ${afterPackageState?.id}, " +
+                        "Destination: ${afterPackageState?.destinationWarehouse?.id}, " +
+                        "Index: $previousIndex"
         )
 
         return true
@@ -67,8 +74,14 @@ class ReroutePackageCommand(
 
         dependencies.telemetry.recordStateTransition(
             commandType = commandType,
-            beforeState = newPackage.toString(),
-            afterState = oldPackage.toString()
+            beforeState =
+                "Package: ${newPackage.id}, " +
+                        "Destination: ${newPackage.destinationWarehouse.id}, " +
+                        "Index: $oldIndex",
+            afterState =
+                "Package: ${oldPackage.id}, " +
+                        "Destination: ${oldPackage.destinationWarehouse.id}, " +
+                        "Index: $oldIndex"
         )
     }
 
@@ -90,8 +103,14 @@ class ReroutePackageCommand(
 
         dependencies.telemetry.recordStateTransition(
             commandType = commandType,
-            beforeState = oldPackage.toString(),
-            afterState = newPackage.toString()
+            beforeState =
+                "Package: ${oldPackage.id}, " +
+                        "Destination: ${oldPackage.destinationWarehouse.id}, " +
+                        "Index: $index",
+            afterState =
+                "Package: ${newPackage.id}, " +
+                        "Destination: ${newPackage.destinationWarehouse.id}, " +
+                        "Index: $index"
         )
     }
 }
