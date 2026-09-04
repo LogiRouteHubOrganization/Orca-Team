@@ -32,7 +32,6 @@ import domain.routing.ShortestPathRouter
 import domain.tree.simulation.*
 import domain.usecase.*
 import domain.validation.*
-
 import java.io.File
 import java.util.*
 
@@ -100,12 +99,11 @@ fun main() {
     val simulationResult = analyzeTreePerformanceUseCase(analyzeTreePerformanceRequest)
 
     displayTreePerformanceResult(simulationResult)
- 
+
 
     // Step 8: Validate Command Pattern
     validateCommandPattern(warehouseIndex)
-    CommandHistoryValidation()
-
+    validateCommandHistory(warehouseIndex)
 
 }
 
