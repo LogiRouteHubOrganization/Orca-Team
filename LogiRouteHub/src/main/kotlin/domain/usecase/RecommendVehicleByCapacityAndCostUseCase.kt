@@ -1,7 +1,6 @@
 package domain.usecase
 
 import domain.model.Vehicle
-import domain.model.Warehouse
 
 class RecommendVehicleByCapacityAndCostUseCase(
     private val findStationedVehiclesByCapacityUseCase:
@@ -9,14 +8,15 @@ class RecommendVehicleByCapacityAndCostUseCase(
 ) {
 
     operator fun invoke(
-        warehouse: Warehouse,
+        warehouseId: String,
         requiredLoadKg: Double
     ): Vehicle? {
 
         val suitableVehicles = findStationedVehiclesByCapacityUseCase(
-            warehouse = warehouse,
+            warehouseId = warehouseId,
             requiredLoadKg = requiredLoadKg
         )
+
         return suitableVehicles.minWithOrNull(
             compareBy<Vehicle> { vehicle ->
                 calculateRemainingCapacityAfterLoad(

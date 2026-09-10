@@ -35,16 +35,16 @@ private class ValidationWarehouseRepository(
         return warehouseIndex.values.toList()
     }
 
-    override fun update(
-        warehouse: Warehouse
-    ) {
+    override fun add(warehouse: Warehouse) {
+        if (warehouseIndex is MutableMap) {
+            warehouseIndex[warehouse.id] = warehouse
+        }
     }
 
-    override fun addPackage(
-        warehouse: Warehouse,
-        logisticsPackage: Package
-    ) {
-        warehouse.addPackage(logisticsPackage)
+    override fun update(warehouse: Warehouse) {
+        if (warehouseIndex is MutableMap) {
+            warehouseIndex[warehouse.id] = warehouse
+        }
     }
 }
 
@@ -57,6 +57,18 @@ private class ValidationVehicleRepository(
     ): Vehicle? {
         return warehouseIndex.values.flatMap { warehouse -> warehouse.stationedVehicles }
             .firstOrNull { vehicle -> vehicle.id == vehicleId }
+    }
+
+    override fun findAll(): List<Vehicle> {
+        return warehouseIndex.values.flatMap { it.stationedVehicles }
+    }
+
+    override fun add(vehicle: Vehicle) {
+        val warehouse = warehouseIndex[vehicle.currentWarehouse.id]
+        if (warehouse != null) {
+            val currentVehicles = warehouse.stationedVehicles as? MutableList<Vehicle>
+            currentVehicles?.add(vehicle)
+        }
     }
 
     override fun update(vehicle: Vehicle) {

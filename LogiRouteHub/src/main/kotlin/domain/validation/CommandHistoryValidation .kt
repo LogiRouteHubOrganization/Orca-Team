@@ -49,16 +49,16 @@ private class HistoryValidationWarehouseRepository(
         return warehouseIndex.values.toList()
     }
 
-    override fun update(
-        warehouse: Warehouse
-    ) {
+    override fun add(warehouse: Warehouse) {
+        if (warehouseIndex is MutableMap) {
+            warehouseIndex[warehouse.id] = warehouse
+        }
     }
 
-    override fun addPackage(
-        warehouse: Warehouse,
-        logisticsPackage: Package
-    ) {
-        warehouse.addPackage(logisticsPackage)
+    override fun update(warehouse: Warehouse) {
+        if (warehouseIndex is MutableMap) {
+            warehouseIndex[warehouse.id] = warehouse
+        }
     }
 }
 
@@ -72,6 +72,18 @@ private class HistoryValidationVehicleRepository(
         return warehouseIndex.values
             .flatMap { it.stationedVehicles }
             .firstOrNull { it.id == vehicleId }
+    }
+
+    override fun findAll(): List<Vehicle> {
+        return warehouseIndex.values.flatMap { it.stationedVehicles }
+    }
+
+    override fun add(vehicle: Vehicle) {
+        val warehouse = warehouseIndex[vehicle.currentWarehouse.id]
+        if (warehouse != null) {
+            val currentVehicles = warehouse.stationedVehicles as? MutableList<Vehicle>
+            currentVehicles?.add(vehicle)
+        }
     }
 
     override fun update(
@@ -186,7 +198,6 @@ private fun findHistoryValidationData(
         packageToUse = logisticsPackage
     )
 }
-
 
 private fun findWarehouseForHistoryValidation(
     warehouseIndex: Map<String, Warehouse>
@@ -495,7 +506,6 @@ class CommandHistoryValidation {
         println("============================================================")
     }
 
-
     private fun printValidationChecks(
         result: HistoryValidationResult
     ) {
@@ -521,7 +531,6 @@ class CommandHistoryValidation {
         println("  ${testName.padEnd(25)} $result")
     }
 }
-
 
 private fun createHistorySnapshot(
     warehouseIndex: Map<String, Warehouse>
@@ -559,7 +568,6 @@ private fun createVehicleSnapshot(
         )
     }
 }
-
 
 private fun printHistoryValidationSkipped(
     reason: String
