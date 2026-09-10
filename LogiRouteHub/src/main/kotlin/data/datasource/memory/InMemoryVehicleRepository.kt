@@ -1,4 +1,4 @@
-package data.repository.memory
+package data.datasource.memory
 
 import domain.model.Vehicle
 import domain.repository.VehicleRepository

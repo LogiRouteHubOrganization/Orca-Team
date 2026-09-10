@@ -1,8 +1,8 @@
-package data.repository
+package data.datasource
 
 import data.dataholder.LogisticsPackageRaw
 
-interface PackageRepository {
+interface PackageDataSource {
 
     fun loadPackages(): List<LogisticsPackageRaw>
 }

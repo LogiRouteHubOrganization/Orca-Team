@@ -1,15 +1,15 @@
-package data.repository.csv
+package data.datasource.csv
 
 import data.dataholder.FleetRaw
-import data.repository.VehicleRepository
+import data.datasource.VehicleDataSource
 import data.parser.FleetParser
 import java.io.File
 
 
-class CsvVehicleRepository(
+class CsvVehicleDataSource(
     private val vehicleFile: File,
     private val fleetParser: FleetParser
-) : VehicleRepository {
+) : VehicleDataSource {
     private val headerLineCount = 1
 
     override fun loadVehicles(): List<FleetRaw> {
