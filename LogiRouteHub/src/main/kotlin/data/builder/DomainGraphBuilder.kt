@@ -1,4 +1,4 @@
-package domain.builder
+package data.builder
 
 import data.dataholder.FleetRaw
 import data.dataholder.LogisticsPackageRaw
@@ -10,32 +10,28 @@ import domain.model.Vehicle
 import domain.model.Warehouse
 
 class DomainGraphBuilder(
-    private val repositories: GraphBuilderInput
+    private val dataSources: GraphBuilderInput
 ) {
 
     fun buildGraph(): Map<String, Warehouse> {
 
         val warehouses = createWarehouses(
-            repositories.warehouseRepository.loadWarehouses()
+            dataSources.warehouseDataSource.loadWarehouses()
         )
 
         val warehouseIndex = createWarehouseIndex(warehouses)
 
-        buildPackages(
-            repositories.packageRepository.loadPackages(),
+        buildPackages(dataSources.packageDataSource.loadPackages(),
             warehouseIndex
         )
 
-        buildVehicles(
-            repositories.vehicleRepository.loadVehicles(),
+        buildVehicles(dataSources.vehicleDataSource.loadVehicles(),
             warehouseIndex
         )
 
-        buildRoutes(
-            repositories.routeRepository.loadRoutes(),
+        buildRoutes(dataSources.routeDataSource.loadRoutes(),
             warehouseIndex
         )
-
         return warehouseIndex
     }
 

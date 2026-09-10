@@ -1,7 +1,7 @@
-package data.repository
+package data.datasource
 
 import data.dataholder.RouteRaw
 
-interface RouteRepository {
+interface RouteDataSource {
     fun loadRoutes(): List<RouteRaw>
 }

@@ -1,15 +1,15 @@
-package data.repository.csv
+package data.datasource.csv
 
 import data.dataholder.WarehouseRaw
-import data.repository.WarehouseRepository
+import data.datasource.WarehouseDataSource
 import data.parser.WarehouseParser
 import java.io.File
 
 
-class CsvWarehouseRepository(
+class CsvWarehouseDataSource(
     private val warehouseFile: File,
     private val warehouseParser: WarehouseParser
-) : WarehouseRepository {
+) : WarehouseDataSource {
 
     private val headerLineCount = 1
 

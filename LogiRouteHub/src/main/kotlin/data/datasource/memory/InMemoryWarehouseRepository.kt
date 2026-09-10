@@ -1,4 +1,4 @@
-package data.repository.memory
+package data.datasource.memory
 
 
 import domain.model.Warehouse
@@ -11,6 +11,10 @@ class InMemoryWarehouseRepository(
 
     override fun findById(warehouseId: String): Warehouse? {
         return warehouses.find { it.id == warehouseId }
+    }
+
+    override fun findAll(): List<Warehouse> {
+        return warehouses
     }
 
     override fun update(warehouse: Warehouse) {
