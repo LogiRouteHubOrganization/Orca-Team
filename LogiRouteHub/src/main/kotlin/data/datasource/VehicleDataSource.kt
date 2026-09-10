@@ -1,8 +1,8 @@
-package data.repository
+package data.datasource
 
 import data.dataholder.FleetRaw
 
-interface VehicleRepository {
+interface VehicleDataSource {
 
     fun loadVehicles(): List<FleetRaw>
 }
