@@ -2,9 +2,11 @@ package domain.usecase
 
 import domain.model.Package
 import domain.model.request.ReroutePackageRequest
+import domain.repository.PackageRepository
 import domain.repository.WarehouseRepository
 
 class ReroutePackageUseCase(
+    private val packageRepository: PackageRepository,
     private val warehouseRepository: WarehouseRepository
 ) {
 
@@ -16,22 +18,15 @@ class ReroutePackageUseCase(
             input.warehouseId
         ) ?: return null
 
-        val indexedPackage = warehouse.cargoQueue
-            .withIndex()
-            .find { indexedValue ->
-                indexedValue.value.id == input.packageId
-            } ?: return null
+        val logisticsPackage = warehouse.cargoQueue.find {
+            it.id == input.packageId
+        } ?: return null
 
-        val reroutedPackage = indexedPackage.value.copy(
+        val reroutedPackage = logisticsPackage.copy(
             destinationWarehouse = input.newDestinationWarehouse
         )
 
-        warehouse.updatePackageAtIndex(
-            packageIndex = indexedPackage.index,
-            logisticsPackage = reroutedPackage
-        )
-
-        warehouseRepository.update(warehouse)
+        packageRepository.update(reroutedPackage)
 
         return reroutedPackage
     }
