@@ -1,24 +1,25 @@
 package presentation
 
-import data.dataholder.FleetRaw
-import data.dataholder.LogisticsPackageRaw
-import data.dataholder.RouteRaw
-import data.dataholder.WarehouseRaw
-import data.parser.FleetParser
-import data.parser.PackageParser
-import data.parser.RouteParser
-import data.parser.WarehouseParser
-import data.datasource.PackageDataSource
-import data.datasource.RouteDataSource
-import data.datasource.VehicleDataSource
-import data.datasource.WarehouseDataSource
 import data.datasource.csv.CsvPackageDataSource
 import data.datasource.csv.CsvRouteDataSource
 import data.datasource.csv.CsvVehicleDataSource
 import data.datasource.csv.CsvWarehouseDataSource
-import domain.algorithm.sorting.sortPackages
-import data.builder.DomainGraphBuilder
-import data.builder.GraphBuilderInput
+import data.mapper.PackageMapper
+import data.mapper.RouteMapper
+import data.mapper.VehicleMapper
+import data.mapper.WarehouseMapper
+import data.parser.FleetParser
+import data.parser.PackageParser
+import data.parser.RouteParser
+import data.parser.WarehouseParser
+import data.repository.memory.InMemoryPackageRepository
+import data.repository.memory.InMemoryRouteRepository
+import data.repository.memory.InMemoryVehicleRepository
+import data.repository.memory.InMemoryWarehouseRepository
+import data.initializer.DomainDataInitializer
+import data.initializer.dependencies.DomainDataSources
+import data.initializer.dependencies.DomainMappers
+import data.initializer.dependencies.DomainRepositories
 import domain.model.Warehouse
 import domain.model.request.AnalyzeTreePerformanceRequest
 import domain.pricing.EcoStrategy
@@ -30,7 +31,6 @@ import domain.routing.BidirectionalRouter
 import domain.routing.LeastHopRouter
 import domain.routing.ShortestPathRouter
 import domain.tree.simulation.SequentialTrackingIdGenerator
-import domain.tree.simulation.PerformanceMetrics
 import domain.tree.simulation.SimulationResult
 import domain.tree.simulation.TreeType
 import domain.tree.simulation.BalancedBST
@@ -53,52 +53,62 @@ private const val WAREHOUSES_FILE_PATH = "src/main/resources/warehouses.csv"
 private const val ROUTES_FILE_PATH = "src/main/resources/routes.csv"
 private const val FLEET_FILE_PATH = "src/main/resources/fleet.csv"
 
-private const val TOP_PACKAGE_COUNT = 3
-private const val DISPLAY_POSITION_OFFSET = 1
-private const val WEIGHT_DECIMAL_FORMAT = "%.2f"
 
+private const val WEIGHT_DECIMAL_FORMAT = "%.2f"
 private const val OUTPUT_SEPARATOR = "******************************************************"
 
 fun main() {
 
-    // Step 1: Configure repositories and connect them to their parsers.
-    val packageDataSource = createPackageDataSource()
-    val warehouseDataSource = createWarehouseDataSource()
-    val routeDataSource = createRouteDataSource()
-    val vehicleDataSource = createVehicleDataSource()
-
-    // Step 2: Group data-sources required by the domain graph builder.
-    val graphDataSources = GraphBuilderInput(
-        packageDataSource = packageDataSource,
-        warehouseDataSource = warehouseDataSource,
-        vehicleDataSource = vehicleDataSource,
-        routeDataSource = routeDataSource
+    // Step 1: Initialize DataSources (CSV Readers)
+    val dataSources = DomainDataSources(
+        warehouseDataSource = CsvWarehouseDataSource(File(WAREHOUSES_FILE_PATH), WarehouseParser()),
+        packageDataSource = CsvPackageDataSource(File(PACKAGES_FILE_PATH), PackageParser()),
+        vehicleDataSource = CsvVehicleDataSource(File(FLEET_FILE_PATH), FleetParser()),
+        routeDataSource = CsvRouteDataSource(File(ROUTES_FILE_PATH), RouteParser())
     )
 
-    // Step 3: Load and preprocess raw data from CSV files.
-    val rawPackages = loadPackages(packageDataSource)
-    sortPackagesByPriorityAndWeight(rawPackages)
-    displayTopPriorityPackages(rawPackages)
+    // Step 2: Initialize Mappers
+    val mappers = DomainMappers(
+        warehouseMapper = WarehouseMapper(),
+        packageMapper = PackageMapper(),
+        vehicleMapper = VehicleMapper(),
+        routeMapper = RouteMapper()
+    )
 
-    // Step 4: Build the domain graph.
-    val warehouseIndex = buildProjectDomainGraph(dataSources = graphDataSources)
+    // Step 3: Initialize InMemory Repositories
+    val repositories = DomainRepositories(
+        warehouseRepository = InMemoryWarehouseRepository(),
+        packageRepository = InMemoryPackageRepository(),
+        vehicleRepository = InMemoryVehicleRepository(),
+        routeRepository = InMemoryRouteRepository()
+    )
 
-    // Step 5: Validate graph construction and package sorting.
+    // Step 4: Run Initializer to load data, map it, fill Repositories, and link domain entities
+    val domainDataInitializer = DomainDataInitializer(
+        dataSources = dataSources,
+        mappers = mappers,
+        repositories = repositories
+    )
+    domainDataInitializer.initialize()
+
+    // Step 5: Build warehouse index from Repository for validations & algorithms
+    val warehouses = repositories.warehouseRepository.findAll()
+    val warehouseIndex = warehouses.associateBy { it.id }
+
+    // Step 6: Validate graph construction and package sorting
     validateGraphAndSorting(warehouseIndex)
 
-    // Step 6: Validate pricing strategies and package decorators.
+    // Step 7: Validate pricing strategies and package decorators
     validatePricingAndDecorators(warehouseIndex)
 
-    // Step 7: Validate routing algorithms.
+    // Step 8: Validate routing algorithms
     validateRoutingAlgorithms(warehouseIndex)
 
-    // Step 8:Validate HubTree
+    // Step 9: Validate HubTree
     HubTreeValidation(warehouseIndex).validateHubTree()
 
     val trackingIdGenerator = SequentialTrackingIdGenerator()
-
     val unbalancedBST = UnbalancedBST()
-
     val balancedBST = BalancedBST()
 
     val analyzeTreePerformanceUseCase = AnalyzeTreePerformanceUseCase(
@@ -114,56 +124,9 @@ fun main() {
 
     displayTreePerformanceResult(simulationResult)
 
-
-    // Step 9: Validate Command Pattern
+    // Step 10: Validate Command Pattern
     validateCommandPattern(warehouseIndex)
     validateCommandHistory(warehouseIndex)
-
-}
-
-private fun createPackageDataSource(): PackageDataSource {
-    val packageParser = PackageParser()
-
-    return CsvPackageDataSource(
-        packageFile = File(PACKAGES_FILE_PATH),
-        packageParser = packageParser
-    )
-}
-
-private fun createWarehouseDataSource(): WarehouseDataSource {
-    val warehouseParser = WarehouseParser()
-
-    return CsvWarehouseDataSource(
-        warehouseFile = File(WAREHOUSES_FILE_PATH),
-        warehouseParser = warehouseParser
-    )
-}
-
-private fun createRouteDataSource(): RouteDataSource {
-    val routeParser = RouteParser()
-
-    return CsvRouteDataSource(
-        routeFile = File(ROUTES_FILE_PATH),
-        routeParser = routeParser
-    )
-}
-
-private fun createVehicleDataSource(): VehicleDataSource {
-    val fleetParser = FleetParser()
-
-    return CsvVehicleDataSource(
-        vehicleFile = File(FLEET_FILE_PATH),
-        fleetParser = fleetParser
-    )
-}
-
-private fun buildProjectDomainGraph(
-    dataSources: GraphBuilderInput
-): Map<String, Warehouse> {
-
-    val domainGraphBuilder = DomainGraphBuilder(dataSources = dataSources)
-
-    return domainGraphBuilder.buildGraph()
 }
 
 private fun validateGraphAndSorting(
@@ -222,7 +185,6 @@ private fun validateRoutingAlgorithms(
     )
     routingValidation.validateRouting()
 
-
     val shortestPathRouter = ShortestPathRouter(
         warehouseIndex.values.toList()
     )
@@ -238,7 +200,6 @@ private fun validateRoutingAlgorithms(
     )
     dijkstraRoutingValidation.validateRouting()
 
-
     val bidirectionalRouter = BidirectionalRouter(
         warehouseIndex.values.toList()
     )
@@ -249,124 +210,6 @@ private fun validateRoutingAlgorithms(
     )
     bidirectionalRoutingValidation.validateRouting()
 }
-
-private fun loadPackages(
-    packageDataSource: PackageDataSource
-): MutableList<LogisticsPackageRaw> {
-
-    println("Starting Package Data Pipeline...")
-
-    val packages = packageDataSource
-        .loadPackages()
-        .toMutableList()
-
-    println("Successfully loaded ${packages.size} " + "valid package records.")
-    return packages
-}
-
-private fun sortPackagesByPriorityAndWeight(
-    packages: MutableList<LogisticsPackageRaw>
-) {
-    sortPackages(packages)
-}
-
-private fun displayTopPriorityPackages(
-    packages: List<LogisticsPackageRaw>
-) {
-    println()
-    println("Top $TOP_PACKAGE_COUNT priority packages:")
-
-    val displayedPackageCount = minOf(TOP_PACKAGE_COUNT, packages.size)
-
-    for (packageIndex in packages.indices.take(displayedPackageCount)
-    ) {
-        val packagePosition = packageIndex + DISPLAY_POSITION_OFFSET
-
-        val logisticsPackage = packages[packageIndex]
-
-        println(
-            "$packagePosition. " + "ID: ${logisticsPackage.packageId}" +
-                    " | Weight: " +
-                    "${formatWeight(logisticsPackage.packageWeightByKg)} kg" +
-                    " | Priority: ${logisticsPackage.packagePriority}"
-        )
-    }
-    printSeparator()
-}
-
-private fun loadWarehouses(
-    warehouseDataSource: WarehouseDataSource
-): List<WarehouseRaw> {
-
-    println("Starting Warehouse Data Pipeline...")
-
-    val warehouses = warehouseDataSource.loadWarehouses()
-
-    println(
-        "Successfully loaded ${warehouses.size} " + "valid warehouse records."
-    )
-    println("--- Detailed Warehouse Records ---")
-
-    for (warehouse in warehouses) {
-        println(
-            "ID: ${warehouse.warehouseId}" +
-                    " | Name: ${warehouse.warehouseName}" +
-                    " | Zone: ${warehouse.regionalZone}" +
-                    " | Latitude: ${warehouse.latitude}" +
-                    " | Longitude: ${warehouse.longitude}"
-        )
-    }
-    println("--- Warehouse Data Initialization Complete ---")
-    printSeparator()
-    return warehouses
-}
-
-private fun loadRoutes(
-    routeDataSource: RouteDataSource
-): List<RouteRaw> {
-
-    println("Starting Route Data Pipeline...")
-    val routes = routeDataSource.loadRoutes()
-    println("Successfully loaded ${routes.size} " + "valid route records.")
-    println("--- Detailed Route Records ---")
-
-    for (route in routes) {
-        println(
-            "Route ID: ${route.routeId}" + " | Origin Hub: ${route.originHubId}" +
-                    " | Destination Hub: ${route.destinationHubId}" +
-                    " | Distance: ${route.distanceKm} km" +
-                    " | Typical Delay: ${route.typicalDelayMin} min"
-        )
-    }
-    println("--- Route Data Initialization Complete ---")
-    printSeparator()
-    return routes
-}
-
-private fun loadVehicles(
-    vehicleDataSource: VehicleDataSource
-): List<FleetRaw> {
-
-    println("Starting Vehicle Data Pipeline...")
-
-    val vehicles = vehicleDataSource.loadVehicles()
-
-    println("Successfully loaded ${vehicles.size} " + "valid vehicle records.")
-    println("--- Detailed Vehicle Records ---")
-
-    for (vehicle in vehicles) {
-        println(
-            "Vehicle ID: ${vehicle.vehicleId}" + " | Current Hub: ${vehicle.currentHubId}" +
-                    " | Max Capacity: ${vehicle.maxCapacityKg} kg" +
-                    " | Cost Per Km: $${vehicle.costPerKm}"
-        )
-    }
-    println("--- Vehicle Data Initialization Complete ---")
-    printSeparator()
-
-    return vehicles
-}
-
 
 private fun validateQuickSort(
     warehouseIndex: Map<String, Warehouse>,
@@ -387,7 +230,6 @@ private fun validateQuickSort(
     println()
     println("Cargo Queue Before Sorting:")
     printCargoQueue(firstWarehouse)
-
 
     warehouseIndex.values.forEach { warehouse ->
         sortCargoQueueUseCase(warehouse)
