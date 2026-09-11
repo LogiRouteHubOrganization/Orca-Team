@@ -1,15 +1,15 @@
-package data.repository.csv
+package data.datasource.csv
 
 import data.dataholder.RouteRaw
-import data.repository.RouteRepository
+import data.datasource.RouteDataSource
 import data.parser.RouteParser
 import java.io.File
 
 
-class CsvRouteRepository(
+class CsvRouteDataSource(
     private val routeFile: File,
     private val routeParser: RouteParser
-) : RouteRepository {
+) : RouteDataSource {
     private val headerLineCount = 1
 
     override fun loadRoutes(): List<RouteRaw> {

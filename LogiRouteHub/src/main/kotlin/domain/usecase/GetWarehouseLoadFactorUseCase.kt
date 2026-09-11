@@ -1,22 +1,31 @@
-package domain.usecasePackage
-import domain.model.Warehouse
-class GetWarehouseLoadFactorUseCase {
-    var initialValueForTheSum =0.0
-    val vehicleCapacity=0.0
-    operator fun invoke(warehouse: Warehouse): Double {
+package domain.usecase
+
+import domain.repository.WarehouseRepository
+
+class GetWarehouseLoadFactorUseCase(
+    private val warehouseRepository: WarehouseRepository
+) {
+    private val initialValueForTheSum = 0.0
+    private val zeroCapacity = 0.0
+
+    operator fun invoke(warehouseId: String): Double {
+
+        val warehouse = warehouseRepository.findById(warehouseId) ?: return zeroCapacity
+
         val totalPackageWeight = warehouse.cargoQueue
-            .map { packageItem -> packageItem.weightByKg}
+            .map { packageItem -> packageItem.weightByKg }
             .fold(initialValueForTheSum) { totalWeight, packageWeight ->
                 totalWeight + packageWeight
             }
+
         val totalVehicleCapacity = warehouse.stationedVehicles
             .map { vehicle -> vehicle.maxCapacityKg }
             .fold(initialValueForTheSum) { totalCapacity, vehicleCapacity ->
                 totalCapacity + vehicleCapacity
             }
 
-        return if (totalVehicleCapacity == vehicleCapacity) {
-            vehicleCapacity
+        return if (totalVehicleCapacity == zeroCapacity) {
+            zeroCapacity
         } else {
             totalPackageWeight / totalVehicleCapacity
         }

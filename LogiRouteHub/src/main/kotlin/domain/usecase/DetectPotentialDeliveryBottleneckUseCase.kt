@@ -1,6 +1,7 @@
 package domain.usecase
 
 import domain.model.Warehouse
+import domain.repository.WarehouseRepository
 
 data class PotentialDeliveryBottleneck(
     val warehouse: Warehouse,
@@ -9,13 +10,14 @@ data class PotentialDeliveryBottleneck(
     val capacityGapKg: Double
 )
 
-class DetectDeliveryBottleneckUseCase {
+class DetectDeliveryBottleneckUseCase(
+    private val warehouseRepository: WarehouseRepository
+) {
 
-    operator fun invoke(
-        warehouseIndex: Map<String, Warehouse>
-    ): List<PotentialDeliveryBottleneck> {
+    operator fun invoke(): List<PotentialDeliveryBottleneck> {
+        val warehouses = warehouseRepository.findAll()
 
-        return warehouseIndex.values
+        return warehouses
             .map { warehouse ->
                 WarehouseCapacityInfo(
                     warehouse = warehouse,

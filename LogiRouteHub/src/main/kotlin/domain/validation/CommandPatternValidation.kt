@@ -8,6 +8,7 @@ import domain.model.Warehouse
 import domain.model.request.DispatchVehicleRequest
 import domain.model.request.ReroutePackageRequest
 import domain.repository.VehicleRepository
+import domain.repository.PackageRepository
 import domain.repository.WarehouseRepository
 import domain.usecase.AssignPackageToCargoQueueUseCase
 import domain.usecase.DispatchVehicleUseCase
@@ -35,16 +36,16 @@ private class ValidationWarehouseRepository(
         return warehouseIndex.values.toList()
     }
 
-    override fun update(
-        warehouse: Warehouse
-    ) {
+    override fun add(warehouse: Warehouse) {
+        if (warehouseIndex is MutableMap) {
+            warehouseIndex[warehouse.id] = warehouse
+        }
     }
 
-    override fun addPackage(
-        warehouse: Warehouse,
-        logisticsPackage: Package
-    ) {
-        warehouse.addPackage(logisticsPackage)
+    override fun update(warehouse: Warehouse) {
+        if (warehouseIndex is MutableMap) {
+            warehouseIndex[warehouse.id] = warehouse
+        }
     }
 }
 
@@ -59,7 +60,51 @@ private class ValidationVehicleRepository(
             .firstOrNull { vehicle -> vehicle.id == vehicleId }
     }
 
+    override fun findAll(): List<Vehicle> {
+        return warehouseIndex.values.flatMap { it.stationedVehicles }
+    }
+
+    override fun add(vehicle: Vehicle) {
+        val warehouse = warehouseIndex[vehicle.currentWarehouse.id]
+        if (warehouse != null) {
+            val currentVehicles = warehouse.stationedVehicles as? MutableList<Vehicle>
+            currentVehicles?.add(vehicle)
+        }
+    }
+
     override fun update(vehicle: Vehicle) {
+    }
+}
+private class ValidationPackageRepository(
+    private val warehouseIndex: Map<String, Warehouse>
+) : PackageRepository {
+
+    override fun findById(packageId: String): Package? {
+        return warehouseIndex.values
+            .flatMap { it.cargoQueue }
+            .firstOrNull { it.id == packageId }
+    }
+
+    override fun findAll(): List<Package> {
+        return warehouseIndex.values.flatMap { it.cargoQueue }
+    }
+
+    override fun add(packageItem: Package) {
+        val warehouse = warehouseIndex[packageItem.originWarehouse.id]
+        if (warehouse != null) {
+            val queue = warehouse.cargoQueue as? MutableList<Package>
+            queue?.add(packageItem)
+        }
+    }
+
+    override fun update(packageItem: Package) {
+        warehouseIndex.values.forEach { warehouse ->
+            val queue = warehouse.cargoQueue as? MutableList<Package>
+            val index = queue?.indexOfFirst { it.id == packageItem.id } ?: -1
+            if (index != -1 && queue != null) {
+                queue[index] = packageItem
+            }
+        }
     }
 }
 
@@ -77,12 +122,15 @@ fun validateCommandPattern(
 
     val vehicleRepository = ValidationVehicleRepository(warehouseIndex)
 
+    val packageRepository = ValidationPackageRepository(warehouseIndex)
+
     val telemetry = ConsoleTelemetry()
 
     runCommandValidations(
         warehouseIndex = warehouseIndex,
         warehouseRepository = warehouseRepository,
         vehicleRepository = vehicleRepository,
+        packageRepository = packageRepository,
         telemetry = telemetry
     )
     printValidationSuiteFooter()
@@ -92,6 +140,7 @@ private fun runCommandValidations(
     warehouseIndex: Map<String, Warehouse>,
     warehouseRepository: WarehouseRepository,
     vehicleRepository: VehicleRepository,
+    packageRepository: PackageRepository,
     telemetry: ConsoleTelemetry
 ) {
     val assignUseCase = createAssignPackageUseCase(warehouseRepository)
@@ -99,17 +148,19 @@ private fun runCommandValidations(
     val dispatchUseCase = createDispatchVehicleUseCase(warehouseRepository, vehicleRepository)
 
     val rerouteUseCase = ReroutePackageUseCase(
-        warehouseRepository = warehouseRepository
+        warehouseRepository = warehouseRepository,
+        packageRepository = packageRepository
     )
 
     validateAllCommands(
-        warehouseIndex,
-        warehouseRepository,
-        vehicleRepository,
-        assignUseCase,
-        dispatchUseCase,
-        rerouteUseCase,
-        telemetry
+        warehouseIndex = warehouseIndex,
+        warehouseRepository = warehouseRepository,
+        vehicleRepository = vehicleRepository,
+        packageRepository = packageRepository,
+        assignUseCase = assignUseCase,
+        dispatchUseCase = dispatchUseCase,
+        rerouteUseCase = rerouteUseCase,
+        telemetry = telemetry
     )
 }
 
@@ -117,6 +168,7 @@ private fun validateAllCommands(
     warehouseIndex: Map<String, Warehouse>,
     warehouseRepository: WarehouseRepository,
     vehicleRepository: VehicleRepository,
+    packageRepository:PackageRepository,
     assignUseCase: AssignPackageToCargoQueueUseCase,
     dispatchUseCase: DispatchVehicleUseCase,
     rerouteUseCase: ReroutePackageUseCase,
@@ -130,10 +182,11 @@ private fun validateAllCommands(
     )
 
     validateReroutePackageCommand(
-        warehouseIndex,
-        warehouseRepository,
-        rerouteUseCase,
-        telemetry
+        warehouseIndex = warehouseIndex,
+        warehouseRepository = warehouseRepository,
+        packageRepository = packageRepository,
+        rerouteUseCase = rerouteUseCase,
+        telemetry = telemetry
     )
 
     validateDispatchVehicleCommand(
@@ -273,6 +326,7 @@ private fun testAssignHistory(
 private fun validateReroutePackageCommand(
     warehouseIndex: Map<String, Warehouse>,
     warehouseRepository: WarehouseRepository,
+    packageRepository: PackageRepository,
     rerouteUseCase: ReroutePackageUseCase,
     telemetry: ConsoleTelemetry
 ) {
@@ -284,11 +338,12 @@ private fun validateReroutePackageCommand(
     }
 
     val command = createReroutePackageCommand(
-        validationData.first,
-        validationData.second,
-        warehouseRepository,
-        rerouteUseCase,
-        telemetry
+        warehouse = validationData.first,
+        destinationWarehouse = validationData.second,
+        warehouseRepository = warehouseRepository,
+        packageRepository = packageRepository,
+        rerouteUseCase = rerouteUseCase,
+        telemetry = telemetry
     )
 
     validateRerouteExecution(
@@ -299,7 +354,6 @@ private fun validateReroutePackageCommand(
     )
 }
 
-
 private fun findRerouteValidationData(
     warehouseIndex: Map<String, Warehouse>
 ): Pair<Warehouse, Warehouse>? {
@@ -308,8 +362,7 @@ private fun findRerouteValidationData(
 
     val destinationWarehouse = warehouseIndex.values.firstOrNull { it.id != warehouse.id } ?: return null
 
-    return Pair(
-        warehouse,
+    return Pair(warehouse,
         destinationWarehouse
     )
 }
@@ -318,6 +371,7 @@ private fun createReroutePackageCommand(
     warehouse: Warehouse,
     destinationWarehouse: Warehouse,
     warehouseRepository: WarehouseRepository,
+    packageRepository: PackageRepository,
     rerouteUseCase: ReroutePackageUseCase,
     telemetry: ConsoleTelemetry
 ): ReroutePackageCommand {
@@ -332,22 +386,23 @@ private fun createReroutePackageCommand(
 
     return ReroutePackageCommand(
         dependencies = createRerouteDependencies(
-            warehouseRepository,
-            rerouteUseCase,
-            telemetry
-        ),
+            warehouseRepository = warehouseRepository,
+            packageRepository = packageRepository,
+            rerouteUseCase = rerouteUseCase,
+            telemetry = telemetry),
         input = request
     )
 }
-
 private fun createRerouteDependencies(
     warehouseRepository: WarehouseRepository,
+    packageRepository: PackageRepository,
     rerouteUseCase: ReroutePackageUseCase,
     telemetry: ConsoleTelemetry
 ): ReroutePackageCommandDependencies {
 
     return ReroutePackageCommandDependencies(
         reroutePackageUseCase = rerouteUseCase,
+        packageRepository = packageRepository,
         warehouseRepository = warehouseRepository,
         telemetry = telemetry
     )

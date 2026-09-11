@@ -9,15 +9,12 @@ class AssignPackageToCargoQueueUseCase(
 ) {
 
     operator fun invoke(logisticsPackage: Package) {
-        logisticsPackage.originWarehouse.also { originWarehouse ->
-            warehouseRepository.addPackage(
-                warehouse = originWarehouse,
-                logisticsPackage = logisticsPackage
-            )
+        val originWarehouse = logisticsPackage.originWarehouse
 
-            sortCargoQueue(originWarehouse)
+        originWarehouse.addPackage(logisticsPackage)
 
-            warehouseRepository.update(originWarehouse)
-        }
+        sortCargoQueue(originWarehouse)
+
+        warehouseRepository.update(originWarehouse)
     }
 }

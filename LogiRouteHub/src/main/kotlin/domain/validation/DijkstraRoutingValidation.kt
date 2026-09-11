@@ -253,10 +253,12 @@ class DijkstraRoutingValidation(
             println("Required warehouses were not found.")
             return
         }
+
         val warehousePath = findOptimalPathUseCase(
-            startWarehouse = startWarehouse,
-            destinationWarehouse = destinationWarehouse
+            startWarehouseId = startWarehouse.id,
+            destinationWarehouseId = destinationWarehouse.id
         )
+
         if (warehousePath.isNotEmpty()) {
             println("Dijkstra integration: PASSED")
             print("Warehouse Path: ")

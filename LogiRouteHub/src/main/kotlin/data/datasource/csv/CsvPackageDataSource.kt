@@ -1,15 +1,15 @@
-package data.repository.csv
+package data.datasource.csv
 
 import data.dataholder.LogisticsPackageRaw
-import data.repository.PackageRepository
+import data.datasource.PackageDataSource
 import data.parser.PackageParser
 import java.io.File
 
 
-class CsvPackageRepository(
+class CsvPackageDataSource(
     private val packageFile: File,
     private val packageParser: PackageParser
-) : PackageRepository {
+) : PackageDataSource {
 
     private val headerLineCount = 1
 

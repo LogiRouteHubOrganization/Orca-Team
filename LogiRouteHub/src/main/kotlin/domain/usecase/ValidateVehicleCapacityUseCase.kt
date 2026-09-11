@@ -1,10 +1,17 @@
 package domain.usecase
-import domain.model.Vehicle
-import domain.model.Package
-class ValidateVehicleCapacityUseCase{
-    operator fun invoke(vehicle:Vehicle,packages:List<Package>)
-    : Boolean {
-        return packages.sumOf { it.weightByKg } <= vehicle.maxCapacityKg
-    }
 
+import domain.model.Package
+import domain.model.Vehicle
+
+class ValidateVehicleCapacityUseCase {
+
+    operator fun invoke(
+        vehicle: Vehicle,
+        packages: List<Package>
+    ): Boolean {
+        val totalPackageWeight = packages.sumOf { it.weightByKg }
+        val currentLoadedWeight = vehicle.calculateTotalLoadedWeightKg()
+
+        return (currentLoadedWeight + totalPackageWeight) <= vehicle.maxCapacityKg
+    }
 }

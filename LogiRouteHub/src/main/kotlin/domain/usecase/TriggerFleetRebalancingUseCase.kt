@@ -1,11 +1,9 @@
 package domain.usecase
 
-import domain.model.Warehouse
 import domain.model.Vehicle
-import domain.repository.WarehouseRepository
+import domain.model.Warehouse
 import domain.model.request.FleetRebalancingConfig
-import domain.usecasePackage.GetWarehouseLoadFactorUseCase
-
+import domain.repository.WarehouseRepository
 
 class TriggerFleetRebalancingUseCase(
     private val warehouseRepository: WarehouseRepository,
@@ -20,13 +18,13 @@ class TriggerFleetRebalancingUseCase(
 
         val overloadedWarehouses = warehouses
             .filter { warehouse ->
-                getWarehouseLoadFactorUseCase(warehouse) >=
+                getWarehouseLoadFactorUseCase(warehouse.id) >=
                         config.highLoadFactorThreshold
             }
 
         val underutilizedWarehouses = warehouses
             .filter { warehouse ->
-                getWarehouseLoadFactorUseCase(warehouse) <=
+                getWarehouseLoadFactorUseCase(warehouse.id) <=
                         config.lowLoadFactorThreshold
             }
 

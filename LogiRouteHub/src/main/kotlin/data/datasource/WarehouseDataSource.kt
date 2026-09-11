@@ -1,8 +1,8 @@
-package data.repository
+package data.datasource
 
 import data.dataholder.WarehouseRaw
 
-interface WarehouseRepository {
+interface WarehouseDataSource {
 
     fun loadWarehouses(): List<WarehouseRaw>
 }
