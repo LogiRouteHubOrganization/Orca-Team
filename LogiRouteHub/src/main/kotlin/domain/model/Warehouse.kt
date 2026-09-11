@@ -1,7 +1,11 @@
 package domain.model
 
 class Warehouse(
-    val id: String, val name: String, val regionalZone: String, val latitude: Double, val longitude: Double
+    val id: String,
+    val name: String,
+    val regionalZone: String,
+    val latitude: Double,
+    val longitude: Double
 ) {
     private val cargoQueueList = mutableListOf<Package>()
     private val outgoingRoutesList = mutableListOf<Route>()
@@ -32,8 +36,20 @@ class Warehouse(
         stationedVehiclesList.add(vehicle)
     }
 
+    fun removeVehicle(vehicle: Vehicle) {
+        stationedVehiclesList.remove(vehicle)
+    }
+
+    fun updateVehicleAtIndex(
+        vehicleIndex: Int,
+        vehicle: Vehicle
+    ) {
+        stationedVehiclesList[vehicleIndex] = vehicle
+    }
+
     fun updatePackageAtIndex(
-        packageIndex: Int, logisticsPackage: Package
+        packageIndex: Int,
+        logisticsPackage: Package
     ) {
         cargoQueueList[packageIndex] = logisticsPackage
     }
@@ -43,4 +59,14 @@ class Warehouse(
         cargoQueueList.addAll(previousQueue)
     }
 
+    fun removeRoute(route: Route) {
+        outgoingRoutesList.remove(route)
+    }
+
+    fun updateRouteAtIndex(
+        routeIndex: Int,
+        route: Route
+    ) {
+        outgoingRoutesList[routeIndex] = route
+    }
 }

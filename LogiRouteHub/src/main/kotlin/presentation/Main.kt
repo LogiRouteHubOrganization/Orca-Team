@@ -12,14 +12,10 @@ import data.parser.FleetParser
 import data.parser.PackageParser
 import data.parser.RouteParser
 import data.parser.WarehouseParser
-import data.repository.memory.InMemoryPackageRepository
-import data.repository.memory.InMemoryRouteRepository
-import data.repository.memory.InMemoryVehicleRepository
-import data.repository.memory.InMemoryWarehouseRepository
-import data.initializer.DomainDataInitializer
-import data.initializer.dependencies.DomainDataSources
-import data.initializer.dependencies.DomainMappers
-import data.initializer.dependencies.DomainRepositories
+import data.repository.PackageRepositoryImpl
+import data.repository.RouteRepositoryImpl
+import data.repository.VehicleRepositoryImpl
+import data.repository.WarehouseRepositoryImpl
 import domain.model.Warehouse
 import domain.model.request.AnalyzeTreePerformanceRequest
 import domain.pricing.EcoStrategy
@@ -30,70 +26,83 @@ import domain.pricing.decorator.PackageDecoratorComposer
 import domain.routing.BidirectionalRouter
 import domain.routing.LeastHopRouter
 import domain.routing.ShortestPathRouter
-import domain.tree.simulation.SequentialTrackingIdGenerator
-import domain.tree.simulation.SimulationResult
-import domain.tree.simulation.TreeType
-import domain.tree.simulation.BalancedBST
-import domain.tree.simulation.UnbalancedBST
+import domain.tree.simulation.*
 import domain.usecase.*
-import domain.validation.validateDomainGraph
-import domain.validation.validatePricingStrategies
-import domain.validation.validateDecoratorIntegration
-import domain.validation.DijkstraRoutingValidation
-import domain.validation.BidirectionalRoutingValidation
-import domain.validation.LeastHopRoutingValidation
-import domain.validation.HubTreeValidation
-import domain.validation.validateCommandHistory
-import domain.validation.validateCommandPattern
+import domain.validation.*
 import java.io.File
-import java.util.Locale
+import java.util.*
 
 private const val PACKAGES_FILE_PATH = "src/main/resources/packages.csv"
 private const val WAREHOUSES_FILE_PATH = "src/main/resources/warehouses.csv"
 private const val ROUTES_FILE_PATH = "src/main/resources/routes.csv"
 private const val FLEET_FILE_PATH = "src/main/resources/fleet.csv"
 
-
 private const val WEIGHT_DECIMAL_FORMAT = "%.2f"
 private const val OUTPUT_SEPARATOR = "******************************************************"
 
 fun main() {
 
-    // Step 1: Initialize DataSources (CSV Readers)
-    val dataSources = DomainDataSources(
-        warehouseDataSource = CsvWarehouseDataSource(File(WAREHOUSES_FILE_PATH), WarehouseParser()),
-        packageDataSource = CsvPackageDataSource(File(PACKAGES_FILE_PATH), PackageParser()),
-        vehicleDataSource = CsvVehicleDataSource(File(FLEET_FILE_PATH), FleetParser()),
-        routeDataSource = CsvRouteDataSource(File(ROUTES_FILE_PATH), RouteParser())
+    // Step 1: Initialize DataSources
+    val warehouseDataSource = CsvWarehouseDataSource(
+        warehouseFile = File(WAREHOUSES_FILE_PATH),
+        warehouseParser = WarehouseParser()
+    )
+
+    val packageDataSource = CsvPackageDataSource(
+        packageFile = File(PACKAGES_FILE_PATH),
+        packageParser = PackageParser()
+    )
+
+    val vehicleDataSource = CsvVehicleDataSource(
+        vehicleFile = File(FLEET_FILE_PATH),
+        fleetParser = FleetParser()
+    )
+
+    val routeDataSource = CsvRouteDataSource(
+        routeFile = File(ROUTES_FILE_PATH),
+        routeParser = RouteParser()
     )
 
     // Step 2: Initialize Mappers
-    val mappers = DomainMappers(
-        warehouseMapper = WarehouseMapper(),
-        packageMapper = PackageMapper(),
-        vehicleMapper = VehicleMapper(),
-        routeMapper = RouteMapper()
+    val warehouseMapper = WarehouseMapper()
+    val packageMapper = PackageMapper()
+    val vehicleMapper = VehicleMapper()
+    val routeMapper = RouteMapper()
+
+    // Step 3: Initialize Repositories
+    val warehouseRepository = WarehouseRepositoryImpl(
+        warehouseDataSource = warehouseDataSource,
+        warehouseMapper = warehouseMapper
     )
 
-    // Step 3: Initialize InMemory Repositories
-    val repositories = DomainRepositories(
-        warehouseRepository = InMemoryWarehouseRepository(),
-        packageRepository = InMemoryPackageRepository(),
-        vehicleRepository = InMemoryVehicleRepository(),
-        routeRepository = InMemoryRouteRepository()
+    val packageRepository = PackageRepositoryImpl(
+        packageDataSource = packageDataSource,
+        packageMapper = packageMapper,
+        warehouseRepository = warehouseRepository
     )
 
-    // Step 4: Run Initializer to load data, map it, fill Repositories, and link domain entities
-    val domainDataInitializer = DomainDataInitializer(
-        dataSources = dataSources,
-        mappers = mappers,
-        repositories = repositories
+    val vehicleRepository = VehicleRepositoryImpl(
+        vehicleDataSource = vehicleDataSource,
+        vehicleMapper = vehicleMapper,
+        warehouseRepository = warehouseRepository
     )
-    domainDataInitializer.initialize()
 
-    // Step 5: Build warehouse index from Repository for validations & algorithms
-    val warehouses = repositories.warehouseRepository.findAll()
-    val warehouseIndex = warehouses.associateBy { it.id }
+    val routeRepository = RouteRepositoryImpl(
+        routeDataSource = routeDataSource,
+        routeMapper = routeMapper,
+        warehouseRepository = warehouseRepository
+    )
+
+    // Step 4: Load repository-backed domain state
+    val warehouses = warehouseRepository.findAll()
+    packageRepository.findAll()
+    vehicleRepository.findAll()
+    routeRepository.findAll()
+
+    // Step 5: Build warehouse index for validations and algorithms
+    val warehouseIndex = warehouses.associateBy {
+        it.id
+    }
 
     // Step 6: Validate graph construction and package sorting
     validateGraphAndSorting(warehouseIndex)
@@ -106,7 +115,6 @@ fun main() {
 
     // Step 9: Validate HubTree
     HubTreeValidation(warehouseIndex).validateHubTree()
-
     val trackingIdGenerator = SequentialTrackingIdGenerator()
     val unbalancedBST = UnbalancedBST()
     val balancedBST = BalancedBST()
@@ -120,8 +128,9 @@ fun main() {
         numberOfTrackingIds = 1000,
         nanoTimeProvider = System::nanoTime
     )
-    val simulationResult = analyzeTreePerformanceUseCase(analyzeTreePerformanceRequest)
-
+    val simulationResult = analyzeTreePerformanceUseCase(
+        analyzeTreePerformanceRequest
+    )
     displayTreePerformanceResult(simulationResult)
 
     // Step 10: Validate Command Pattern
