@@ -17,6 +17,7 @@ import data.repository.RouteRepositoryImpl
 import data.repository.VehicleRepositoryImpl
 import data.repository.WarehouseRepositoryImpl
 import domain.model.Warehouse
+import domain.repository.WarehouseRepository
 import domain.model.request.AnalyzeTreePerformanceRequest
 import domain.pricing.EcoStrategy
 import domain.pricing.ExpressStrategy
@@ -100,18 +101,16 @@ fun main() {
     routeRepository.findAll()
 
     // Step 5: Build warehouse index for validations and algorithms
-    val warehouseIndex = warehouses.associateBy {
-        it.id
-    }
+    val warehouseIndex = warehouses.associateBy { it.id }
 
-    // Step 6: Validate graph construction and package sorting
-    validateGraphAndSorting(warehouseIndex)
+    // Step 6: Validate package sorting
+    validateSorting(warehouseIndex)
 
     // Step 7: Validate pricing strategies and package decorators
     validatePricingAndDecorators(warehouseIndex)
 
     // Step 8: Validate routing algorithms
-    validateRoutingAlgorithms(warehouseIndex)
+    validateRoutingAlgorithms(warehouseIndex,warehouseRepository)
 
     // Step 9: Validate HubTree
     HubTreeValidation(warehouseIndex).validateHubTree()
@@ -138,11 +137,9 @@ fun main() {
     validateCommandHistory(warehouseIndex)
 }
 
-private fun validateGraphAndSorting(
+private fun validateSorting(
     warehouseIndex: Map<String, Warehouse>
 ) {
-    validateDomainGraph(warehouseIndex)
-
     val sortCargoQueueUseCase = SortingCargoQueueUseCase()
 
     validateQuickSort(
@@ -181,12 +178,15 @@ private fun validatePricingAndDecorators(
 }
 
 private fun validateRoutingAlgorithms(
-    warehouseIndex: Map<String, Warehouse>
+    warehouseIndex: Map<String, Warehouse>,
+    warehouseRepository: WarehouseRepository
 ) {
     val leastHopRouter = LeastHopRouter()
 
-    val findFewestHopsRouteUseCase =
-        FindFewestHopsRouteUseCase(leastHopRouter)
+    val findFewestHopsRouteUseCase = FindFewestHopsRouteUseCase(
+        warehouseRepository = warehouseRepository,
+        pathFinder = leastHopRouter
+    )
 
     val routingValidation = LeastHopRoutingValidation(
         warehouseIndex = warehouseIndex,
@@ -199,6 +199,7 @@ private fun validateRoutingAlgorithms(
     )
 
     val findOptimalPathUseCase = FindOptimalPathUseCase(
+        warehouseRepository = warehouseRepository,
         shortestPathFinder = shortestPathRouter
     )
 
