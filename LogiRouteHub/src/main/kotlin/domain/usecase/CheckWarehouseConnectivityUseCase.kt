@@ -1,15 +1,19 @@
 package domain.usecase
 
-import domain.model.Warehouse
+import domain.repository.WarehouseRepository
 import domain.routing.LeastHopRouter
 
 class CheckWarehouseConnectivityUseCase(
+    private val warehouseRepository: WarehouseRepository,
     private val leastHopRouter: LeastHopRouter
 ) {
     operator fun invoke(
-        startWarehouse: Warehouse,
-        destinationWarehouse: Warehouse
+        startWarehouseId: String,
+        destinationWarehouseId: String
     ): Boolean {
+        val startWarehouse = warehouseRepository.findById(startWarehouseId) ?: return false
+        val destinationWarehouse = warehouseRepository.findById(destinationWarehouseId) ?: return false
+
         val warehousePath = leastHopRouter.findLeastHopPath(
             startWarehouse = startWarehouse,
             destinationWarehouse = destinationWarehouse

@@ -32,8 +32,8 @@ class LeastHopRoutingValidation(
         )
 
         val warehousePath = findFewestHopsRouteUseCase(
-            startWarehouse,
-            destinationWarehouse
+            startWarehouseId = startWarehouse.id,
+            destinationWarehouseId = destinationWarehouse.id
         )
 
         validateWarehousePath(
@@ -48,8 +48,8 @@ class LeastHopRoutingValidation(
         val destinationWarehouse = createWarehouse("WH-002")
 
         val warehousePath = findFewestHopsRouteUseCase(
-            startWarehouse,
-            destinationWarehouse
+            startWarehouseId = startWarehouse.id,
+            destinationWarehouseId = destinationWarehouse.id
         )
 
         if (warehousePath.isEmpty()) {
@@ -65,8 +65,8 @@ class LeastHopRoutingValidation(
         val warehouse = createWarehouse("WH-001")
 
         val warehousePath = findFewestHopsRouteUseCase(
-            warehouse,
-            warehouse
+            startWarehouseId = warehouse.id,
+            destinationWarehouseId = warehouse.id
         )
 
         validateWarehousePath(
@@ -106,8 +106,8 @@ class LeastHopRoutingValidation(
         )
 
         val warehousePath = findFewestHopsRouteUseCase(
-            startWarehouse,
-            destinationWarehouse
+            startWarehouseId = startWarehouse.id,
+            destinationWarehouseId = destinationWarehouse.id
         )
 
         validateWarehousePath(
@@ -142,8 +142,8 @@ class LeastHopRoutingValidation(
             createRoute("RT-00005", extraPathWarehouse, destinationWarehouse)
         )
         val warehousePath = findFewestHopsRouteUseCase(
-            startWarehouse,
-            destinationWarehouse
+            startWarehouseId = startWarehouse.id,
+            destinationWarehouseId = destinationWarehouse.id
         )
         validateWarehousePath(
             "Least-hop path",
@@ -163,8 +163,8 @@ class LeastHopRoutingValidation(
         }
 
         val warehousePath = findFewestHopsRouteUseCase(
-            startWarehouse,
-            destinationWarehouse
+            startWarehouseId = startWarehouse.id,
+            destinationWarehouseId = destinationWarehouse.id
         )
 
         if (warehousePath.isNotEmpty()) {
@@ -212,5 +212,3 @@ class LeastHopRoutingValidation(
         }
     }
 }
-
-
