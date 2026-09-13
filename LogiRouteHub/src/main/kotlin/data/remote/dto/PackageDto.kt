@@ -7,6 +7,8 @@ import kotlinx.serialization.Serializable
 data class PackageDto(
     val id: String,
 
+
+
     @SerialName("weight_by_kg")
     val weightByKg: Double,
 

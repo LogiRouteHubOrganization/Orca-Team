@@ -6,7 +6,6 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class VehicleDto(
     val id: String,
-
     @SerialName("max_capacity_kg")
     val maxCapacityKg: Double,
 

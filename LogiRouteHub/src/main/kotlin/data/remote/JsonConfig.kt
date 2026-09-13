@@ -7,4 +7,5 @@ object JsonConfig {
         isLenient = true
         encodeDefaults = true
     }
+
 }
