@@ -3,7 +3,9 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class RouteRequestDto(
+data class RouteCreateRequestDto(
+    val id: String,
+
     @SerialName("origin_warehouse_id")
     val originWarehouseId: String,
 

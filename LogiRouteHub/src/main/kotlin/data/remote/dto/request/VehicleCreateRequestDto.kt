@@ -1,9 +1,12 @@
 package data.remote.dto.request
+
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class VehicleRequestDto(
+data class VehicleCreateRequestDto(
+    val id: String,
+
     @SerialName("max_capacity_kg")
     val maxCapacityKg: Double,
 

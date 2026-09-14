@@ -3,7 +3,8 @@ package data.remote.datasource.supabase
 import data.remote.SupabaseClientProvider
 import data.remote.datasource.VehicleRemoteDataSource
 import data.remote.dto.VehicleDto
-import data.remote.dto.request.VehicleRequestDto
+import data.remote.dto.request.VehicleCreateRequestDto
+import data.remote.dto.request.VehicleUpdateRequestDto
 import data.remote.utils.safeApiCall
 import io.github.jan.supabase.postgrest.from
 
@@ -32,7 +33,9 @@ class VehicleRemoteDataSourceImpl : VehicleRemoteDataSource {
         }
     }
 
-    override suspend fun createVehicle(vehicleRequest: VehicleRequestDto): VehicleDto {
+    override suspend fun createVehicle(
+        vehicleRequest: VehicleCreateRequestDto
+    ): VehicleDto {
         return safeApiCall {
             client.from(tableName)
                 .insert(vehicleRequest) {
@@ -42,7 +45,10 @@ class VehicleRemoteDataSourceImpl : VehicleRemoteDataSource {
         }
     }
 
-    override suspend fun updateVehicle(id: String, vehicleRequest: VehicleRequestDto): VehicleDto {
+    override suspend fun updateVehicle(
+        id: String,
+        vehicleRequest: VehicleUpdateRequestDto
+    ): VehicleDto {
         return safeApiCall {
             client.from(tableName)
                 .update(vehicleRequest) {
