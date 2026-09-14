@@ -1,5 +1,4 @@
 package data.remote.mapper
-
 import data.remote.dto.PackageDto
 import data.remote.dto.RouteDto
 import data.remote.dto.VehicleDto

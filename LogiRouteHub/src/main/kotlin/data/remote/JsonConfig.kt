@@ -1,5 +1,4 @@
 import kotlinx.serialization.json.Json
-
 object JsonConfig {
 
     val instance = Json {
