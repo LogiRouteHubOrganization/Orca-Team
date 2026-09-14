@@ -1,6 +1,6 @@
 plugins {
-    kotlin("jvm") version "2.1.10"
-    kotlin("plugin.serialization") version "2.1.10"
+    alias(libs.plugins.kotlinJvm)
+    alias(libs.plugins.kotlinPluginSerialization)
 
     id("io.gitlab.arturbosch.detekt") version "1.23.5"
 
@@ -20,10 +20,8 @@ repositories {
 }
 
 dependencies {
-    implementation(platform("io.github.jan-tennert.supabase:bom:3.5.0"))
-    implementation("io.github.jan-tennert.supabase:postgrest-kt")
-
-    implementation("io.ktor:ktor-client-cio:3.0.3")
+    implementation(libs.supabase.postgrest)
+    implementation(libs.ktor.client.cio)
 }
 
 tasks.test {

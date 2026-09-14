@@ -20,7 +20,7 @@ class GetPackageJourneyUseCase(
     private val shortestPathRouter: ShortestPathRouter
 ) {
 
-    operator fun invoke(packageId: String): PackageJourney? {
+    suspend operator fun invoke(packageId: String): PackageJourney? {
 
         val logisticsPackage = packageRepository.findById(packageId)
             ?: return null

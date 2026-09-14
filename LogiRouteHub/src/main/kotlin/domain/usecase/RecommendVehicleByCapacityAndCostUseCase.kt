@@ -7,7 +7,7 @@ class RecommendVehicleByCapacityAndCostUseCase(
     FindStationedVehiclesByCapacityUseCase
 ) {
 
-    operator fun invoke(
+    suspend operator fun invoke(
         warehouseId: String,
         requiredLoadKg: Double
     ): Vehicle? {
@@ -34,9 +34,11 @@ class RecommendVehicleByCapacityAndCostUseCase(
         requiredLoadKg: Double
     ): Double {
 
-        val currentLoadedWeightKg = vehicle.calculateTotalLoadedWeightKg()
+        val currentLoadedWeightKg =
+            vehicle.calculateTotalLoadedWeightKg()
 
-        val projectedLoadedWeightKg = currentLoadedWeightKg + requiredLoadKg
+        val projectedLoadedWeightKg =
+            currentLoadedWeightKg + requiredLoadKg
 
         return vehicle.maxCapacityKg - projectedLoadedWeightKg
     }

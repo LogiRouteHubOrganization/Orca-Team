@@ -40,25 +40,31 @@ private class HistoryValidationWarehouseRepository(
     private val warehouseIndex: Map<String, Warehouse>
 ) : WarehouseRepository {
 
-    override fun findById(
+    override suspend fun findById(
         warehouseId: String
     ): Warehouse? {
         return warehouseIndex[warehouseId]
     }
 
-    override fun findAll(): List<Warehouse> {
+    override suspend fun findAll(): List<Warehouse> {
         return warehouseIndex.values.toList()
     }
 
-    override fun add(warehouse: Warehouse) {
+    override suspend fun add(warehouse: Warehouse) {
         if (warehouseIndex is MutableMap) {
             warehouseIndex[warehouse.id] = warehouse
         }
     }
 
-    override fun update(warehouse: Warehouse) {
+    override suspend fun update(warehouse: Warehouse) {
         if (warehouseIndex is MutableMap) {
             warehouseIndex[warehouse.id] = warehouse
+        }
+    }
+
+    override suspend fun delete(warehouseId: String) {
+        if (warehouseIndex is MutableMap) {
+            warehouseIndex.remove(warehouseId)
         }
     }
 }
@@ -67,7 +73,7 @@ private class HistoryValidationVehicleRepository(
     private val warehouseIndex: Map<String, Warehouse>
 ) : VehicleRepository {
 
-    override fun findById(
+    override suspend fun findById(
         vehicleId: String
     ): Vehicle? {
         return warehouseIndex.values
@@ -75,24 +81,41 @@ private class HistoryValidationVehicleRepository(
             .firstOrNull { it.id == vehicleId }
     }
 
-    override fun findAll(): List<Vehicle> {
+    override suspend fun findAll(): List<Vehicle> {
         return warehouseIndex.values.flatMap { it.stationedVehicles }
     }
 
-    override fun add(vehicle: Vehicle) {
+    override suspend fun add(vehicle: Vehicle) {
         val warehouse = warehouseIndex[vehicle.currentWarehouse.id]
+
         if (warehouse != null) {
-            val currentVehicles = warehouse.stationedVehicles as? MutableList<Vehicle>
+            val currentVehicles =
+                warehouse.stationedVehicles as? MutableList<Vehicle>
+
             currentVehicles?.add(vehicle)
         }
     }
 
-    override fun update(vehicle: Vehicle) {
+    override suspend fun update(vehicle: Vehicle) {
         val warehouse = warehouseIndex[vehicle.currentWarehouse.id]
-        val vehicles = warehouse?.stationedVehicles as? MutableList<Vehicle>
-        val index = vehicles?.indexOfFirst { it.id == vehicle.id } ?: -1
+
+        val vehicles =
+            warehouse?.stationedVehicles as? MutableList<Vehicle>
+
+        val index =
+            vehicles?.indexOfFirst { it.id == vehicle.id } ?: -1
+
         if (index != -1 && vehicles != null) {
             vehicles[index] = vehicle
+        }
+    }
+
+    override suspend fun delete(vehicleId: String) {
+        warehouseIndex.values.forEach { warehouse ->
+            val vehicles =
+                warehouse.stationedVehicles as? MutableList<Vehicle>
+
+            vehicles?.removeIf { it.id == vehicleId }
         }
     }
 }
@@ -101,42 +124,62 @@ private class HistoryValidationPackageRepository(
     private val warehouseIndex: Map<String, Warehouse>
 ) : PackageRepository {
 
-    override fun findById(packageId: String): Package? {
+    override suspend fun findById(
+        packageId: String
+    ): Package? {
         return warehouseIndex.values
             .flatMap { it.cargoQueue }
             .firstOrNull { it.id == packageId }
     }
 
-    override fun findAll(): List<Package> {
+    override suspend fun findAll(): List<Package> {
         return warehouseIndex.values.flatMap { it.cargoQueue }
     }
 
-    override fun add(packageItem: Package) {
-        val warehouse = warehouseIndex[packageItem.originWarehouse.id]
+    override suspend fun add(packageItem: Package) {
+        val warehouse =
+            warehouseIndex[packageItem.originWarehouse.id]
+
         if (warehouse != null) {
-            val queue = warehouse.cargoQueue as? MutableList<Package>
+            val queue =
+                warehouse.cargoQueue as? MutableList<Package>
+
             queue?.add(packageItem)
         }
     }
 
-    override fun update(packageItem: Package) {
+    override suspend fun update(packageItem: Package) {
         warehouseIndex.values.forEach { warehouse ->
-            val queue = warehouse.cargoQueue as? MutableList<Package>
-            val index = queue?.indexOfFirst { it.id == packageItem.id } ?: -1
+            val queue =
+                warehouse.cargoQueue as? MutableList<Package>
+
+            val index =
+                queue?.indexOfFirst { it.id == packageItem.id } ?: -1
+
             if (index != -1 && queue != null) {
                 queue[index] = packageItem
             }
         }
     }
+
+    override suspend fun delete(packageId: String) {
+        warehouseIndex.values.forEach { warehouse ->
+            val queue =
+                warehouse.cargoQueue as? MutableList<Package>
+
+            queue?.removeIf { it.id == packageId }
+        }
+    }
 }
 
-fun validateCommandHistory(
+suspend fun validateCommandHistory(
     warehouseIndex: Map<String, Warehouse>
 ) {
     if (warehouseIndex.isEmpty()) {
         printHistoryValidationSkipped("No warehouses were built.")
         return
     }
+
     val telemetry = ConsoleTelemetry()
 
     val history = buildCommandHistory(
@@ -145,13 +188,17 @@ fun validateCommandHistory(
     )
 
     if (history == null) {
-        printHistoryValidationSkipped("Suitable validation data was not found.")
+        printHistoryValidationSkipped(
+            "Suitable validation data was not found."
+        )
         return
     }
 
     CommandHistoryValidation().run(
         history = history,
-        stateSnapshot = { createHistorySnapshot(warehouseIndex) },
+        stateSnapshot = {
+            createHistorySnapshot(warehouseIndex)
+        },
         telemetry = telemetry
     )
 }
@@ -161,20 +208,24 @@ private fun buildCommandHistory(
     telemetry: CommandTelemetry
 ): CommandHistory? {
 
-    val validationData = findHistoryValidationData(warehouseIndex)
-        ?: return null
+    val validationData =
+        findHistoryValidationData(warehouseIndex)
+            ?: return null
 
-    val warehouseRepository = HistoryValidationWarehouseRepository(
-        warehouseIndex
-    )
+    val warehouseRepository =
+        HistoryValidationWarehouseRepository(
+            warehouseIndex
+        )
 
-    val vehicleRepository = HistoryValidationVehicleRepository(
-        warehouseIndex
-    )
+    val vehicleRepository =
+        HistoryValidationVehicleRepository(
+            warehouseIndex
+        )
 
-    val packageRepository = HistoryValidationPackageRepository(
-        warehouseIndex
-    )
+    val packageRepository =
+        HistoryValidationPackageRepository(
+            warehouseIndex
+        )
 
     return createCommandHistory(
         validationData,
@@ -194,23 +245,28 @@ private fun createCommandHistory(
 ): CommandHistory {
 
     return CommandHistory(
-        assignPackageToQueueCommand = createHistoryAssignCommand(
-            data,
-            warehouseRepository,
-            telemetry
-        ),
-        dispatchVehicleCommand = createHistoryDispatchCommand(
-            data,
-            warehouseRepository,
-            vehicleRepository,
-            telemetry
-        ),
-        reroutePackageCommand = createHistoryRerouteCommand(
-            data,
-            warehouseRepository,
-            packageRepository,
-            telemetry
-        )
+        assignPackageToQueueCommand =
+            createHistoryAssignCommand(
+                data,
+                warehouseRepository,
+                telemetry
+            ),
+
+        dispatchVehicleCommand =
+            createHistoryDispatchCommand(
+                data,
+                warehouseRepository,
+                vehicleRepository,
+                telemetry
+            ),
+
+        reroutePackageCommand =
+            createHistoryRerouteCommand(
+                data,
+                warehouseRepository,
+                packageRepository,
+                telemetry
+            )
     )
 }
 
@@ -218,19 +274,23 @@ private fun findHistoryValidationData(
     warehouseIndex: Map<String, Warehouse>
 ): HistoryValidationData? {
 
-    val warehouse = findWarehouseForHistoryValidation(
-        warehouseIndex
-    )
-        ?: return null
+    val warehouse =
+        findWarehouseForHistoryValidation(
+            warehouseIndex
+        ) ?: return null
 
-    val destinationWarehouse = warehouseIndex.values.firstOrNull {
-        it.id != warehouse.id
-    }
-        ?: return null
+    val destinationWarehouse =
+        warehouseIndex.values.firstOrNull {
+            it.id != warehouse.id
+        } ?: return null
 
-    val vehicle = findSuitableVehicle(warehouse) ?: return null
+    val vehicle =
+        findSuitableVehicle(warehouse)
+            ?: return null
 
-    val logisticsPackage = warehouse.cargoQueue.firstOrNull() ?: return null
+    val logisticsPackage =
+        warehouse.cargoQueue.firstOrNull()
+            ?: return null
 
     return HistoryValidationData(
         warehouse = warehouse,
@@ -245,7 +305,8 @@ private fun findWarehouseForHistoryValidation(
 ): Warehouse? {
 
     return warehouseIndex.values.firstOrNull { warehouse ->
-        warehouse.cargoQueue.isNotEmpty() && warehouse.stationedVehicles.isNotEmpty() &&
+        warehouse.cargoQueue.isNotEmpty() &&
+                warehouse.stationedVehicles.isNotEmpty() &&
                 findSuitableVehicle(warehouse) != null
     }
 }
@@ -256,7 +317,9 @@ private fun findSuitableVehicle(
 
     return warehouse.stationedVehicles.firstOrNull { vehicle ->
 
-        val availableCapacity = vehicle.maxCapacityKg - vehicle.calculateTotalLoadedWeightKg()
+        val availableCapacity =
+            vehicle.maxCapacityKg -
+                    vehicle.calculateTotalLoadedWeightKg()
 
         warehouse.cargoQueue.any { logisticsPackage ->
             logisticsPackage.weightByKg <= availableCapacity
@@ -270,22 +333,25 @@ private fun createHistoryAssignCommand(
     telemetry: CommandTelemetry
 ): AssignPackageToQueueCommand {
 
-    val useCase = AssignPackageToCargoQueueUseCase(
-        sortCargoQueue = SortingCargoQueueUseCase(),
-        warehouseRepository = warehouseRepository
-    )
+    val useCase =
+        AssignPackageToCargoQueueUseCase(
+            sortCargoQueue = SortingCargoQueueUseCase(),
+            warehouseRepository = warehouseRepository
+        )
 
-    val packageToAssign = data.packageToUse.copy(
-        id = "${data.packageToUse.id}-history-test"
-    )
+    val packageToAssign =
+        data.packageToUse.copy(
+            id = "${data.packageToUse.id}-history-test"
+        )
 
     return AssignPackageToQueueCommand(
         logisticsPackage = packageToAssign,
-        dependencies = AssignPackageToQueueCommandDependencies(
-            assignPackageToCargoQueueUseCase = useCase,
-            warehouseRepository = warehouseRepository,
-            telemetry = telemetry
-        )
+        dependencies =
+            AssignPackageToQueueCommandDependencies(
+                assignPackageToCargoQueueUseCase = useCase,
+                warehouseRepository = warehouseRepository,
+                telemetry = telemetry
+            )
     )
 }
 
@@ -296,23 +362,28 @@ private fun createHistoryRerouteCommand(
     telemetry: CommandTelemetry
 ): ReroutePackageCommand {
 
-    val useCase = ReroutePackageUseCase(
-        warehouseRepository = warehouseRepository,
-        packageRepository = packageRepository
-    )
-    val request = ReroutePackageRequest(
-        warehouseId = data.warehouse.id,
-        packageId = data.packageToUse.id,
-        newDestinationWarehouse = data.destinationWarehouse
-    )
+    val useCase =
+        ReroutePackageUseCase(
+            warehouseRepository = warehouseRepository,
+            packageRepository = packageRepository
+        )
+
+    val request =
+        ReroutePackageRequest(
+            warehouseId = data.warehouse.id,
+            packageId = data.packageToUse.id,
+            newDestinationWarehouse =
+                data.destinationWarehouse
+        )
 
     return ReroutePackageCommand(
-        dependencies = ReroutePackageCommandDependencies(
-            reroutePackageUseCase = useCase,
-            packageRepository = packageRepository,
-            warehouseRepository = warehouseRepository,
-            telemetry = telemetry
-        ),
+        dependencies =
+            ReroutePackageCommandDependencies(
+                reroutePackageUseCase = useCase,
+                packageRepository = packageRepository,
+                warehouseRepository = warehouseRepository,
+                telemetry = telemetry
+            ),
         input = request
     )
 }
@@ -324,29 +395,33 @@ private fun createHistoryDispatchCommand(
     telemetry: CommandTelemetry
 ): DispatchVehicleCommand {
 
-    val useCase = DispatchVehicleUseCase(
-        vehicleRepository = vehicleRepository,
-        warehouseRepository = warehouseRepository
-    )
-    val request = DispatchVehicleRequest(
-        vehicleId = data.vehicle.id,
-        warehouseId = data.warehouse.id
-    )
+    val useCase =
+        DispatchVehicleUseCase(
+            vehicleRepository = vehicleRepository,
+            warehouseRepository = warehouseRepository
+        )
+
+    val request =
+        DispatchVehicleRequest(
+            vehicleId = data.vehicle.id,
+            warehouseId = data.warehouse.id
+        )
 
     return DispatchVehicleCommand(
-        dependencies = DispatchVehicleCommandDependencies(
-            dispatchVehicleUseCase = useCase,
-            vehicleRepository = vehicleRepository,
-            warehouseRepository = warehouseRepository,
-            telemetry = telemetry
-        ),
+        dependencies =
+            DispatchVehicleCommandDependencies(
+                dispatchVehicleUseCase = useCase,
+                vehicleRepository = vehicleRepository,
+                warehouseRepository = warehouseRepository,
+                telemetry = telemetry
+            ),
         request = request
     )
 }
 
 class CommandHistoryValidation {
 
-    fun run(
+    suspend fun run(
         history: CommandHistory,
         stateSnapshot: () -> String,
         telemetry: CommandTelemetry
@@ -354,45 +429,52 @@ class CommandHistoryValidation {
         printHeader()
 
         val invoker = CommandInvoker(telemetry)
-        val result = validateHistory(
-            history = history,
-            invoker = invoker,
-            stateSnapshot = stateSnapshot
-        )
+
+        val result =
+            validateHistory(
+                history = history,
+                invoker = invoker,
+                stateSnapshot = stateSnapshot
+            )
+
         printResult(result)
     }
 
-    private fun validateHistory(
+    private suspend fun validateHistory(
         history: CommandHistory,
         invoker: CommandInvoker,
         stateSnapshot: () -> String
     ): HistoryValidationResult {
 
-        val initialState = stateSnapshot()
+        val initialState =
+            stateSnapshot()
 
-        val forwardStates = executeInitialCommands(
-            history,
-            invoker,
-            stateSnapshot
-        )
+        val forwardStates =
+            executeInitialCommands(
+                history,
+                invoker,
+                stateSnapshot
+            )
 
-        val undoPassed = validateMultiLevelUndo(
-            invoker,
-            stateSnapshot,
-            initialState,
-            forwardStates.first
-        )
+        val undoPassed =
+            validateMultiLevelUndo(
+                invoker,
+                stateSnapshot,
+                initialState,
+                forwardStates.first
+            )
+
         return continueHistoryValidation(
-            history,
-            invoker,
-            stateSnapshot,
-            initialState,
-            forwardStates,
-            undoPassed
+            history = history,
+            invoker = invoker,
+            stateSnapshot = stateSnapshot,
+            initialState = initialState,
+            forwardStates = forwardStates,
+            undoPassed = undoPassed
         )
     }
 
-    private fun continueHistoryValidation(
+    private suspend fun continueHistoryValidation(
         history: CommandHistory,
         invoker: CommandInvoker,
         stateSnapshot: () -> String,
@@ -401,42 +483,53 @@ class CommandHistoryValidation {
         undoPassed: Boolean
     ): HistoryValidationResult {
 
-        val redoPassed = validateMultiLevelRedo(
-            invoker,
-            stateSnapshot,
-            forwardStates
-        )
+        val redoPassed =
+            validateMultiLevelRedo(
+                invoker,
+                stateSnapshot,
+                forwardStates
+            )
 
-        val clearanceResult = validateRedoClearance(
-            history,
-            invoker,
-            stateSnapshot,
-            forwardStates.first
-        )
+        val clearanceResult =
+            validateRedoClearance(
+                history,
+                invoker,
+                stateSnapshot,
+                forwardStates.first
+            )
 
         return HistoryValidationResult(
             multiLevelUndoPassed = undoPassed,
             multiLevelRedoPassed = redoPassed,
             redoClearancePassed = clearanceResult.first,
-            finalRestorationPassed = clearanceResult.second == initialState
+            finalRestorationPassed =
+                clearanceResult.second == initialState
         )
     }
 
-    private fun executeInitialCommands(
+    private suspend fun executeInitialCommands(
         history: CommandHistory,
         invoker: CommandInvoker,
         stateSnapshot: () -> String
     ): Pair<String, String> {
 
-        printScenario("Execute Assign -> Execute Reroute")
+        printScenario(
+            "Execute Assign -> Execute Reroute"
+        )
 
-        invoker.execute(history.assignPackageToQueueCommand)
+        invoker.execute(
+            history.assignPackageToQueueCommand
+        )
 
-        val afterAssign = stateSnapshot()
+        val afterAssign =
+            stateSnapshot()
 
-        invoker.execute(history.reroutePackageCommand)
+        invoker.execute(
+            history.reroutePackageCommand
+        )
 
-        val afterReroute = stateSnapshot()
+        val afterReroute =
+            stateSnapshot()
 
         return Pair(
             afterAssign,
@@ -444,7 +537,7 @@ class CommandHistoryValidation {
         )
     }
 
-    private fun validateMultiLevelUndo(
+    private suspend fun validateMultiLevelUndo(
         invoker: CommandInvoker,
         stateSnapshot: () -> String,
         initialState: String,
@@ -455,16 +548,18 @@ class CommandHistoryValidation {
 
         invoker.undo()
 
-        val firstUndoPassed = stateSnapshot() == afterAssign
+        val firstUndoPassed =
+            stateSnapshot() == afterAssign
 
         invoker.undo()
 
-        val secondUndoPassed = stateSnapshot() == initialState
+        val secondUndoPassed =
+            stateSnapshot() == initialState
 
         return firstUndoPassed && secondUndoPassed
     }
 
-    private fun validateMultiLevelRedo(
+    private suspend fun validateMultiLevelRedo(
         invoker: CommandInvoker,
         stateSnapshot: () -> String,
         forwardStates: Pair<String, String>
@@ -474,16 +569,18 @@ class CommandHistoryValidation {
 
         invoker.redo()
 
-        val firstRedoPassed = stateSnapshot() == forwardStates.first
+        val firstRedoPassed =
+            stateSnapshot() == forwardStates.first
 
         invoker.redo()
 
-        val secondRedoPassed = stateSnapshot() == forwardStates.second
+        val secondRedoPassed =
+            stateSnapshot() == forwardStates.second
 
         return firstRedoPassed && secondRedoPassed
     }
 
-    private fun validateRedoClearance(
+    private suspend fun validateRedoClearance(
         history: CommandHistory,
         invoker: CommandInvoker,
         stateSnapshot: () -> String,
@@ -491,23 +588,37 @@ class CommandHistoryValidation {
     ): Pair<Boolean, String> {
 
         printScenario("Redo Stack Clearance")
+
         invoker.undo()
 
-        val undoPassed = stateSnapshot() == afterAssign
+        val undoPassed =
+            stateSnapshot() == afterAssign
 
-        invoker.execute(history.dispatchVehicleCommand)
-        val afterDispatch = stateSnapshot()
+        invoker.execute(
+            history.dispatchVehicleCommand
+        )
+
+        val afterDispatch =
+            stateSnapshot()
 
         invoker.redo()
 
-        val redoWasCleared = stateSnapshot() == afterDispatch
+        val redoWasCleared =
+            stateSnapshot() == afterDispatch
 
-        val finalState = restoreInitialState(invoker, stateSnapshot)
+        val finalState =
+            restoreInitialState(
+                invoker,
+                stateSnapshot
+            )
 
-        return Pair(undoPassed && redoWasCleared, finalState)
+        return Pair(
+            undoPassed && redoWasCleared,
+            finalState
+        )
     }
 
-    private fun restoreInitialState(
+    private suspend fun restoreInitialState(
         invoker: CommandInvoker,
         stateSnapshot: () -> String
     ): String {
@@ -541,9 +652,7 @@ class CommandHistoryValidation {
     ) {
         println()
         println("============================================================")
-        println(
-            "                 HISTORY TEST RESULTS"
-        )
+        println("                 HISTORY TEST RESULTS")
         println("============================================================")
 
         printValidationChecks(result)
@@ -554,26 +663,41 @@ class CommandHistoryValidation {
     private fun printValidationChecks(
         result: HistoryValidationResult
     ) {
-        printCheck("Multi-Level Undo", result.multiLevelUndoPassed)
+        printCheck(
+            "Multi-Level Undo",
+            result.multiLevelUndoPassed
+        )
 
-        printCheck("Multi-Level Redo", result.multiLevelRedoPassed)
+        printCheck(
+            "Multi-Level Redo",
+            result.multiLevelRedoPassed
+        )
 
-        printCheck("Redo Stack Clearance", result.redoClearancePassed)
+        printCheck(
+            "Redo Stack Clearance",
+            result.redoClearancePassed
+        )
 
-        printCheck("Final State Restoration", result.finalRestorationPassed)
+        printCheck(
+            "Final State Restoration",
+            result.finalRestorationPassed
+        )
     }
 
     private fun printCheck(
         testName: String,
         passed: Boolean
     ) {
-        val result = if (passed) {
-            "[PASSED]"
-        } else {
-            "[FAILED]"
-        }
+        val result =
+            if (passed) {
+                "[PASSED]"
+            } else {
+                "[FAILED]"
+            }
 
-        println("  ${testName.padEnd(25)} $result")
+        println(
+            "  ${testName.padEnd(25)} $result"
+        )
     }
 }
 
@@ -582,11 +706,10 @@ private fun createHistorySnapshot(
 ): String {
 
     return buildString {
-        warehouseIndex.values.sortedBy { it.id }
+        warehouseIndex.values
+            .sortedBy { it.id }
             .forEach { warehouse ->
-                appendWarehouseSnapshot(
-                    warehouse
-                )
+                appendWarehouseSnapshot(warehouse)
             }
     }
 }
@@ -596,9 +719,13 @@ private fun StringBuilder.appendWarehouseSnapshot(
 ) {
     append("Warehouse=${warehouse.id}")
 
-    append("|Queue=${warehouse.cargoQueue.map { it.id }}")
+    append(
+        "|Queue=${warehouse.cargoQueue.map { it.id }}"
+    )
 
-    append("|Vehicles=${createVehicleSnapshot(warehouse)}")
+    append(
+        "|Vehicles=${createVehicleSnapshot(warehouse)}"
+    )
 
     appendLine()
 }
@@ -608,8 +735,11 @@ private fun createVehicleSnapshot(
 ): List<Pair<String, List<String>>> {
 
     return warehouse.stationedVehicles.map { vehicle ->
-
-        Pair(vehicle.id, vehicle.assignedPackages.map { logisticsPackage -> logisticsPackage.id }
+        Pair(
+            vehicle.id,
+            vehicle.assignedPackages.map {
+                    logisticsPackage -> logisticsPackage.id
+            }
         )
     }
 }
@@ -619,7 +749,7 @@ private fun printHistoryValidationSkipped(
 ) {
     println()
     println("============================================================")
-    println("              COMMAND HISTORY VALIDATION              ")
+    println("              COMMAND HISTORY VALIDATION")
     println("============================================================")
     println("[SKIPPED] $reason")
     println("============================================================")

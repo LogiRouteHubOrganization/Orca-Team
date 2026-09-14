@@ -8,7 +8,7 @@ class LeastHopRoutingValidation(
     private val warehouseIndex: Map<String, Warehouse>,
     private val findFewestHopsRouteUseCase: FindFewestHopsRouteUseCase
 ) {
-    fun validateRouting() {
+    suspend fun validateRouting() {
         validatePathExists()
         validateNoPath()
         validateSameWarehouse()
@@ -19,7 +19,7 @@ class LeastHopRoutingValidation(
         println("Routing validation completed.")
     }
 
-    private fun validatePathExists() {
+    private suspend fun validatePathExists() {
         val startWarehouse = createWarehouse("WH-001")
         val destinationWarehouse = createWarehouse("WH-002")
 
@@ -43,7 +43,7 @@ class LeastHopRoutingValidation(
         )
     }
 
-    private fun validateNoPath() {
+    private suspend fun validateNoPath() {
         val startWarehouse = createWarehouse("WH-001")
         val destinationWarehouse = createWarehouse("WH-002")
 
@@ -61,7 +61,7 @@ class LeastHopRoutingValidation(
         }
     }
 
-    private fun validateSameWarehouse() {
+    private suspend fun validateSameWarehouse() {
         val warehouse = createWarehouse("WH-001")
 
         val warehousePath = findFewestHopsRouteUseCase(
@@ -76,7 +76,7 @@ class LeastHopRoutingValidation(
         )
     }
 
-    private fun validateCycle() {
+    private suspend fun validateCycle() {
         val startWarehouse = createWarehouse("WH-001")
         val middleWarehouse = createWarehouse("WH-002")
         val destinationWarehouse = createWarehouse("WH-003")
@@ -117,7 +117,7 @@ class LeastHopRoutingValidation(
         )
     }
 
-    private fun validateLeastHopPath() {
+    private suspend fun validateLeastHopPath() {
         val startWarehouse = createWarehouse("WH-001")
         val shortPathWarehouse = createWarehouse("WH-002")
         val alternativePathWarehouse = createWarehouse("WH-003")
@@ -125,26 +125,50 @@ class LeastHopRoutingValidation(
         val extraPathWarehouse = createWarehouse("WH-005")
 
         startWarehouse.addRoute(
-            createRoute("RT-00001", startWarehouse, shortPathWarehouse)
+            createRoute(
+                "RT-00001",
+                startWarehouse,
+                shortPathWarehouse
+            )
         )
+
         shortPathWarehouse.addRoute(
-            createRoute("RT-00002", shortPathWarehouse, destinationWarehouse)
+            createRoute(
+                "RT-00002",
+                shortPathWarehouse,
+                destinationWarehouse
+            )
         )
 
         startWarehouse.addRoute(
-            createRoute("RT-00003", startWarehouse, alternativePathWarehouse)
+            createRoute(
+                "RT-00003",
+                startWarehouse,
+                alternativePathWarehouse
+            )
         )
 
         alternativePathWarehouse.addRoute(
-            createRoute("RT-00004", alternativePathWarehouse, extraPathWarehouse)
+            createRoute(
+                "RT-00004",
+                alternativePathWarehouse,
+                extraPathWarehouse
+            )
         )
+
         extraPathWarehouse.addRoute(
-            createRoute("RT-00005", extraPathWarehouse, destinationWarehouse)
+            createRoute(
+                "RT-00005",
+                extraPathWarehouse,
+                destinationWarehouse
+            )
         )
+
         val warehousePath = findFewestHopsRouteUseCase(
             startWarehouseId = startWarehouse.id,
             destinationWarehouseId = destinationWarehouse.id
         )
+
         validateWarehousePath(
             "Least-hop path",
             warehousePath,
@@ -152,7 +176,7 @@ class LeastHopRoutingValidation(
         )
     }
 
-    private fun validateIntegration() {
+    private suspend fun validateIntegration() {
         val startWarehouse = warehouseIndex["WH-001"]
         val destinationWarehouse = warehouseIndex["WH-002"]
 
@@ -186,7 +210,11 @@ class LeastHopRoutingValidation(
         )
     }
 
-    private fun createRoute(id: String, origin: Warehouse, destination: Warehouse): Route {
+    private fun createRoute(
+        id: String,
+        origin: Warehouse,
+        destination: Warehouse
+    ): Route {
         return Route(
             id = id,
             originWarehouse = origin,

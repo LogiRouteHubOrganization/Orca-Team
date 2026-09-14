@@ -25,7 +25,7 @@ class ReroutePackageCommand(
 
     override val commandType = "ReroutePackageCommand"
 
-    override fun execute(): Boolean {
+    override suspend fun execute(): Boolean {
         val warehouse =
             dependencies.warehouseRepository
                 .findById(input.warehouseId)
@@ -40,14 +40,18 @@ class ReroutePackageCommand(
         previousPackageState = indexedPackage.value
         previousIndex = indexedPackage.index
 
-        val reroutedPackage = dependencies.reroutePackageUseCase(input)
-            ?: return false
+        val reroutedPackage =
+            dependencies.reroutePackageUseCase(input)
+                ?: return false
 
         afterPackageState = reroutedPackage
 
         dependencies.telemetry.recordStateTransition(
             commandType = commandType,
-            beforeState = createPackageState(previousPackageState, previousIndex),
+            beforeState = createPackageState(
+                previousPackageState,
+                previousIndex
+            ),
             afterState = createPackageState(
                 afterPackageState,
                 previousIndex
@@ -57,7 +61,7 @@ class ReroutePackageCommand(
         return true
     }
 
-    override fun undo() {
+    override suspend fun undo() {
         val oldPackage = previousPackageState ?: return
         val newPackage = afterPackageState ?: return
         val index = previousIndex ?: return
@@ -66,12 +70,18 @@ class ReroutePackageCommand(
 
         dependencies.telemetry.recordStateTransition(
             commandType = commandType,
-            beforeState = createPackageState(newPackage, index),
-            afterState = createPackageState(oldPackage, index)
+            beforeState = createPackageState(
+                newPackage,
+                index
+            ),
+            afterState = createPackageState(
+                oldPackage,
+                index
+            )
         )
     }
 
-    override fun redo() {
+    override suspend fun redo() {
         val oldPackage = previousPackageState ?: return
         val newPackage = afterPackageState ?: return
         val index = previousIndex ?: return
@@ -80,7 +90,10 @@ class ReroutePackageCommand(
 
         dependencies.telemetry.recordStateTransition(
             commandType = commandType,
-            beforeState = createPackageState(oldPackage, index),
+            beforeState = createPackageState(
+                oldPackage,
+                index
+            ),
             afterState = createPackageState(
                 newPackage,
                 index

@@ -10,7 +10,7 @@ class TriggerFleetRebalancingUseCase(
     private val getWarehouseLoadFactorUseCase: GetWarehouseLoadFactorUseCase
 ) {
 
-    operator fun invoke(
+    suspend operator fun invoke(
         config: FleetRebalancingConfig
     ): List<FleetRebalancingPlan> {
 

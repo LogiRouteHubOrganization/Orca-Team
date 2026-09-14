@@ -25,9 +25,8 @@ class AssignPackageToQueueCommand(
 
     override val commandType = "AssignPackageToQueueCommand"
 
-    override fun execute(): Boolean {
-        val currentWarehouse =
-            logisticsPackage.originWarehouse
+    override suspend fun execute(): Boolean {
+        val currentWarehouse = logisticsPackage.originWarehouse
 
         warehouse = currentWarehouse
 
@@ -37,7 +36,8 @@ class AssignPackageToQueueCommand(
 
         afterWarehouseQueue = currentWarehouse.cargoQueue.toList()
 
-        val isQueueChanged = currentWarehouse.cargoQueue != previousWarehouseQueue
+        val isQueueChanged =
+            currentWarehouse.cargoQueue != previousWarehouseQueue
 
         if (isQueueChanged) {
             dependencies.telemetry.recordStateTransition(
@@ -50,15 +50,16 @@ class AssignPackageToQueueCommand(
         return isQueueChanged
     }
 
-    override fun undo() {
+    override suspend fun undo() {
         val executedWarehouse = warehouse ?: return
 
         val oldQueue = previousWarehouseQueue ?: return
-
         val newQueue = afterWarehouseQueue ?: return
 
         executedWarehouse.restoreCargoQueue(oldQueue)
+
         dependencies.warehouseRepository.update(executedWarehouse)
+
         dependencies.telemetry.recordStateTransition(
             commandType = commandType,
             beforeState = createQueueState(newQueue),
@@ -66,11 +67,10 @@ class AssignPackageToQueueCommand(
         )
     }
 
-    override fun redo() {
+    override suspend fun redo() {
         val executedWarehouse = warehouse ?: return
 
         val oldQueue = previousWarehouseQueue ?: return
-
         val newQueue = afterWarehouseQueue ?: return
 
         executedWarehouse.restoreCargoQueue(newQueue)

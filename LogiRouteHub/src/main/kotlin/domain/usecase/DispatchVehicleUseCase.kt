@@ -10,7 +10,9 @@ class DispatchVehicleUseCase(
     private val warehouseRepository: WarehouseRepository
 ) {
 
-    operator fun invoke(input: DispatchVehicleRequest): List<Package> {
+    suspend operator fun invoke(
+        input: DispatchVehicleRequest
+    ): List<Package> {
 
         val vehicle = vehicleRepository.findById(input.vehicleId)
             ?: return emptyList()
@@ -27,14 +29,11 @@ class DispatchVehicleUseCase(
         ) { (selectedPackages, remainingCapacity), logisticsPackage ->
 
             if (logisticsPackage.weightByKg <= remainingCapacity) {
-
                 (selectedPackages + logisticsPackage) to
                         (remainingCapacity - logisticsPackage.weightByKg)
-
             } else {
                 selectedPackages to remainingCapacity
             }
-
         }.first
 
         packagesToDispatch.forEach { logisticsPackage ->

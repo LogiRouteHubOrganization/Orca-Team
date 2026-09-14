@@ -17,7 +17,7 @@ class WarehouseRepositoryImpl(
     private val warehouses = mutableListOf<Warehouse>()
     private var isLoaded = false
 
-    private fun loadWarehousesIfNeeded() {
+    private suspend fun loadWarehousesIfNeeded() {
         if (isLoaded) return
 
         val rawWarehouses = warehouseDataSource.loadWarehouses()
@@ -30,27 +30,42 @@ class WarehouseRepositoryImpl(
         isLoaded = true
     }
 
-    override fun findAll(): List<Warehouse> {
+    override suspend fun findAll(): List<Warehouse> {
         loadWarehousesIfNeeded()
         return warehouses.toList()
     }
 
-    override fun findById(warehouseId: String): Warehouse? {
+    override suspend fun findById(warehouseId: String): Warehouse? {
         loadWarehousesIfNeeded()
         return warehouses.find { it.id == warehouseId }
     }
 
-    override fun add(warehouse: Warehouse) {
+    override suspend fun add(warehouse: Warehouse) {
         loadWarehousesIfNeeded()
         warehouses.add(warehouse)
     }
 
-    override fun update(warehouse: Warehouse) {
+    override suspend fun update(warehouse: Warehouse) {
         loadWarehousesIfNeeded()
 
-        val warehouseIndex = warehouses.indexOfFirst { it.id == warehouse.id }
+        val warehouseIndex = warehouses.indexOfFirst {
+            it.id == warehouse.id
+        }
+
         if (warehouseIndex != NOT_FOUND_INDEX) {
             warehouses[warehouseIndex] = warehouse
+        }
+    }
+
+    override suspend fun delete(warehouseId: String) {
+        loadWarehousesIfNeeded()
+
+        val warehouseIndex = warehouses.indexOfFirst {
+            it.id == warehouseId
+        }
+
+        if (warehouseIndex != NOT_FOUND_INDEX) {
+            warehouses.removeAt(warehouseIndex)
         }
     }
 }

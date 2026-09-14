@@ -15,7 +15,6 @@ import domain.usecase.DispatchVehicleUseCase
 import domain.usecase.ReroutePackageUseCase
 import domain.usecase.SortingCargoQueueUseCase
 
-
 private data class CommandValidationResult(
     val executed: Boolean,
     val undone: Boolean,
@@ -26,25 +25,31 @@ private class ValidationWarehouseRepository(
     private val warehouseIndex: Map<String, Warehouse>
 ) : WarehouseRepository {
 
-    override fun findById(
+    override suspend fun findById(
         warehouseId: String
     ): Warehouse? {
         return warehouseIndex[warehouseId]
     }
 
-    override fun findAll(): List<Warehouse> {
+    override suspend fun findAll(): List<Warehouse> {
         return warehouseIndex.values.toList()
     }
 
-    override fun add(warehouse: Warehouse) {
+    override suspend fun add(warehouse: Warehouse) {
         if (warehouseIndex is MutableMap) {
             warehouseIndex[warehouse.id] = warehouse
         }
     }
 
-    override fun update(warehouse: Warehouse) {
+    override suspend fun update(warehouse: Warehouse) {
         if (warehouseIndex is MutableMap) {
             warehouseIndex[warehouse.id] = warehouse
+        }
+    }
+
+    override suspend fun delete(warehouseId: String) {
+        if (warehouseIndex is MutableMap) {
+            warehouseIndex.remove(warehouseId)
         }
     }
 }
@@ -53,62 +58,105 @@ private class ValidationVehicleRepository(
     private val warehouseIndex: Map<String, Warehouse>
 ) : VehicleRepository {
 
-    override fun findById(
+    override suspend fun findById(
         vehicleId: String
     ): Vehicle? {
-        return warehouseIndex.values.flatMap { warehouse -> warehouse.stationedVehicles }
+        return warehouseIndex.values
+            .flatMap { warehouse -> warehouse.stationedVehicles }
             .firstOrNull { vehicle -> vehicle.id == vehicleId }
     }
 
-    override fun findAll(): List<Vehicle> {
+    override suspend fun findAll(): List<Vehicle> {
         return warehouseIndex.values.flatMap { it.stationedVehicles }
     }
 
-    override fun add(vehicle: Vehicle) {
+    override suspend fun add(vehicle: Vehicle) {
         val warehouse = warehouseIndex[vehicle.currentWarehouse.id]
         if (warehouse != null) {
-            val currentVehicles = warehouse.stationedVehicles as? MutableList<Vehicle>
+            val currentVehicles =
+                warehouse.stationedVehicles as? MutableList<Vehicle>
+
             currentVehicles?.add(vehicle)
         }
     }
 
-    override fun update(vehicle: Vehicle) {
+    override suspend fun update(vehicle: Vehicle) {
+        val warehouse = warehouseIndex[vehicle.currentWarehouse.id]
+
+        if (warehouse != null) {
+            val currentVehicles =
+                warehouse.stationedVehicles as? MutableList<Vehicle>
+
+            val index =
+                currentVehicles?.indexOfFirst { it.id == vehicle.id } ?: -1
+
+            if (currentVehicles != null && index != -1) {
+                currentVehicles[index] = vehicle
+            }
+        }
+    }
+
+    override suspend fun delete(vehicleId: String) {
+        warehouseIndex.values.forEach { warehouse ->
+            val currentVehicles =
+                warehouse.stationedVehicles as? MutableList<Vehicle>
+
+            currentVehicles?.removeIf { it.id == vehicleId }
+        }
     }
 }
+
 private class ValidationPackageRepository(
     private val warehouseIndex: Map<String, Warehouse>
 ) : PackageRepository {
 
-    override fun findById(packageId: String): Package? {
+    override suspend fun findById(packageId: String): Package? {
         return warehouseIndex.values
             .flatMap { it.cargoQueue }
             .firstOrNull { it.id == packageId }
     }
 
-    override fun findAll(): List<Package> {
+    override suspend fun findAll(): List<Package> {
         return warehouseIndex.values.flatMap { it.cargoQueue }
     }
 
-    override fun add(packageItem: Package) {
-        val warehouse = warehouseIndex[packageItem.originWarehouse.id]
+    override suspend fun add(packageItem: Package) {
+        val warehouse =
+            warehouseIndex[packageItem.originWarehouse.id]
+
         if (warehouse != null) {
-            val queue = warehouse.cargoQueue as? MutableList<Package>
+            val queue =
+                warehouse.cargoQueue as? MutableList<Package>
+
             queue?.add(packageItem)
         }
     }
 
-    override fun update(packageItem: Package) {
+    override suspend fun update(packageItem: Package) {
         warehouseIndex.values.forEach { warehouse ->
-            val queue = warehouse.cargoQueue as? MutableList<Package>
-            val index = queue?.indexOfFirst { it.id == packageItem.id } ?: -1
+            val queue =
+                warehouse.cargoQueue as? MutableList<Package>
+
+            val index =
+                queue?.indexOfFirst { it.id == packageItem.id } ?: -1
+
             if (index != -1 && queue != null) {
                 queue[index] = packageItem
             }
         }
     }
+
+    override suspend fun delete(packageId: String) {
+        warehouseIndex.values.forEach { warehouse ->
+            val queue =
+                warehouse.cargoQueue as? MutableList<Package>
+
+            queue?.removeIf { it.id == packageId }
+        }
+    }
 }
 
-fun validateCommandPattern(
+suspend fun validateCommandPattern(
     warehouseIndex: Map<String, Warehouse>
 ) {
     printValidationSuiteHeader()
@@ -118,11 +166,14 @@ fun validateCommandPattern(
         return
     }
 
-    val warehouseRepository = ValidationWarehouseRepository(warehouseIndex)
+    val warehouseRepository =
+        ValidationWarehouseRepository(warehouseIndex)
 
-    val vehicleRepository = ValidationVehicleRepository(warehouseIndex)
+    val vehicleRepository =
+        ValidationVehicleRepository(warehouseIndex)
 
-    val packageRepository = ValidationPackageRepository(warehouseIndex)
+    val packageRepository =
+        ValidationPackageRepository(warehouseIndex)
 
     val telemetry = ConsoleTelemetry()
 
@@ -133,24 +184,31 @@ fun validateCommandPattern(
         packageRepository = packageRepository,
         telemetry = telemetry
     )
+
     printValidationSuiteFooter()
 }
 
-private fun runCommandValidations(
+private suspend fun runCommandValidations(
     warehouseIndex: Map<String, Warehouse>,
     warehouseRepository: WarehouseRepository,
     vehicleRepository: VehicleRepository,
     packageRepository: PackageRepository,
     telemetry: ConsoleTelemetry
 ) {
-    val assignUseCase = createAssignPackageUseCase(warehouseRepository)
+    val assignUseCase =
+        createAssignPackageUseCase(warehouseRepository)
 
-    val dispatchUseCase = createDispatchVehicleUseCase(warehouseRepository, vehicleRepository)
+    val dispatchUseCase =
+        createDispatchVehicleUseCase(
+            warehouseRepository,
+            vehicleRepository
+        )
 
-    val rerouteUseCase = ReroutePackageUseCase(
-        warehouseRepository = warehouseRepository,
-        packageRepository = packageRepository
-    )
+    val rerouteUseCase =
+        ReroutePackageUseCase(
+            warehouseRepository = warehouseRepository,
+            packageRepository = packageRepository
+        )
 
     validateAllCommands(
         warehouseIndex = warehouseIndex,
@@ -164,11 +222,11 @@ private fun runCommandValidations(
     )
 }
 
-private fun validateAllCommands(
+private suspend fun validateAllCommands(
     warehouseIndex: Map<String, Warehouse>,
     warehouseRepository: WarehouseRepository,
     vehicleRepository: VehicleRepository,
-    packageRepository:PackageRepository,
+    packageRepository: PackageRepository,
     assignUseCase: AssignPackageToCargoQueueUseCase,
     dispatchUseCase: DispatchVehicleUseCase,
     rerouteUseCase: ReroutePackageUseCase,
@@ -201,47 +259,46 @@ private fun validateAllCommands(
 private fun createAssignPackageUseCase(
     warehouseRepository: WarehouseRepository
 ): AssignPackageToCargoQueueUseCase {
-
     return AssignPackageToCargoQueueUseCase(
         sortCargoQueue = SortingCargoQueueUseCase(),
         warehouseRepository = warehouseRepository
     )
 }
 
-
 private fun createDispatchVehicleUseCase(
     warehouseRepository: WarehouseRepository,
     vehicleRepository: VehicleRepository
 ): DispatchVehicleUseCase {
-
     return DispatchVehicleUseCase(
         vehicleRepository = vehicleRepository,
         warehouseRepository = warehouseRepository
     )
 }
 
-
-private fun validateAssignPackageCommand(
+private suspend fun validateAssignPackageCommand(
     warehouseIndex: Map<String, Warehouse>,
     warehouseRepository: WarehouseRepository,
     assignUseCase: AssignPackageToCargoQueueUseCase,
     telemetry: ConsoleTelemetry
 ) {
-    val warehouse = warehouseIndex.values.firstOrNull()
+    val warehouse =
+        warehouseIndex.values.firstOrNull()
 
-    val originalPackage = warehouse?.cargoQueue?.firstOrNull()
+    val originalPackage =
+        warehouse?.cargoQueue?.firstOrNull()
 
     if (warehouse == null || originalPackage == null) {
         printValidationSkipped("Assign Package Command")
         return
     }
 
-    val command = createAssignPackageCommand(
-        originalPackage,
-        warehouseRepository,
-        assignUseCase,
-        telemetry
-    )
+    val command =
+        createAssignPackageCommand(
+            originalPackage,
+            warehouseRepository,
+            assignUseCase,
+            telemetry
+        )
 
     validateAssignExecution(
         warehouse,
@@ -257,15 +314,17 @@ private fun createAssignPackageCommand(
     telemetry: ConsoleTelemetry
 ): AssignPackageToQueueCommand {
 
-    val packageToAssign = originalPackage.copy(
-        id = "${originalPackage.id}-command-test"
-    )
+    val packageToAssign =
+        originalPackage.copy(
+            id = "${originalPackage.id}-command-test"
+        )
 
-    val dependencies = AssignPackageToQueueCommandDependencies(
-        assignPackageToCargoQueueUseCase = assignUseCase,
-        warehouseRepository = warehouseRepository,
-        telemetry = telemetry
-    )
+    val dependencies =
+        AssignPackageToQueueCommandDependencies(
+            assignPackageToCargoQueueUseCase = assignUseCase,
+            warehouseRepository = warehouseRepository,
+            telemetry = telemetry
+        )
 
     return AssignPackageToQueueCommand(
         logisticsPackage = packageToAssign,
@@ -273,29 +332,34 @@ private fun createAssignPackageCommand(
     )
 }
 
-
-private fun validateAssignExecution(
+private suspend fun validateAssignExecution(
     warehouse: Warehouse,
     command: AssignPackageToQueueCommand,
     telemetry: ConsoleTelemetry
 ) {
     printValidationHeader("Assign Package Command")
 
-    val originalQueue = warehouse.cargoQueue.toList()
+    val originalQueue =
+        warehouse.cargoQueue.toList()
 
-    val invoker = CommandInvoker(telemetry)
+    val invoker =
+        CommandInvoker(telemetry)
 
-    val result = testAssignHistory(
-        warehouse,
-        originalQueue,
-        command,
-        invoker
+    val result =
+        testAssignHistory(
+            warehouse,
+            originalQueue,
+            command,
+            invoker
+        )
+
+    printCommandResult(
+        "Assign Package Command",
+        result
     )
-    printCommandResult("Assign Package Command", result)
 }
 
-
-private fun testAssignHistory(
+private suspend fun testAssignHistory(
     warehouse: Warehouse,
     originalQueue: List<Package>,
     command: AssignPackageToQueueCommand,
@@ -304,47 +368,55 @@ private fun testAssignHistory(
 
     invoker.execute(command)
 
-    val executedQueue = warehouse.cargoQueue.toList()
+    val executedQueue =
+        warehouse.cargoQueue.toList()
 
-    val executed = executedQueue.size == originalQueue.size + 1
+    val executed =
+        executedQueue.size == originalQueue.size + 1
 
     invoker.undo()
-    val undone = warehouse.cargoQueue == originalQueue
+
+    val undone =
+        warehouse.cargoQueue == originalQueue
 
     invoker.redo()
-    val redone = warehouse.cargoQueue == executedQueue
+
+    val redone =
+        warehouse.cargoQueue == executedQueue
 
     invoker.undo()
 
     return CommandValidationResult(
-        executed,
-        undone,
-        redone
+        executed = executed,
+        undone = undone,
+        redone = redone
     )
 }
 
-private fun validateReroutePackageCommand(
+private suspend fun validateReroutePackageCommand(
     warehouseIndex: Map<String, Warehouse>,
     warehouseRepository: WarehouseRepository,
     packageRepository: PackageRepository,
     rerouteUseCase: ReroutePackageUseCase,
     telemetry: ConsoleTelemetry
 ) {
-    val validationData = findRerouteValidationData(warehouseIndex)
+    val validationData =
+        findRerouteValidationData(warehouseIndex)
 
     if (validationData == null) {
         printValidationSkipped("Reroute Package Command")
         return
     }
 
-    val command = createReroutePackageCommand(
-        warehouse = validationData.first,
-        destinationWarehouse = validationData.second,
-        warehouseRepository = warehouseRepository,
-        packageRepository = packageRepository,
-        rerouteUseCase = rerouteUseCase,
-        telemetry = telemetry
-    )
+    val command =
+        createReroutePackageCommand(
+            warehouse = validationData.first,
+            destinationWarehouse = validationData.second,
+            warehouseRepository = warehouseRepository,
+            packageRepository = packageRepository,
+            rerouteUseCase = rerouteUseCase,
+            telemetry = telemetry
+        )
 
     validateRerouteExecution(
         validationData.first,
@@ -358,11 +430,18 @@ private fun findRerouteValidationData(
     warehouseIndex: Map<String, Warehouse>
 ): Pair<Warehouse, Warehouse>? {
 
-    val warehouse = warehouseIndex.values.firstOrNull { it.cargoQueue.isNotEmpty() } ?: return null
+    val warehouse =
+        warehouseIndex.values
+            .firstOrNull { it.cargoQueue.isNotEmpty() }
+            ?: return null
 
-    val destinationWarehouse = warehouseIndex.values.firstOrNull { it.id != warehouse.id } ?: return null
+    val destinationWarehouse =
+        warehouseIndex.values
+            .firstOrNull { it.id != warehouse.id }
+            ?: return null
 
-    return Pair(warehouse,
+    return Pair(
+        warehouse,
         destinationWarehouse
     )
 }
@@ -376,23 +455,27 @@ private fun createReroutePackageCommand(
     telemetry: ConsoleTelemetry
 ): ReroutePackageCommand {
 
-    val packageToReroute = warehouse.cargoQueue.first()
+    val packageToReroute =
+        warehouse.cargoQueue.first()
 
-    val request = ReroutePackageRequest(
-        warehouseId = warehouse.id,
-        packageId = packageToReroute.id,
-        newDestinationWarehouse = destinationWarehouse
-    )
+    val request =
+        ReroutePackageRequest(
+            warehouseId = warehouse.id,
+            packageId = packageToReroute.id,
+            newDestinationWarehouse = destinationWarehouse
+        )
 
     return ReroutePackageCommand(
         dependencies = createRerouteDependencies(
             warehouseRepository = warehouseRepository,
             packageRepository = packageRepository,
             rerouteUseCase = rerouteUseCase,
-            telemetry = telemetry),
+            telemetry = telemetry
+        ),
         input = request
     )
 }
+
 private fun createRerouteDependencies(
     warehouseRepository: WarehouseRepository,
     packageRepository: PackageRepository,
@@ -408,31 +491,40 @@ private fun createRerouteDependencies(
     )
 }
 
-private fun validateRerouteExecution(
+private suspend fun validateRerouteExecution(
     warehouse: Warehouse,
     destinationWarehouse: Warehouse,
     command: ReroutePackageCommand,
     telemetry: ConsoleTelemetry
 ) {
     printValidationHeader("Reroute Package Command")
-    val packageToReroute = warehouse.cargoQueue.first()
 
-    val originalDestination = packageToReroute.destinationWarehouse
+    val packageToReroute =
+        warehouse.cargoQueue.first()
 
-    val invoker = CommandInvoker(telemetry)
+    val originalDestination =
+        packageToReroute.destinationWarehouse
 
-    val result = testRerouteHistory(
-        warehouse,
-        packageToReroute.id,
-        originalDestination,
-        destinationWarehouse,
-        command,
-        invoker
+    val invoker =
+        CommandInvoker(telemetry)
+
+    val result =
+        testRerouteHistory(
+            warehouse,
+            packageToReroute.id,
+            originalDestination,
+            destinationWarehouse,
+            command,
+            invoker
+        )
+
+    printCommandResult(
+        "Reroute Package Command",
+        result
     )
-    printCommandResult("Reroute Package Command", result)
 }
 
-private fun testRerouteHistory(
+private suspend fun testRerouteHistory(
     warehouse: Warehouse,
     packageId: String,
     originalDestination: Warehouse,
@@ -443,31 +535,37 @@ private fun testRerouteHistory(
 
     invoker.execute(command)
 
-    val executed = hasPackageDestination(
-        warehouse,
-        packageId,
-        newDestination
-    )
+    val executed =
+        hasPackageDestination(
+            warehouse,
+            packageId,
+            newDestination
+        )
 
     invoker.undo()
 
-    val undone = hasPackageDestination(
-        warehouse,
-        packageId,
-        originalDestination
-    )
+    val undone =
+        hasPackageDestination(
+            warehouse,
+            packageId,
+            originalDestination
+        )
+
     invoker.redo()
 
-    val redone = hasPackageDestination(
-        warehouse,
-        packageId,
-        newDestination
-    )
+    val redone =
+        hasPackageDestination(
+            warehouse,
+            packageId,
+            newDestination
+        )
+
     invoker.undo()
+
     return CommandValidationResult(
-        executed,
-        undone,
-        redone
+        executed = executed,
+        undone = undone,
+        redone = redone
     )
 }
 
@@ -477,35 +575,45 @@ private fun hasPackageDestination(
     destinationWarehouse: Warehouse
 ): Boolean {
 
-    val logisticsPackage = warehouse.cargoQueue.firstOrNull { it.id == packageId }
+    val logisticsPackage =
+        warehouse.cargoQueue
+            .firstOrNull { it.id == packageId }
 
-    return logisticsPackage?.destinationWarehouse == destinationWarehouse
+    return logisticsPackage?.destinationWarehouse ==
+            destinationWarehouse
 }
 
-private fun validateDispatchVehicleCommand(
+private suspend fun validateDispatchVehicleCommand(
     warehouseIndex: Map<String, Warehouse>,
     warehouseRepository: WarehouseRepository,
     vehicleRepository: VehicleRepository,
     dispatchUseCase: DispatchVehicleUseCase,
     telemetry: ConsoleTelemetry
 ) {
-    val warehouse = findWarehouseForDispatchValidation(warehouseIndex)
+    val warehouse =
+        findWarehouseForDispatchValidation(
+            warehouseIndex
+        )
 
     if (warehouse == null) {
-        printValidationSkipped("Dispatch Vehicle Command")
+        printValidationSkipped(
+            "Dispatch Vehicle Command"
+        )
         return
     }
 
-    val vehicle = warehouse.stationedVehicles.first()
+    val vehicle =
+        warehouse.stationedVehicles.first()
 
-    val command = createDispatchVehicleCommand(
-        warehouse,
-        vehicle,
-        warehouseRepository,
-        vehicleRepository,
-        dispatchUseCase,
-        telemetry
-    )
+    val command =
+        createDispatchVehicleCommand(
+            warehouse,
+            vehicle,
+            warehouseRepository,
+            vehicleRepository,
+            dispatchUseCase,
+            telemetry
+        )
 
     validateDispatchExecution(
         warehouse,
@@ -520,9 +628,11 @@ private fun findWarehouseForDispatchValidation(
 ): Warehouse? {
 
     return warehouseIndex.values
-        .firstOrNull { it.cargoQueue.isNotEmpty() && it.stationedVehicles.isNotEmpty() }
+        .firstOrNull {
+            it.cargoQueue.isNotEmpty() &&
+                    it.stationedVehicles.isNotEmpty()
+        }
 }
-
 
 private fun createDispatchVehicleCommand(
     warehouse: Warehouse,
@@ -533,17 +643,19 @@ private fun createDispatchVehicleCommand(
     telemetry: ConsoleTelemetry
 ): DispatchVehicleCommand {
 
-    val request = DispatchVehicleRequest(
-        vehicleId = vehicle.id,
-        warehouseId = warehouse.id
-    )
+    val request =
+        DispatchVehicleRequest(
+            vehicleId = vehicle.id,
+            warehouseId = warehouse.id
+        )
 
-    val dependencies = DispatchVehicleCommandDependencies(
-        dispatchVehicleUseCase = dispatchUseCase,
-        vehicleRepository = vehicleRepository,
-        warehouseRepository = warehouseRepository,
-        telemetry = telemetry
-    )
+    val dependencies =
+        DispatchVehicleCommandDependencies(
+            dispatchVehicleUseCase = dispatchUseCase,
+            vehicleRepository = vehicleRepository,
+            warehouseRepository = warehouseRepository,
+            telemetry = telemetry
+        )
 
     return DispatchVehicleCommand(
         dependencies = dependencies,
@@ -551,8 +663,7 @@ private fun createDispatchVehicleCommand(
     )
 }
 
-
-private fun validateDispatchExecution(
+private suspend fun validateDispatchExecution(
     warehouse: Warehouse,
     vehicle: Vehicle,
     command: DispatchVehicleCommand,
@@ -562,32 +673,41 @@ private fun validateDispatchExecution(
         "Dispatch Vehicle Command"
     )
 
-    val originalPackages = vehicle.assignedPackages.toList()
+    val originalPackages =
+        vehicle.assignedPackages.toList()
 
-    val originalQueue = warehouse.cargoQueue.toList()
+    val originalQueue =
+        warehouse.cargoQueue.toList()
 
-    val invoker = CommandInvoker(telemetry)
+    val invoker =
+        CommandInvoker(telemetry)
 
     invoker.execute(command)
 
-    val executedPackages = vehicle.assignedPackages.toList()
+    val executedPackages =
+        vehicle.assignedPackages.toList()
 
-    val executedQueue = warehouse.cargoQueue.toList()
+    val executedQueue =
+        warehouse.cargoQueue.toList()
 
-    val result = testDispatchHistory(
-        warehouse,
-        vehicle,
-        originalPackages,
-        originalQueue,
-        executedPackages,
-        executedQueue,
-        invoker
+    val result =
+        testDispatchHistory(
+            warehouse,
+            vehicle,
+            originalPackages,
+            originalQueue,
+            executedPackages,
+            executedQueue,
+            invoker
+        )
+
+    printCommandResult(
+        "Dispatch Vehicle Command",
+        result
     )
-
-    printCommandResult("Dispatch Vehicle Command", result)
 }
 
-private fun testDispatchHistory(
+private suspend fun testDispatchHistory(
     warehouse: Warehouse,
     vehicle: Vehicle,
     originalPackages: List<Package>,
@@ -597,21 +717,28 @@ private fun testDispatchHistory(
     invoker: CommandInvoker
 ): CommandValidationResult {
 
-    val executed = vehicle.assignedPackages != originalPackages || warehouse.cargoQueue != originalQueue
+    val executed =
+        vehicle.assignedPackages != originalPackages ||
+                warehouse.cargoQueue != originalQueue
 
     invoker.undo()
 
-    val undone = vehicle.assignedPackages == originalPackages && warehouse.cargoQueue == originalQueue
+    val undone =
+        vehicle.assignedPackages == originalPackages &&
+                warehouse.cargoQueue == originalQueue
 
     invoker.redo()
 
-    val redone = vehicle.assignedPackages == executedPackages && warehouse.cargoQueue == executedQueue
+    val redone =
+        vehicle.assignedPackages == executedPackages &&
+                warehouse.cargoQueue == executedQueue
 
     invoker.undo()
+
     return CommandValidationResult(
-        executed,
-        undone,
-        redone
+        executed = executed,
+        undone = undone,
+        redone = redone
     )
 }
 
@@ -671,7 +798,6 @@ private fun printCommandResult(
     )
     println("------------------------------------------------------------")
 }
-
 
 private fun getResultText(
     passed: Boolean

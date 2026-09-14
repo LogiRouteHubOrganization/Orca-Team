@@ -4,11 +4,13 @@ import domain.model.Vehicle
 
 interface VehicleRepository {
 
-    fun findById(vehicleId: String): Vehicle?
+    suspend fun findById(vehicleId: String): Vehicle?
 
-    fun findAll(): List<Vehicle>
+    suspend fun findAll(): List<Vehicle>
 
-    fun add(vehicle: Vehicle)
+    suspend fun add(vehicle: Vehicle)
 
-    fun update(vehicle: Vehicle)
+    suspend fun update(vehicle: Vehicle)
+
+    suspend fun delete(vehicleId: String)
 }

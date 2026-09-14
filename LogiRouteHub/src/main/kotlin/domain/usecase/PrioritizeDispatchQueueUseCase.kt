@@ -10,7 +10,7 @@ class PrioritizeDispatchQueueUseCase(
     private val priorityLevels: PackagePriorityLevels
 ) {
 
-    operator fun invoke(warehouseId: String): Warehouse? {
+    suspend operator fun invoke(warehouseId: String): Warehouse? {
 
         val warehouse = warehouseRepository.findById(warehouseId)
             ?: return null
@@ -23,13 +23,16 @@ class PrioritizeDispatchQueueUseCase(
                     it.weightByKg
                 }
             )
+
         prioritizedPackages.forEachIndexed { index, logisticsPackage ->
             warehouse.updatePackageAtIndex(
                 packageIndex = index,
                 logisticsPackage = logisticsPackage
             )
         }
+
         warehouseRepository.update(warehouse)
+
         return warehouse
     }
 

@@ -14,7 +14,7 @@ class DetectDeliveryBottleneckUseCase(
     private val warehouseRepository: WarehouseRepository
 ) {
 
-    operator fun invoke(): List<PotentialDeliveryBottleneck> {
+    suspend operator fun invoke(): List<PotentialDeliveryBottleneck> {
         val warehouses = warehouseRepository.findAll()
 
         return warehouses

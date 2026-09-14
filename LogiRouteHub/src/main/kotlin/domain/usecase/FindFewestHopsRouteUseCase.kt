@@ -8,12 +8,15 @@ class FindFewestHopsRouteUseCase(
     private val warehouseRepository: WarehouseRepository,
     private val pathFinder: LeastHopPathFinder
 ) {
-    operator fun invoke(
+    suspend operator fun invoke(
         startWarehouseId: String,
         destinationWarehouseId: String
     ): List<Warehouse> {
-        val startWarehouse = warehouseRepository.findById(startWarehouseId) ?: return emptyList()
-        val destinationWarehouse = warehouseRepository.findById(destinationWarehouseId) ?: return emptyList()
+        val startWarehouse =
+            warehouseRepository.findById(startWarehouseId) ?: return emptyList()
+
+        val destinationWarehouse =
+            warehouseRepository.findById(destinationWarehouseId) ?: return emptyList()
 
         return pathFinder.findLeastHopPath(
             startWarehouse = startWarehouse,

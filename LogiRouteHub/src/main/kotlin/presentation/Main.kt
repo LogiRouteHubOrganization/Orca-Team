@@ -1,21 +1,13 @@
 package presentation
 
-import data.datasource.csv.CsvPackageDataSource
-import data.datasource.csv.CsvRouteDataSource
-import data.datasource.csv.CsvVehicleDataSource
-import data.datasource.csv.CsvWarehouseDataSource
-import data.mapper.PackageMapper
-import data.mapper.RouteMapper
-import data.mapper.VehicleMapper
-import data.mapper.WarehouseMapper
-import data.parser.FleetParser
-import data.parser.PackageParser
-import data.parser.RouteParser
-import data.parser.WarehouseParser
-import data.repository.PackageRepositoryImpl
-import data.repository.RouteRepositoryImpl
-import data.repository.VehicleRepositoryImpl
-import data.repository.WarehouseRepositoryImpl
+import data.remote.datasource.PackageRemoteDataSourceImpl
+import data.remote.datasource.RouteRemoteDataSourceImpl
+import data.remote.datasource.VehicleRemoteDataSourceImpl
+import data.remote.datasource.WarehouseRemoteDataSourceImpl
+import data.remote.repository.PackageRemoteRepositoryImpl
+import data.remote.repository.RouteRemoteRepositoryImpl
+import data.remote.repository.VehicleRemoteRepositoryImpl
+import data.remote.repository.WarehouseRemoteRepositoryImpl
 import domain.model.Warehouse
 import domain.repository.WarehouseRepository
 import domain.model.request.AnalyzeTreePerformanceRequest
@@ -30,111 +22,123 @@ import domain.routing.ShortestPathRouter
 import domain.tree.simulation.*
 import domain.usecase.*
 import domain.validation.*
-import java.io.File
-import java.util.*
-
-private const val PACKAGES_FILE_PATH = "src/main/resources/packages.csv"
-private const val WAREHOUSES_FILE_PATH = "src/main/resources/warehouses.csv"
-private const val ROUTES_FILE_PATH = "src/main/resources/routes.csv"
-private const val FLEET_FILE_PATH = "src/main/resources/fleet.csv"
+import kotlinx.coroutines.runBlocking
+import java.util.Locale
 
 private const val WEIGHT_DECIMAL_FORMAT = "%.2f"
 private const val OUTPUT_SEPARATOR = "******************************************************"
 
-fun main() {
+fun main() = runBlocking {
 
-    // Step 1: Initialize DataSources
-    val warehouseDataSource = CsvWarehouseDataSource(
-        warehouseFile = File(WAREHOUSES_FILE_PATH),
-        warehouseParser = WarehouseParser()
-    )
+    println("==============================================")
+    println("       LogiRouteHub - Supabase Live Mode")
+    println("==============================================")
+    println()
 
-    val packageDataSource = CsvPackageDataSource(
-        packageFile = File(PACKAGES_FILE_PATH),
-        packageParser = PackageParser()
-    )
+    try {
 
-    val vehicleDataSource = CsvVehicleDataSource(
-        vehicleFile = File(FLEET_FILE_PATH),
-        fleetParser = FleetParser()
-    )
+        // Step 1: Initialize Supabase Remote DataSources
+        val warehouseDataSource = WarehouseRemoteDataSourceImpl()
+        val packageDataSource = PackageRemoteDataSourceImpl()
+        val vehicleDataSource = VehicleRemoteDataSourceImpl()
+        val routeDataSource = RouteRemoteDataSourceImpl()
 
-    val routeDataSource = CsvRouteDataSource(
-        routeFile = File(ROUTES_FILE_PATH),
-        routeParser = RouteParser()
-    )
+        // Step 2: Initialize Remote Repositories
+        val warehouseRepository: WarehouseRepository =
+            WarehouseRemoteRepositoryImpl(
+                remoteDataSource = warehouseDataSource
+            )
 
-    // Step 2: Initialize Mappers
-    val warehouseMapper = WarehouseMapper()
-    val packageMapper = PackageMapper()
-    val vehicleMapper = VehicleMapper()
-    val routeMapper = RouteMapper()
+        val packageRepository =
+            PackageRemoteRepositoryImpl(
+                remoteDataSource = packageDataSource,
+                warehouseRepository = warehouseRepository
+            )
 
-    // Step 3: Initialize Repositories
-    val warehouseRepository = WarehouseRepositoryImpl(
-        warehouseDataSource = warehouseDataSource,
-        warehouseMapper = warehouseMapper
-    )
+        val vehicleRepository =
+            VehicleRemoteRepositoryImpl(
+                remoteDataSource = vehicleDataSource,
+                warehouseRepository = warehouseRepository
+            )
 
-    val packageRepository = PackageRepositoryImpl(
-        packageDataSource = packageDataSource,
-        packageMapper = packageMapper,
-        warehouseRepository = warehouseRepository
-    )
+        val routeRepository =
+            RouteRemoteRepositoryImpl(
+                remoteDataSource = routeDataSource,
+                warehouseRepository = warehouseRepository
+            )
 
-    val vehicleRepository = VehicleRepositoryImpl(
-        vehicleDataSource = vehicleDataSource,
-        vehicleMapper = vehicleMapper,
-        warehouseRepository = warehouseRepository
-    )
+        println("Loading live Supabase data...")
 
-    val routeRepository = RouteRepositoryImpl(
-        routeDataSource = routeDataSource,
-        routeMapper = routeMapper,
-        warehouseRepository = warehouseRepository
-    )
+        // Step 3: Load live records
+        val warehouses = warehouseRepository.findAll()
+        val packages = packageRepository.findAll()
+        val vehicles = vehicleRepository.findAll()
+        val routes = routeRepository.findAll()
 
-    // Step 4: Load repository-backed domain state
-    val warehouses = warehouseRepository.findAll()
-    packageRepository.findAll()
-    vehicleRepository.findAll()
-    routeRepository.findAll()
+        println("Warehouses: ${warehouses.size}")
+        println("Packages:   ${packages.size}")
+        println("Vehicles:   ${vehicles.size}")
+        println("Routes:     ${routes.size}")
+        println()
 
-    // Step 5: Build warehouse index for validations and algorithms
-    val warehouseIndex = warehouses.associateBy { it.id }
+        // Step 4: Build warehouse index
+        val warehouseIndex = warehouses.associateBy { it.id }
 
-    // Step 6: Validate package sorting
-    validateSorting(warehouseIndex)
+        // Step 5: Validate existing algorithms
+        validateSorting(warehouseIndex)
 
-    // Step 7: Validate pricing strategies and package decorators
-    validatePricingAndDecorators(warehouseIndex)
+        validatePricingAndDecorators(warehouseIndex)
 
-    // Step 8: Validate routing algorithms
-    validateRoutingAlgorithms(warehouseIndex,warehouseRepository)
+        validateRoutingAlgorithms(
+            warehouseIndex = warehouseIndex,
+            warehouseRepository = warehouseRepository
+        )
 
-    // Step 9: Validate HubTree
-    HubTreeValidation(warehouseIndex).validateHubTree()
-    val trackingIdGenerator = SequentialTrackingIdGenerator()
-    val unbalancedBST = UnbalancedBST()
-    val balancedBST = BalancedBST()
+        // Step 6: Validate HubTree
+        HubTreeValidation(warehouseIndex).validateHubTree()
 
-    val analyzeTreePerformanceUseCase = AnalyzeTreePerformanceUseCase(
-        generator = trackingIdGenerator,
-        unbalancedBST = unbalancedBST,
-        balancedBST = balancedBST
-    )
-    val analyzeTreePerformanceRequest = AnalyzeTreePerformanceRequest(
-        numberOfTrackingIds = 1000,
-        nanoTimeProvider = System::nanoTime
-    )
-    val simulationResult = analyzeTreePerformanceUseCase(
-        analyzeTreePerformanceRequest
-    )
-    displayTreePerformanceResult(simulationResult)
+        val trackingIdGenerator = SequentialTrackingIdGenerator()
+        val unbalancedBST = UnbalancedBST()
+        val balancedBST = BalancedBST()
 
-    // Step 10: Validate Command Pattern
-    validateCommandPattern(warehouseIndex)
-    validateCommandHistory(warehouseIndex)
+        val analyzeTreePerformanceUseCase =
+            AnalyzeTreePerformanceUseCase(
+                generator = trackingIdGenerator,
+                unbalancedBST = unbalancedBST,
+                balancedBST = balancedBST
+            )
+
+        val analyzeTreePerformanceRequest =
+            AnalyzeTreePerformanceRequest(
+                numberOfTrackingIds = 1000,
+                nanoTimeProvider = System::nanoTime
+            )
+
+        val simulationResult =
+            analyzeTreePerformanceUseCase(
+                analyzeTreePerformanceRequest
+            )
+
+        displayTreePerformanceResult(simulationResult)
+
+        // Step 7: Validate Command Pattern
+        validateCommandPattern(warehouseIndex)
+        validateCommandHistory(warehouseIndex)
+
+        println()
+        println("==============================================")
+        println("Supabase live-data verification completed.")
+        println("==============================================")
+
+    } catch (e: Exception) {
+        println()
+        println("==============================================")
+        println("ERROR")
+        println("==============================================")
+        println(e.message ?: "Unexpected error")
+        println()
+        e.printStackTrace()
+    }
 }
 
 private fun validateSorting(
@@ -177,7 +181,7 @@ private fun validatePricingAndDecorators(
     )
 }
 
-private fun validateRoutingAlgorithms(
+private suspend fun validateRoutingAlgorithms(
     warehouseIndex: Map<String, Warehouse>,
     warehouseRepository: WarehouseRepository
 ) {
@@ -192,6 +196,7 @@ private fun validateRoutingAlgorithms(
         warehouseIndex = warehouseIndex,
         findFewestHopsRouteUseCase = findFewestHopsRouteUseCase
     )
+
     routingValidation.validateRouting()
 
     val shortestPathRouter = ShortestPathRouter(
@@ -208,16 +213,19 @@ private fun validateRoutingAlgorithms(
         router = shortestPathRouter,
         findOptimalPathUseCase = findOptimalPathUseCase
     )
+
     dijkstraRoutingValidation.validateRouting()
 
     val bidirectionalRouter = BidirectionalRouter(
         warehouseIndex.values.toList()
     )
 
-    val bidirectionalRoutingValidation = BidirectionalRoutingValidation(
-        warehouseIndex = warehouseIndex,
-        router = bidirectionalRouter
-    )
+    val bidirectionalRoutingValidation =
+        BidirectionalRoutingValidation(
+            warehouseIndex = warehouseIndex,
+            router = bidirectionalRouter
+        )
+
     bidirectionalRoutingValidation.validateRouting()
 }
 
@@ -231,7 +239,7 @@ private fun validateQuickSort(
     val firstWarehouse = warehouseIndex.values.firstOrNull()
 
     if (firstWarehouse == null) {
-        println("QuickSort validation skipped: No warehouses were built.")
+        println("QuickSort validation skipped: No warehouses were loaded.")
         printSeparator()
         return
     }
@@ -248,6 +256,7 @@ private fun validateQuickSort(
     println()
     println("Cargo Queue After Sorting:")
     printCargoQueue(firstWarehouse)
+
     printSeparator()
 }
 
@@ -260,11 +269,18 @@ private fun printCargoQueue(
     }
 
     for (logisticsPackage in warehouse.cargoQueue) {
-        println(logisticsPackage.id + " | ${formatWeight(logisticsPackage.weightByKg)} kg")
+        println(
+            logisticsPackage.id +
+                    " | " +
+                    formatWeight(logisticsPackage.weightByKg) +
+                    " kg"
+        )
     }
 }
 
-private fun formatWeight(weightByKg: Double): String {
+private fun formatWeight(
+    weightByKg: Double
+): String {
     return String.format(
         Locale.US,
         WEIGHT_DECIMAL_FORMAT,
@@ -284,14 +300,30 @@ private fun displayTreePerformanceResult(
     println("===== TREE PERFORMANCE ANALYSIS =====")
 
     println()
-    println(getTreeTypeDisplayName(result.unbalancedTreeMetrics.treeType))
-    println("Steps: ${result.unbalancedTreeMetrics.searchSteps}")
-    println("Time: ${result.unbalancedTreeMetrics.executionTimeNanos} ns")
+    println(
+        getTreeTypeDisplayName(
+            result.unbalancedTreeMetrics.treeType
+        )
+    )
+    println(
+        "Steps: ${result.unbalancedTreeMetrics.searchSteps}"
+    )
+    println(
+        "Time: ${result.unbalancedTreeMetrics.executionTimeNanos} ns"
+    )
 
     println()
-    println(getTreeTypeDisplayName(result.balancedTreeMetrics.treeType))
-    println("Steps: ${result.balancedTreeMetrics.searchSteps}")
-    println("Time: ${result.balancedTreeMetrics.executionTimeNanos} ns")
+    println(
+        getTreeTypeDisplayName(
+            result.balancedTreeMetrics.treeType
+        )
+    )
+    println(
+        "Steps: ${result.balancedTreeMetrics.searchSteps}"
+    )
+    println(
+        "Time: ${result.balancedTreeMetrics.executionTimeNanos} ns"
+    )
 }
 
 private fun getTreeTypeDisplayName(
@@ -302,4 +334,3 @@ private fun getTreeTypeDisplayName(
         TreeType.BALANCED_BST -> "Balanced BST"
     }
 }
-

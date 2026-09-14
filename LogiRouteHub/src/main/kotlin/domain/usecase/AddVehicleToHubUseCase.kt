@@ -1,15 +1,15 @@
 package domain.usecase
 
 import domain.model.Warehouse
-import domain.repository.WarehouseRepository
 import domain.repository.VehicleRepository
+import domain.repository.WarehouseRepository
 
 class AddVehicleToHubUseCase(
     private val warehouseRepository: WarehouseRepository,
     private val vehicleRepository: VehicleRepository
 ) {
 
-    operator fun invoke(
+    suspend operator fun invoke(
         warehouseId: String,
         vehicleId: String
     ): Warehouse? {

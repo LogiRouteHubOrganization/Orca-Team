@@ -6,16 +6,14 @@ import domain.routing.LeastHopRouter
 import domain.routing.ShortestPathRouter
 import domain.usecase.FindOptimalPathUseCase
 
-
 class DijkstraRoutingValidation(
     private val warehouseIndex: Map<String, Warehouse>,
     private val router: ShortestPathRouter,
     private val findOptimalPathUseCase: FindOptimalPathUseCase
-
 ) {
     private val defaultRouteDelayMin = 10
 
-    fun validateRouting() {
+    suspend fun validateRouting() {
         validatePathExists()
         validateNoPath()
         validateSameWarehouse()
@@ -28,16 +26,28 @@ class DijkstraRoutingValidation(
     }
 
     private fun validatePathExists() {
-
         val startWarehouse = createWarehouse("WH-001")
         val middleWarehouse = createWarehouse("WH-002")
         val destinationWarehouse = createWarehouse("WH-003")
+
         startWarehouse.addRoute(
-            createRoute(id = "RT-00001", origin = startWarehouse, destination = middleWarehouse, distanceKm = 5.0)
+            createRoute(
+                id = "RT-00001",
+                origin = startWarehouse,
+                destination = middleWarehouse,
+                distanceKm = 5.0
+            )
         )
+
         middleWarehouse.addRoute(
-            createRoute(id = "RT-00002", origin = middleWarehouse, destination = destinationWarehouse, distanceKm = 4.0)
+            createRoute(
+                id = "RT-00002",
+                origin = middleWarehouse,
+                destination = destinationWarehouse,
+                distanceKm = 4.0
+            )
         )
+
         val router = ShortestPathRouter(
             listOf(
                 startWarehouse,
@@ -45,9 +55,12 @@ class DijkstraRoutingValidation(
                 destinationWarehouse
             )
         )
+
         val warehousePath = router.findShortestPath(
-            startWarehouse, destinationWarehouse
+            startWarehouse,
+            destinationWarehouse
         )
+
         validateWarehousePath(
             testName = "Path exists",
             actualPath = warehousePath,
@@ -60,37 +73,44 @@ class DijkstraRoutingValidation(
     }
 
     private fun validateNoPath() {
-
         val startWarehouse = createWarehouse("WH-001")
         val destinationWarehouse = createWarehouse("WH-002")
+
         val router = ShortestPathRouter(
             listOf(
                 startWarehouse,
                 destinationWarehouse
             )
         )
+
         val warehousePath =
             router.findShortestPath(
                 startWarehouse,
                 destinationWarehouse
             )
+
         if (warehousePath.isEmpty()) {
             println("No path: PASSED")
         } else {
             println("No path: FAILED")
             println("Expected: empty path")
-            println("Actual: " + warehousePath.map { warehouse -> warehouse.id })
+            println(
+                "Actual: " +
+                        warehousePath.map { warehouse -> warehouse.id }
+            )
         }
     }
 
     private fun validateSameWarehouse() {
-
         val warehouse = createWarehouse("WH-001")
         val router = ShortestPathRouter(listOf(warehouse))
-        val warehousePath = router.findShortestPath(
-            warehouse,
-            warehouse
-        )
+
+        val warehousePath =
+            router.findShortestPath(
+                warehouse,
+                warehouse
+            )
+
         validateWarehousePath(
             testName = "Same warehouse",
             actualPath = warehousePath,
@@ -99,20 +119,37 @@ class DijkstraRoutingValidation(
     }
 
     private fun validateCycle() {
-
         val startWarehouse = createWarehouse("WH-001")
         val middleWarehouse = createWarehouse("WH-002")
         val destinationWarehouse = createWarehouse("WH-003")
 
         startWarehouse.addRoute(
-            createRoute(id = "RT-00001", origin = startWarehouse, destination = middleWarehouse, distanceKm = 3.0)
+            createRoute(
+                id = "RT-00001",
+                origin = startWarehouse,
+                destination = middleWarehouse,
+                distanceKm = 3.0
+            )
         )
+
         middleWarehouse.addRoute(
-            createRoute(id = "RT-00002", origin = middleWarehouse, destination = destinationWarehouse, distanceKm = 4.0)
+            createRoute(
+                id = "RT-00002",
+                origin = middleWarehouse,
+                destination = destinationWarehouse,
+                distanceKm = 4.0
+            )
         )
+
         destinationWarehouse.addRoute(
-            createRoute(id = "RT-00003", origin = destinationWarehouse, destination = startWarehouse, distanceKm = 2.0)
+            createRoute(
+                id = "RT-00003",
+                origin = destinationWarehouse,
+                destination = startWarehouse,
+                distanceKm = 2.0
+            )
         )
+
         val router = ShortestPathRouter(
             listOf(
                 startWarehouse,
@@ -120,9 +157,13 @@ class DijkstraRoutingValidation(
                 destinationWarehouse
             )
         )
-        val warehousePath = router.findShortestPath(
-            startWarehouse, destinationWarehouse
-        )
+
+        val warehousePath =
+            router.findShortestPath(
+                startWarehouse,
+                destinationWarehouse
+            )
+
         validateWarehousePath(
             testName = "Cycle",
             actualPath = warehousePath,
@@ -135,13 +176,18 @@ class DijkstraRoutingValidation(
     }
 
     private fun validateShortestDistancePath() {
+        val warehouses =
+            createRoutingComparisonGraph()
 
-        val warehouses = createRoutingComparisonGraph()
-        val router = ShortestPathRouter(warehouses)
-        val warehousePath = router.findShortestPath(
-            warehouses[0],
-            warehouses[3]
-        )
+        val router =
+            ShortestPathRouter(warehouses)
+
+        val warehousePath =
+            router.findShortestPath(
+                warehouses[0],
+                warehouses[3]
+            )
+
         validateWarehousePath(
             testName = "Shortest-distance path",
             actualPath = warehousePath,
@@ -155,24 +201,54 @@ class DijkstraRoutingValidation(
     }
 
     private fun createRoutingComparisonGraph(): List<Warehouse> {
+        val startWarehouse =
+            createWarehouse("WH-001")
 
-        val startWarehouse = createWarehouse("WH-001")
-        val shortHopWarehouse = createWarehouse("WH-002")
-        val lowerDistanceWarehouse = createWarehouse("WH-003")
-        val destinationWarehouse = createWarehouse("WH-004")
+        val shortHopWarehouse =
+            createWarehouse("WH-002")
+
+        val lowerDistanceWarehouse =
+            createWarehouse("WH-003")
+
+        val destinationWarehouse =
+            createWarehouse("WH-004")
 
         startWarehouse.addRoute(
-            createRoute("RT-00001", startWarehouse, shortHopWarehouse, 10.0)
+            createRoute(
+                "RT-00001",
+                startWarehouse,
+                shortHopWarehouse,
+                10.0
+            )
         )
+
         shortHopWarehouse.addRoute(
-            createRoute("RT-00002", shortHopWarehouse, destinationWarehouse, 4.0)
+            createRoute(
+                "RT-00002",
+                shortHopWarehouse,
+                destinationWarehouse,
+                4.0
+            )
         )
+
         startWarehouse.addRoute(
-            createRoute("RT-00003", startWarehouse, lowerDistanceWarehouse, 3.0)
+            createRoute(
+                "RT-00003",
+                startWarehouse,
+                lowerDistanceWarehouse,
+                3.0
+            )
         )
+
         lowerDistanceWarehouse.addRoute(
-            createRoute("RT-00004", lowerDistanceWarehouse, shortHopWarehouse, 2.0)
+            createRoute(
+                "RT-00004",
+                lowerDistanceWarehouse,
+                shortHopWarehouse,
+                2.0
+            )
         )
+
         return listOf(
             startWarehouse,
             shortHopWarehouse,
@@ -182,24 +258,32 @@ class DijkstraRoutingValidation(
     }
 
     private fun validateBfsComparison() {
+        val warehouses =
+            createRoutingComparisonGraph()
 
-        val warehouses = createRoutingComparisonGraph()
-        val startWarehouse = warehouses.first()
-        val destinationWarehouse = warehouses.last()
+        val startWarehouse =
+            warehouses.first()
 
-        val bfsPath = LeastHopRouter().findLeastHopPath(
-            startWarehouse,
-            destinationWarehouse
-        )
+        val destinationWarehouse =
+            warehouses.last()
+
+        val bfsPath =
+            LeastHopRouter().findLeastHopPath(
+                startWarehouse,
+                destinationWarehouse
+            )
+
         val dijkstraPath =
             ShortestPathRouter(warehouses).findShortestPath(
                 startWarehouse,
                 destinationWarehouse
             )
+
         printRoutingComparison(
             bfsPath,
             dijkstraPath
         )
+
         validateRoutingComparison(
             bfsPath,
             dijkstraPath
@@ -212,15 +296,21 @@ class DijkstraRoutingValidation(
     ) {
         println()
         println("=== BFS vs Dijkstra Comparison ===")
+
         print("BFS Path: ")
+
         for (warehouse in bfsPath) {
             print("${warehouse.id} ")
         }
+
         println()
+
         print("Dijkstra Path: ")
+
         for (warehouse in dijkstraPath) {
             print("${warehouse.id} ")
         }
+
         println()
     }
 
@@ -228,12 +318,16 @@ class DijkstraRoutingValidation(
         bfsPath: List<Warehouse>,
         dijkstraPath: List<Warehouse>
     ) {
-        val bfsWarehouseIds = bfsPath.map { warehouse ->
-            warehouse.id
-        }
-        val dijkstraWarehouseIds = dijkstraPath.map { warehouse ->
-            warehouse.id
-        }
+        val bfsWarehouseIds =
+            bfsPath.map { warehouse ->
+                warehouse.id
+            }
+
+        val dijkstraWarehouseIds =
+            dijkstraPath.map { warehouse ->
+                warehouse.id
+            }
+
         if (
             bfsWarehouseIds != dijkstraWarehouseIds &&
             dijkstraPath.isNotEmpty()
@@ -244,29 +338,45 @@ class DijkstraRoutingValidation(
         }
     }
 
-    private fun validateIntegration() {
-        val startWarehouse = warehouseIndex["WH-001"]
-        val destinationWarehouse = warehouseIndex["WH-002"]
+    private suspend fun validateIntegration() {
+        val startWarehouse =
+            warehouseIndex["WH-001"]
 
-        if (startWarehouse == null || destinationWarehouse == null) {
+        val destinationWarehouse =
+            warehouseIndex["WH-002"]
+
+        if (
+            startWarehouse == null ||
+            destinationWarehouse == null
+        ) {
             println("Dijkstra integration: FAILED")
             println("Required warehouses were not found.")
             return
         }
 
-        val warehousePath = findOptimalPathUseCase(
-            startWarehouseId = startWarehouse.id,
-            destinationWarehouseId = destinationWarehouse.id
-        )
+        val warehousePath =
+            findOptimalPathUseCase(
+                startWarehouseId = startWarehouse.id,
+                destinationWarehouseId = destinationWarehouse.id
+            )
 
         if (warehousePath.isNotEmpty()) {
             println("Dijkstra integration: PASSED")
+
             print("Warehouse Path: ")
-            for (warehouse in warehousePath) print("${warehouse.id} ")
+
+            for (warehouse in warehousePath) {
+                print("${warehouse.id} ")
+            }
+
             println()
         } else {
             println("Dijkstra integration: FAILED")
-            println("No path found between " + "${startWarehouse.id} and " + destinationWarehouse.id)
+            println(
+                "No path found between " +
+                        "${startWarehouse.id} and " +
+                        destinationWarehouse.id
+            )
         }
     }
 
@@ -302,7 +412,10 @@ class DijkstraRoutingValidation(
         actualPath: List<Warehouse>,
         expectedPath: List<String>
     ) {
-        val actualWarehouseIds = actualPath.map { warehouse -> warehouse.id }
+        val actualWarehouseIds =
+            actualPath.map { warehouse ->
+                warehouse.id
+            }
 
         if (actualWarehouseIds == expectedPath) {
             println("$testName: PASSED")
