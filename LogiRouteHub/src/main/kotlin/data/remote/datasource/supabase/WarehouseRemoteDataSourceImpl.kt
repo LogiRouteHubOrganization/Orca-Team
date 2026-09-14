@@ -3,7 +3,8 @@ package data.remote.datasource.supabase
 import data.remote.SupabaseClientProvider
 import data.remote.datasource.WarehouseRemoteDataSource
 import data.remote.dto.WarehouseDto
-import data.remote.dto.request.WarehouseRequestDto
+import data.remote.dto.request.WarehouseCreateRequestDto
+import data.remote.dto.request.WarehouseUpdateRequestDto
 import data.remote.utils.safeApiCall
 import io.github.jan.supabase.postgrest.from
 
@@ -32,7 +33,9 @@ class WarehouseRemoteDataSourceImpl : WarehouseRemoteDataSource {
         }
     }
 
-    override suspend fun createWarehouse(warehouseRequest: WarehouseRequestDto): WarehouseDto {
+    override suspend fun createWarehouse(
+        warehouseRequest: WarehouseCreateRequestDto
+    ): WarehouseDto {
         return safeApiCall {
             client.from(tableName)
                 .insert(warehouseRequest) {
@@ -42,7 +45,10 @@ class WarehouseRemoteDataSourceImpl : WarehouseRemoteDataSource {
         }
     }
 
-    override suspend fun updateWarehouse(id: String, warehouseRequest: WarehouseRequestDto): WarehouseDto {
+    override suspend fun updateWarehouse(
+        id: String,
+        warehouseRequest: WarehouseUpdateRequestDto
+    ): WarehouseDto {
         return safeApiCall {
             client.from(tableName)
                 .update(warehouseRequest) {

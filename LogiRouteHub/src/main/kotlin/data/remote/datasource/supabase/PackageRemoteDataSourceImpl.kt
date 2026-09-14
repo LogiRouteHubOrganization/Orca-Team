@@ -3,7 +3,8 @@ package data.remote.datasource.supabase
 import data.remote.SupabaseClientProvider
 import data.remote.datasource.PackageRemoteDataSource
 import data.remote.dto.PackageDto
-import data.remote.dto.request.PackageRequestDto
+import data.remote.dto.request.PackageCreateRequestDto
+import data.remote.dto.request.PackageUpdateRequestDto
 import data.remote.utils.safeApiCall
 import io.github.jan.supabase.postgrest.from
 
@@ -32,7 +33,9 @@ class PackageRemoteDataSourceImpl : PackageRemoteDataSource {
         }
     }
 
-    override suspend fun createPackage(packageRequest: PackageRequestDto): PackageDto {
+    override suspend fun createPackage(
+        packageRequest: PackageCreateRequestDto
+    ): PackageDto {
         return safeApiCall {
             client.from(tableName)
                 .insert(packageRequest) {
@@ -42,7 +45,10 @@ class PackageRemoteDataSourceImpl : PackageRemoteDataSource {
         }
     }
 
-    override suspend fun updatePackage(id: String, packageRequest: PackageRequestDto): PackageDto {
+    override suspend fun updatePackage(
+        id: String,
+        packageRequest: PackageUpdateRequestDto
+    ): PackageDto {
         return safeApiCall {
             client.from(tableName)
                 .update(packageRequest) {

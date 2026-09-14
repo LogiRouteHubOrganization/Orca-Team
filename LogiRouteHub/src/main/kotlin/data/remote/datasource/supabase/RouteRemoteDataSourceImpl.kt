@@ -3,7 +3,8 @@ package data.remote.datasource.supabase
 import data.remote.SupabaseClientProvider
 import data.remote.datasource.RouteRemoteDataSource
 import data.remote.dto.RouteDto
-import data.remote.dto.request.RouteRequestDto
+import data.remote.dto.request.RouteCreateRequestDto
+import data.remote.dto.request.RouteUpdateRequestDto
 import data.remote.utils.safeApiCall
 import io.github.jan.supabase.postgrest.from
 
@@ -32,7 +33,9 @@ class RouteRemoteDataSourceImpl : RouteRemoteDataSource {
         }
     }
 
-    override suspend fun createRoute(routeRequest: RouteRequestDto): RouteDto {
+    override suspend fun createRoute(
+        routeRequest: RouteCreateRequestDto
+    ): RouteDto {
         return safeApiCall {
             client.from(tableName)
                 .insert(routeRequest) {
@@ -42,7 +45,10 @@ class RouteRemoteDataSourceImpl : RouteRemoteDataSource {
         }
     }
 
-    override suspend fun updateRoute(id: String, routeRequest: RouteRequestDto): RouteDto {
+    override suspend fun updateRoute(
+        id: String,
+        routeRequest: RouteUpdateRequestDto
+    ): RouteDto {
         return safeApiCall {
             client.from(tableName)
                 .update(routeRequest) {

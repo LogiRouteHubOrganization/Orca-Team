@@ -4,11 +4,15 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class PackageRequestDto(
+data class PackageCreateRequestDto(
+    val id: String,
+
     @SerialName("weight_by_kg")
     val weightByKg: Double,
 
-    val priority: String,@SerialName("origin_warehouse_id")
+    val priority: String,
+
+    @SerialName("origin_warehouse_id")
     val originWarehouseId: String,
 
     @SerialName("destination_warehouse_id")
