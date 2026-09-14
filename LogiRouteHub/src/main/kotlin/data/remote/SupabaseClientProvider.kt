@@ -2,6 +2,8 @@ package data.remote
 
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.serializer.KotlinXSerializer
+import kotlinx.serialization.json.Json
 
 object SupabaseClientProvider {
 
@@ -17,6 +19,14 @@ object SupabaseClientProvider {
         supabaseUrl = supabaseUrl,
         supabaseKey = supabaseKey
     ) {
-        install(Postgrest)
+
+        install(Postgrest) {
+            serializer = KotlinXSerializer(
+                Json {
+                    ignoreUnknownKeys = true
+                    isLenient = true
+                }
+            )
+        }
     }
 }
