@@ -7,7 +7,7 @@ class FindStationedVehiclesByCapacityUseCase(
     private val warehouseRepository: WarehouseRepository
 ) {
 
-    operator fun invoke(
+    suspend operator fun invoke(
         warehouseId: String,
         requiredLoadKg: Double
     ): List<Vehicle> {
@@ -15,10 +15,10 @@ class FindStationedVehiclesByCapacityUseCase(
         val warehouse = warehouseRepository.findById(warehouseId)
             ?: return emptyList()
 
-
         return warehouse.stationedVehicles.filter { vehicle ->
             val currentLoadedWeightKg = vehicle.calculateTotalLoadedWeightKg()
-            val availableCapacityKg = vehicle.maxCapacityKg - currentLoadedWeightKg
+            val availableCapacityKg =
+                vehicle.maxCapacityKg - currentLoadedWeightKg
 
             availableCapacityKg >= requiredLoadKg
         }

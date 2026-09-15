@@ -10,23 +10,26 @@ class TriggerFleetRebalancingUseCase(
     private val getWarehouseLoadFactorUseCase: GetWarehouseLoadFactorUseCase
 ) {
 
-    operator fun invoke(
+    suspend operator fun invoke(
         config: FleetRebalancingConfig
     ): List<FleetRebalancingPlan> {
 
         val warehouses = warehouseRepository.findAll()
 
-        val overloadedWarehouses = warehouses
-            .filter { warehouse ->
-                getWarehouseLoadFactorUseCase(warehouse.id) >=
-                        config.highLoadFactorThreshold
+        val overloadedWarehouses = mutableListOf<Warehouse>()
+        val underutilizedWarehouses = mutableListOf<Warehouse>()
+
+        for (warehouse in warehouses) {
+            val loadFactor = getWarehouseLoadFactorUseCase(warehouse.id)
+
+            if (loadFactor >= config.highLoadFactorThreshold) {
+                overloadedWarehouses.add(warehouse)
             }
 
-        val underutilizedWarehouses = warehouses
-            .filter { warehouse ->
-                getWarehouseLoadFactorUseCase(warehouse.id) <=
-                        config.lowLoadFactorThreshold
+            if (loadFactor <= config.lowLoadFactorThreshold) {
+                underutilizedWarehouses.add(warehouse)
             }
+        }
 
         return underutilizedWarehouses.flatMap { sourceWarehouse ->
             overloadedWarehouses

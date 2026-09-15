@@ -9,7 +9,7 @@ class AddVehicleToHubUseCase(
     private val vehicleRepository: VehicleRepository
 ) {
 
-    operator fun invoke(
+    suspend operator fun invoke(
         warehouseId: String,
         vehicleId: String
     ): Warehouse? {

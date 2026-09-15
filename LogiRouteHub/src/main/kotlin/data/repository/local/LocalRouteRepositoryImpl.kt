@@ -1,4 +1,4 @@
-package data.repository
+package data.repository.local
 
 import data.datasource.RouteDataSource
 import data.mapper.RouteMapper
@@ -6,7 +6,7 @@ import domain.model.Route
 import domain.repository.RouteRepository
 import domain.repository.WarehouseRepository
 
-class RouteRepositoryImpl(
+class LocalRouteRepositoryImpl(
     private val routeDataSource: RouteDataSource,
     private val routeMapper: RouteMapper,
     private val warehouseRepository: WarehouseRepository
@@ -19,12 +19,17 @@ class RouteRepositoryImpl(
     private val routes = mutableListOf<Route>()
     private var isLoaded = false
 
-    private fun loadRoutesIfNeeded() {
+    private suspend fun loadRoutesIfNeeded() {
         if (isLoaded) return
+
         val rawRoutes = routeDataSource.loadRoutes()
+
         for (rawRoute in rawRoutes) {
-            val originWarehouse = warehouseRepository.findById(rawRoute.originHubId)
-            val destinationWarehouse = warehouseRepository.findById(rawRoute.destinationHubId)
+            val originWarehouse =
+                warehouseRepository.findById(rawRoute.originHubId)
+
+            val destinationWarehouse =
+                warehouseRepository.findById(rawRoute.destinationHubId)
 
             if (originWarehouse != null && destinationWarehouse != null) {
                 val route = routeMapper.mapToDomainModel(
@@ -32,6 +37,7 @@ class RouteRepositoryImpl(
                     originWarehouse = originWarehouse,
                     destinationWarehouse = destinationWarehouse
                 )
+
                 routes.add(route)
                 originWarehouse.addRoute(route)
             }
@@ -39,58 +45,70 @@ class RouteRepositoryImpl(
         isLoaded = true
     }
 
-    override fun findById(routeId: String): Route? {
+    override suspend fun findById(routeId: String): Route? {
         loadRoutesIfNeeded()
         return routes.find { it.id == routeId }
     }
 
-    override fun findAll(): List<Route> {
+    override suspend fun findAll(): List<Route> {
         loadRoutesIfNeeded()
         return routes.toList()
     }
 
-    override fun add(route: Route) {
+    override suspend fun add(route: Route) {
         loadRoutesIfNeeded()
+
         routes.add(route)
         route.originWarehouse.addRoute(route)
-
     }
 
-    override fun update(route: Route) {
+    override suspend fun update(route: Route) {
         loadRoutesIfNeeded()
 
         val routeIndex = routes.indexOfFirst {
             it.id == route.id
         }
+
         if (routeIndex == NOT_FOUND_INDEX) return
+
         val previousRoute = routes[routeIndex]
         val previousOriginWarehouse = previousRoute.originWarehouse
         val newOriginWarehouse = route.originWarehouse
 
         if (previousOriginWarehouse.id == newOriginWarehouse.id) {
             previousOriginWarehouse.outgoingRoutes
-                .indexOfFirst {
-                    it.id == route.id
-                }.takeIf {
-                    it != NOT_FOUND_INDEX
-                }?.let { warehouseRouteIndex ->
+                .indexOfFirst { it.id == route.id }
+                .takeIf { it != NOT_FOUND_INDEX }
+                ?.let { warehouseRouteIndex ->
                     previousOriginWarehouse.updateRouteAtIndex(
                         warehouseRouteIndex,
                         route
                     )
                 }
+
             routes[routeIndex] = route
             return
         }
+
         previousOriginWarehouse.outgoingRoutes
-            .find {
-                it.id == route.id
-            }?.let { previousRouteInWarehouse ->
+            .find { it.id == route.id }
+            ?.let { previousRouteInWarehouse ->
                 previousOriginWarehouse.removeRoute(
                     previousRouteInWarehouse
                 )
             }
+
         newOriginWarehouse.addRoute(route)
         routes[routeIndex] = route
+    }
+
+    override suspend fun delete(routeId: String) {
+        loadRoutesIfNeeded()
+
+        val route =
+            routes.find { it.id == routeId } ?: return
+
+        route.originWarehouse.removeRoute(route)
+        routes.remove(route)
     }
 }

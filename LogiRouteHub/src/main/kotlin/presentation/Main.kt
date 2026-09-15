@@ -12,10 +12,10 @@ import data.parser.FleetParser
 import data.parser.PackageParser
 import data.parser.RouteParser
 import data.parser.WarehouseParser
-import data.repository.PackageRepositoryImpl
-import data.repository.RouteRepositoryImpl
-import data.repository.VehicleRepositoryImpl
-import data.repository.WarehouseRepositoryImpl
+import data.repository.local.LocalPackageRepositoryImpl
+import data.repository.local.LocalRouteRepositoryImpl
+import data.repository.local.LocalVehicleRepositoryImpl
+import data.repository.local.LocalWarehouseRepositoryImpl
 import domain.model.Warehouse
 import domain.repository.WarehouseRepository
 import domain.model.request.AnalyzeTreePerformanceRequest
@@ -41,7 +41,7 @@ private const val FLEET_FILE_PATH = "src/main/resources/fleet.csv"
 private const val WEIGHT_DECIMAL_FORMAT = "%.2f"
 private const val OUTPUT_SEPARATOR = "******************************************************"
 
-fun main() {
+suspend fun main() {
 
     // Step 1: Initialize DataSources
     val warehouseDataSource = CsvWarehouseDataSource(
@@ -71,24 +71,24 @@ fun main() {
     val routeMapper = RouteMapper()
 
     // Step 3: Initialize Repositories
-    val warehouseRepository = WarehouseRepositoryImpl(
+    val warehouseRepository = LocalWarehouseRepositoryImpl(
         warehouseDataSource = warehouseDataSource,
         warehouseMapper = warehouseMapper
     )
 
-    val packageRepository = PackageRepositoryImpl(
+    val packageRepository = LocalPackageRepositoryImpl(
         packageDataSource = packageDataSource,
         packageMapper = packageMapper,
         warehouseRepository = warehouseRepository
     )
 
-    val vehicleRepository = VehicleRepositoryImpl(
+    val vehicleRepository = LocalVehicleRepositoryImpl(
         vehicleDataSource = vehicleDataSource,
         vehicleMapper = vehicleMapper,
         warehouseRepository = warehouseRepository
     )
 
-    val routeRepository = RouteRepositoryImpl(
+    val routeRepository = LocalRouteRepositoryImpl(
         routeDataSource = routeDataSource,
         routeMapper = routeMapper,
         warehouseRepository = warehouseRepository
@@ -177,7 +177,7 @@ private fun validatePricingAndDecorators(
     )
 }
 
-private fun validateRoutingAlgorithms(
+private suspend fun validateRoutingAlgorithms(
     warehouseIndex: Map<String, Warehouse>,
     warehouseRepository: WarehouseRepository
 ) {

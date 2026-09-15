@@ -4,11 +4,13 @@ import domain.model.Route
 
 interface RouteRepository {
 
-    fun findById(routeId: String): Route?
+    suspend fun findById(routeId: String): Route?
 
-    fun findAll(): List<Route>
+    suspend fun findAll(): List<Route>
 
-    fun add(route: Route)
+    suspend fun add(route: Route)
 
-    fun update(route: Route)
+    suspend fun update(route: Route)
+
+    suspend fun delete(routeId: String)
 }

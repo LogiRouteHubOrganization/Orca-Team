@@ -4,11 +4,13 @@ import domain.model.Package
 
 interface PackageRepository {
 
-    fun findById(packageId: String): Package?
+    suspend fun findById(packageId: String): Package?
 
-    fun findAll(): List<Package>
+    suspend fun findAll(): List<Package>
 
-    fun add(logisticsPackage: Package)
+    suspend fun add(logisticsPackage: Package)
 
-    fun update(logisticsPackage: Package)
+    suspend fun update(logisticsPackage: Package)
+
+    suspend fun delete(packageId: String)
 }

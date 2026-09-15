@@ -10,7 +10,7 @@ class ReroutePackageUseCase(
     private val warehouseRepository: WarehouseRepository
 ) {
 
-    operator fun invoke(
+    suspend operator fun invoke(
         input: ReroutePackageRequest
     ): Package? {
 

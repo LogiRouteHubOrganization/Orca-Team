@@ -8,7 +8,7 @@ class CommandInvoker(
     private val undoStack = mutableListOf<Command>()
     private val redoStack = mutableListOf<Command>()
 
-    fun execute(command: Command) {
+    suspend fun execute(command: Command) {
         val isExecuted = command.execute()
 
         if (isExecuted) {
@@ -23,11 +23,13 @@ class CommandInvoker(
         }
     }
 
-    fun undo() {
+    suspend fun undo() {
         if (undoStack.isEmpty()) return
 
         val lastCommand = undoStack.last()
+
         lastCommand.undo()
+
         undoStack.removeLast()
         redoStack.add(lastCommand)
 
@@ -38,11 +40,13 @@ class CommandInvoker(
         )
     }
 
-    fun redo() {
+    suspend fun redo() {
         if (redoStack.isEmpty()) return
 
         val lastCommand = redoStack.last()
+
         lastCommand.redo()
+
         redoStack.removeLast()
         undoStack.add(lastCommand)
 

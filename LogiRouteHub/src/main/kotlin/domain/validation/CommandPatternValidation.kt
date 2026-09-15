@@ -26,45 +26,51 @@ private class ValidationWarehouseRepository(
     private val warehouseIndex: Map<String, Warehouse>
 ) : WarehouseRepository {
 
-    override fun findById(
+    override suspend fun findById(
         warehouseId: String
     ): Warehouse? {
         return warehouseIndex[warehouseId]
     }
 
-    override fun findAll(): List<Warehouse> {
+    override suspend  fun findAll(): List<Warehouse> {
         return warehouseIndex.values.toList()
     }
 
-    override fun add(warehouse: Warehouse) {
+    override suspend fun add(warehouse: Warehouse) {
         if (warehouseIndex is MutableMap) {
             warehouseIndex[warehouse.id] = warehouse
         }
     }
 
-    override fun update(warehouse: Warehouse) {
+    override suspend fun update(warehouse: Warehouse) {
         if (warehouseIndex is MutableMap) {
             warehouseIndex[warehouse.id] = warehouse
         }
     }
-}
+    override suspend fun delete(warehouseId: String) {
+        if (warehouseIndex is MutableMap) {
+            warehouseIndex.remove(warehouseId)
+        }
+    }
+    }
+
 
 private class ValidationVehicleRepository(
     private val warehouseIndex: Map<String, Warehouse>
 ) : VehicleRepository {
 
-    override fun findById(
+    override suspend fun findById(
         vehicleId: String
     ): Vehicle? {
         return warehouseIndex.values.flatMap { warehouse -> warehouse.stationedVehicles }
             .firstOrNull { vehicle -> vehicle.id == vehicleId }
     }
 
-    override fun findAll(): List<Vehicle> {
+    override suspend fun findAll(): List<Vehicle> {
         return warehouseIndex.values.flatMap { it.stationedVehicles }
     }
 
-    override fun add(vehicle: Vehicle) {
+    override suspend fun add(vehicle: Vehicle) {
         val warehouse = warehouseIndex[vehicle.currentWarehouse.id]
         if (warehouse != null) {
             val currentVehicles = warehouse.stationedVehicles as? MutableList<Vehicle>
@@ -72,24 +78,33 @@ private class ValidationVehicleRepository(
         }
     }
 
-    override fun update(vehicle: Vehicle) {
+    override suspend fun update(vehicle: Vehicle) {
     }
+    override suspend fun delete(vehicleId: String) {
+        warehouseIndex.values.forEach { warehouse ->
+            val vehicles =
+                warehouse.stationedVehicles as? MutableList<Vehicle>
+
+            vehicles?.removeIf { it.id == vehicleId }
+        }
+    }
+
 }
 private class ValidationPackageRepository(
     private val warehouseIndex: Map<String, Warehouse>
 ) : PackageRepository {
 
-    override fun findById(packageId: String): Package? {
+    override suspend fun findById(packageId: String): Package? {
         return warehouseIndex.values
             .flatMap { it.cargoQueue }
             .firstOrNull { it.id == packageId }
     }
 
-    override fun findAll(): List<Package> {
+    override suspend fun findAll(): List<Package> {
         return warehouseIndex.values.flatMap { it.cargoQueue }
     }
 
-    override fun add(packageItem: Package) {
+    override suspend fun add(packageItem: Package) {
         val warehouse = warehouseIndex[packageItem.originWarehouse.id]
         if (warehouse != null) {
             val queue = warehouse.cargoQueue as? MutableList<Package>
@@ -97,7 +112,7 @@ private class ValidationPackageRepository(
         }
     }
 
-    override fun update(packageItem: Package) {
+    override suspend fun update(packageItem: Package) {
         warehouseIndex.values.forEach { warehouse ->
             val queue = warehouse.cargoQueue as? MutableList<Package>
             val index = queue?.indexOfFirst { it.id == packageItem.id } ?: -1
@@ -105,10 +120,19 @@ private class ValidationPackageRepository(
                 queue[index] = packageItem
             }
         }
+
+    }
+    override suspend fun delete(packageId: String) {
+        warehouseIndex.values.forEach { warehouse ->
+            val queue =
+                warehouse.cargoQueue as? MutableList<Package>
+
+            queue?.removeIf { it.id == packageId }
+        }
     }
 }
 
-fun validateCommandPattern(
+suspend fun validateCommandPattern(
     warehouseIndex: Map<String, Warehouse>
 ) {
     printValidationSuiteHeader()
@@ -136,7 +160,7 @@ fun validateCommandPattern(
     printValidationSuiteFooter()
 }
 
-private fun runCommandValidations(
+private suspend fun runCommandValidations(
     warehouseIndex: Map<String, Warehouse>,
     warehouseRepository: WarehouseRepository,
     vehicleRepository: VehicleRepository,
@@ -164,7 +188,7 @@ private fun runCommandValidations(
     )
 }
 
-private fun validateAllCommands(
+private suspend fun validateAllCommands(
     warehouseIndex: Map<String, Warehouse>,
     warehouseRepository: WarehouseRepository,
     vehicleRepository: VehicleRepository,
@@ -221,7 +245,7 @@ private fun createDispatchVehicleUseCase(
 }
 
 
-private fun validateAssignPackageCommand(
+private suspend fun validateAssignPackageCommand(
     warehouseIndex: Map<String, Warehouse>,
     warehouseRepository: WarehouseRepository,
     assignUseCase: AssignPackageToCargoQueueUseCase,
@@ -274,7 +298,7 @@ private fun createAssignPackageCommand(
 }
 
 
-private fun validateAssignExecution(
+private suspend fun validateAssignExecution(
     warehouse: Warehouse,
     command: AssignPackageToQueueCommand,
     telemetry: ConsoleTelemetry
@@ -295,7 +319,7 @@ private fun validateAssignExecution(
 }
 
 
-private fun testAssignHistory(
+private suspend fun testAssignHistory(
     warehouse: Warehouse,
     originalQueue: List<Package>,
     command: AssignPackageToQueueCommand,
@@ -323,7 +347,7 @@ private fun testAssignHistory(
     )
 }
 
-private fun validateReroutePackageCommand(
+private suspend fun validateReroutePackageCommand(
     warehouseIndex: Map<String, Warehouse>,
     warehouseRepository: WarehouseRepository,
     packageRepository: PackageRepository,
@@ -408,7 +432,7 @@ private fun createRerouteDependencies(
     )
 }
 
-private fun validateRerouteExecution(
+private suspend fun validateRerouteExecution(
     warehouse: Warehouse,
     destinationWarehouse: Warehouse,
     command: ReroutePackageCommand,
@@ -432,7 +456,7 @@ private fun validateRerouteExecution(
     printCommandResult("Reroute Package Command", result)
 }
 
-private fun testRerouteHistory(
+private suspend fun testRerouteHistory(
     warehouse: Warehouse,
     packageId: String,
     originalDestination: Warehouse,
@@ -482,7 +506,7 @@ private fun hasPackageDestination(
     return logisticsPackage?.destinationWarehouse == destinationWarehouse
 }
 
-private fun validateDispatchVehicleCommand(
+private suspend fun validateDispatchVehicleCommand(
     warehouseIndex: Map<String, Warehouse>,
     warehouseRepository: WarehouseRepository,
     vehicleRepository: VehicleRepository,
@@ -552,7 +576,7 @@ private fun createDispatchVehicleCommand(
 }
 
 
-private fun validateDispatchExecution(
+private suspend fun validateDispatchExecution(
     warehouse: Warehouse,
     vehicle: Vehicle,
     command: DispatchVehicleCommand,
@@ -587,7 +611,7 @@ private fun validateDispatchExecution(
     printCommandResult("Dispatch Vehicle Command", result)
 }
 
-private fun testDispatchHistory(
+private suspend fun testDispatchHistory(
     warehouse: Warehouse,
     vehicle: Vehicle,
     originalPackages: List<Package>,

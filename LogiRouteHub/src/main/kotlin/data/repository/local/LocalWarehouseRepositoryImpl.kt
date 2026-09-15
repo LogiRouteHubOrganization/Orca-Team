@@ -1,11 +1,11 @@
-package data.repository
+package data.repository.local
 
 import data.datasource.WarehouseDataSource
 import data.mapper.WarehouseMapper
 import domain.model.Warehouse
 import domain.repository.WarehouseRepository
 
-class WarehouseRepositoryImpl(
+class LocalWarehouseRepositoryImpl(
     private val warehouseDataSource: WarehouseDataSource,
     private val warehouseMapper: WarehouseMapper
 ) : WarehouseRepository {
@@ -26,31 +26,40 @@ class WarehouseRepositoryImpl(
             val warehouse = warehouseMapper.mapToDomainModel(rawWarehouse)
             warehouses.add(warehouse)
         }
-
         isLoaded = true
     }
 
-    override fun findAll(): List<Warehouse> {
+    override suspend fun findAll(): List<Warehouse> {
         loadWarehousesIfNeeded()
         return warehouses.toList()
     }
 
-    override fun findById(warehouseId: String): Warehouse? {
+    override suspend fun findById(warehouseId: String): Warehouse? {
         loadWarehousesIfNeeded()
         return warehouses.find { it.id == warehouseId }
     }
 
-    override fun add(warehouse: Warehouse) {
+    override suspend fun add(warehouse: Warehouse) {
         loadWarehousesIfNeeded()
         warehouses.add(warehouse)
     }
 
-    override fun update(warehouse: Warehouse) {
+    override suspend fun update(warehouse: Warehouse) {
         loadWarehousesIfNeeded()
 
-        val warehouseIndex = warehouses.indexOfFirst { it.id == warehouse.id }
+        val warehouseIndex =
+            warehouses.indexOfFirst { it.id == warehouse.id }
+
         if (warehouseIndex != NOT_FOUND_INDEX) {
             warehouses[warehouseIndex] = warehouse
+        }
+    }
+
+    override suspend fun delete(warehouseId: String) {
+        loadWarehousesIfNeeded()
+
+        warehouses.removeAll {
+            it.id == warehouseId
         }
     }
 }

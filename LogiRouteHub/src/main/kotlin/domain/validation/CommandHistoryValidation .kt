@@ -40,25 +40,31 @@ private class HistoryValidationWarehouseRepository(
     private val warehouseIndex: Map<String, Warehouse>
 ) : WarehouseRepository {
 
-    override fun findById(
+    override suspend fun findById(
         warehouseId: String
     ): Warehouse? {
         return warehouseIndex[warehouseId]
     }
 
-    override fun findAll(): List<Warehouse> {
+    override suspend fun findAll(): List<Warehouse> {
         return warehouseIndex.values.toList()
     }
 
-    override fun add(warehouse: Warehouse) {
+    override suspend fun add(warehouse: Warehouse) {
         if (warehouseIndex is MutableMap) {
             warehouseIndex[warehouse.id] = warehouse
         }
     }
 
-    override fun update(warehouse: Warehouse) {
+    override suspend fun update(warehouse: Warehouse) {
         if (warehouseIndex is MutableMap) {
             warehouseIndex[warehouse.id] = warehouse
+        }
+    }
+
+    override suspend fun delete(warehouseId: String) {
+        if (warehouseIndex is MutableMap) {
+            warehouseIndex.remove(warehouseId)
         }
     }
 }
@@ -67,7 +73,7 @@ private class HistoryValidationVehicleRepository(
     private val warehouseIndex: Map<String, Warehouse>
 ) : VehicleRepository {
 
-    override fun findById(
+    override suspend fun findById(
         vehicleId: String
     ): Vehicle? {
         return warehouseIndex.values
@@ -75,11 +81,11 @@ private class HistoryValidationVehicleRepository(
             .firstOrNull { it.id == vehicleId }
     }
 
-    override fun findAll(): List<Vehicle> {
+    override suspend fun findAll(): List<Vehicle> {
         return warehouseIndex.values.flatMap { it.stationedVehicles }
     }
 
-    override fun add(vehicle: Vehicle) {
+    override suspend fun add(vehicle: Vehicle) {
         val warehouse = warehouseIndex[vehicle.currentWarehouse.id]
         if (warehouse != null) {
             val currentVehicles = warehouse.stationedVehicles as? MutableList<Vehicle>
@@ -87,12 +93,20 @@ private class HistoryValidationVehicleRepository(
         }
     }
 
-    override fun update(vehicle: Vehicle) {
+    override suspend  fun update(vehicle: Vehicle) {
         val warehouse = warehouseIndex[vehicle.currentWarehouse.id]
         val vehicles = warehouse?.stationedVehicles as? MutableList<Vehicle>
         val index = vehicles?.indexOfFirst { it.id == vehicle.id } ?: -1
         if (index != -1 && vehicles != null) {
             vehicles[index] = vehicle
+        }
+    }
+    override suspend fun delete(vehicleId: String) {
+        warehouseIndex.values.forEach { warehouse ->
+            val vehicles =
+                warehouse.stationedVehicles as? MutableList<Vehicle>
+
+            vehicles?.removeIf { it.id == vehicleId }
         }
     }
 }
@@ -101,17 +115,17 @@ private class HistoryValidationPackageRepository(
     private val warehouseIndex: Map<String, Warehouse>
 ) : PackageRepository {
 
-    override fun findById(packageId: String): Package? {
+    override suspend  fun findById(packageId: String): Package? {
         return warehouseIndex.values
             .flatMap { it.cargoQueue }
             .firstOrNull { it.id == packageId }
     }
 
-    override fun findAll(): List<Package> {
+    override suspend  fun findAll(): List<Package> {
         return warehouseIndex.values.flatMap { it.cargoQueue }
     }
 
-    override fun add(packageItem: Package) {
+    override suspend  fun add(packageItem: Package) {
         val warehouse = warehouseIndex[packageItem.originWarehouse.id]
         if (warehouse != null) {
             val queue = warehouse.cargoQueue as? MutableList<Package>
@@ -119,7 +133,7 @@ private class HistoryValidationPackageRepository(
         }
     }
 
-    override fun update(packageItem: Package) {
+    override suspend  fun update(packageItem: Package) {
         warehouseIndex.values.forEach { warehouse ->
             val queue = warehouse.cargoQueue as? MutableList<Package>
             val index = queue?.indexOfFirst { it.id == packageItem.id } ?: -1
@@ -128,9 +142,17 @@ private class HistoryValidationPackageRepository(
             }
         }
     }
+    override suspend fun delete(vehicleId: String) {
+        warehouseIndex.values.forEach { warehouse ->
+            val vehicles =
+                warehouse.stationedVehicles as? MutableList<Vehicle>
+
+            vehicles?.removeIf { it.id == vehicleId }
+        }
+    }
 }
 
-fun validateCommandHistory(
+suspend fun validateCommandHistory(
     warehouseIndex: Map<String, Warehouse>
 ) {
     if (warehouseIndex.isEmpty()) {
@@ -346,7 +368,7 @@ private fun createHistoryDispatchCommand(
 
 class CommandHistoryValidation {
 
-    fun run(
+    suspend fun run(
         history: CommandHistory,
         stateSnapshot: () -> String,
         telemetry: CommandTelemetry
@@ -362,7 +384,7 @@ class CommandHistoryValidation {
         printResult(result)
     }
 
-    private fun validateHistory(
+    private suspend  fun validateHistory(
         history: CommandHistory,
         invoker: CommandInvoker,
         stateSnapshot: () -> String
@@ -392,7 +414,7 @@ class CommandHistoryValidation {
         )
     }
 
-    private fun continueHistoryValidation(
+    private suspend fun continueHistoryValidation(
         history: CommandHistory,
         invoker: CommandInvoker,
         stateSnapshot: () -> String,
@@ -422,7 +444,7 @@ class CommandHistoryValidation {
         )
     }
 
-    private fun executeInitialCommands(
+    private suspend  fun executeInitialCommands(
         history: CommandHistory,
         invoker: CommandInvoker,
         stateSnapshot: () -> String
@@ -444,7 +466,7 @@ class CommandHistoryValidation {
         )
     }
 
-    private fun validateMultiLevelUndo(
+    private suspend  fun validateMultiLevelUndo(
         invoker: CommandInvoker,
         stateSnapshot: () -> String,
         initialState: String,
@@ -464,7 +486,7 @@ class CommandHistoryValidation {
         return firstUndoPassed && secondUndoPassed
     }
 
-    private fun validateMultiLevelRedo(
+    private suspend  fun validateMultiLevelRedo(
         invoker: CommandInvoker,
         stateSnapshot: () -> String,
         forwardStates: Pair<String, String>
@@ -483,7 +505,7 @@ class CommandHistoryValidation {
         return firstRedoPassed && secondRedoPassed
     }
 
-    private fun validateRedoClearance(
+    private suspend  fun validateRedoClearance(
         history: CommandHistory,
         invoker: CommandInvoker,
         stateSnapshot: () -> String,
@@ -507,7 +529,7 @@ class CommandHistoryValidation {
         return Pair(undoPassed && redoWasCleared, finalState)
     }
 
-    private fun restoreInitialState(
+    private suspend  fun restoreInitialState(
         invoker: CommandInvoker,
         stateSnapshot: () -> String
     ): String {
