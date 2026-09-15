@@ -3,16 +3,13 @@ package data.repository.local
 import data.datasource.WarehouseDataSource
 import data.mapper.WarehouseMapper
 import domain.model.Warehouse
+import domain.model.updateinput.WarehouseUpdateModel
 import domain.repository.WarehouseRepository
 
 class LocalWarehouseRepositoryImpl(
     private val warehouseDataSource: WarehouseDataSource,
     private val warehouseMapper: WarehouseMapper
 ) : WarehouseRepository {
-
-    companion object {
-        private const val NOT_FOUND_INDEX = -1
-    }
 
     private val warehouses = mutableListOf<Warehouse>()
     private var isLoaded = false
@@ -22,10 +19,10 @@ class LocalWarehouseRepositoryImpl(
 
         val rawWarehouses = warehouseDataSource.loadWarehouses()
 
-        for (rawWarehouse in rawWarehouses) {
-            val warehouse = warehouseMapper.mapToDomainModel(rawWarehouse)
-            warehouses.add(warehouse)
-        }
+        rawWarehouses
+            .map(warehouseMapper::mapToDomainModel)
+            .also(warehouses::addAll)
+
         isLoaded = true
     }
 
@@ -39,27 +36,36 @@ class LocalWarehouseRepositoryImpl(
         return warehouses.find { it.id == warehouseId }
     }
 
-    override suspend fun add(warehouse: Warehouse) {
+    override suspend fun add(warehouse: Warehouse): Warehouse {
         loadWarehousesIfNeeded()
+
         warehouses.add(warehouse)
+
+        return warehouse
     }
 
-    override suspend fun update(warehouse: Warehouse) {
+    override suspend fun update(
+        warehouseId: String,
+        updateModel: WarehouseUpdateModel
+    ): Warehouse {
         loadWarehousesIfNeeded()
 
-        val warehouseIndex =
-            warehouses.indexOfFirst { it.id == warehouse.id }
+        val warehouse = warehouses.find { it.id == warehouseId }
+            ?: throw IllegalStateException("Warehouse not found: $warehouseId")
 
-        if (warehouseIndex != NOT_FOUND_INDEX) {
-            warehouses[warehouseIndex] = warehouse
-        }
+        warehouse.updateDetails(
+            name = updateModel.name ?: warehouse.name,
+            regionalZone = updateModel.regionalZone ?: warehouse.regionalZone,
+            latitude = updateModel.latitude ?: warehouse.latitude,
+            longitude = updateModel.longitude ?: warehouse.longitude
+        )
+
+        return warehouse
     }
 
     override suspend fun delete(warehouseId: String) {
         loadWarehousesIfNeeded()
 
-        warehouses.removeAll {
-            it.id == warehouseId
-        }
+        warehouses.removeIf { it.id == warehouseId }
     }
 }

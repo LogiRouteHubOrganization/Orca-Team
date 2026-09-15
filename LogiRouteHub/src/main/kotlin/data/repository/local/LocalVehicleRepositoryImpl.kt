@@ -3,6 +3,7 @@ package data.repository.local
 import data.datasource.VehicleDataSource
 import data.mapper.VehicleMapper
 import domain.model.Vehicle
+import domain.model.updateinput.VehicleUpdateModel
 import domain.repository.VehicleRepository
 import domain.repository.WarehouseRepository
 
@@ -12,10 +13,6 @@ class LocalVehicleRepositoryImpl(
     private val warehouseRepository: WarehouseRepository
 ) : VehicleRepository {
 
-    companion object {
-        private const val NOT_FOUND_INDEX = -1
-    }
-
     private val vehicles = mutableListOf<Vehicle>()
     private var isLoaded = false
 
@@ -24,7 +21,7 @@ class LocalVehicleRepositoryImpl(
 
         val rawVehicles = vehicleDataSource.loadVehicles()
 
-        for (rawVehicle in rawVehicles) {
+        rawVehicles.forEach { rawVehicle ->
             val currentWarehouse =
                 warehouseRepository.findById(rawVehicle.currentHubId)
 
@@ -50,65 +47,81 @@ class LocalVehicleRepositoryImpl(
     override suspend fun findById(vehicleId: String): Vehicle? {
         loadVehiclesIfNeeded()
 
-        return vehicles.find {
-            it.id == vehicleId
-        }
+        return vehicles.find { it.id == vehicleId }
     }
 
-    override suspend fun add(vehicle: Vehicle) {
+    override suspend fun add(vehicle: Vehicle): Vehicle {
         loadVehiclesIfNeeded()
 
         vehicles.add(vehicle)
         vehicle.currentWarehouse.addVehicle(vehicle)
+
+        return vehicle
     }
 
-    override suspend fun update(vehicle: Vehicle) {
+    override suspend fun update(
+        vehicleId: String,
+        updateModel: VehicleUpdateModel
+    ): Vehicle {
         loadVehiclesIfNeeded()
 
-        val vehicleIndex =
-            vehicles.indexOfFirst { it.id == vehicle.id }
+        val currentVehicle = vehicles.find { it.id == vehicleId }
+            ?: throw IllegalStateException("Vehicle not found: $vehicleId")
 
-        if (vehicleIndex == NOT_FOUND_INDEX) return
+        val newWarehouse =
+            updateModel.currentWarehouseId
+                ?.let { warehouseRepository.findById(it) }
+                ?: currentVehicle.currentWarehouse
 
-        val previousWarehouse = warehouseRepository.findAll()
-            .find { warehouse ->
-                warehouse.stationedVehicles.any {
-                    it.id == vehicle.id
-                }
-            } ?: return
+        val updatedVehicle = currentVehicle.copy(
+            maxCapacityKg = updateModel.maxCapacityKg
+                ?: currentVehicle.maxCapacityKg,
+            costPerKm = updateModel.costPerKm
+                ?: currentVehicle.costPerKm,
+            currentWarehouse = newWarehouse
+        )
 
-        val newWarehouse = vehicle.currentWarehouse
+        updateVehicleRelations(
+            previousVehicle = currentVehicle,
+            updatedVehicle = updatedVehicle
+        )
+
+        val vehicleIndex = vehicles.indexOfFirst { it.id == vehicleId }
+        vehicles[vehicleIndex] = updatedVehicle
+
+        return updatedVehicle
+    }
+
+    private fun updateVehicleRelations(
+        previousVehicle: Vehicle,
+        updatedVehicle: Vehicle
+    ) {
+        val previousWarehouse = previousVehicle.currentWarehouse
+        val newWarehouse = updatedVehicle.currentWarehouse
 
         if (previousWarehouse.id == newWarehouse.id) {
-            previousWarehouse.stationedVehicles
-                .indexOfFirst { it.id == vehicle.id }
-                .takeIf { it != NOT_FOUND_INDEX }
-                ?.let { warehouseVehicleIndex ->
-                    previousWarehouse.updateVehicleAtIndex(
-                        warehouseVehicleIndex,
-                        vehicle
-                    )
-                }
+            val vehicleIndex =
+                previousWarehouse.stationedVehicles
+                    .indexOfFirst { it.id == previousVehicle.id }
 
-            vehicles[vehicleIndex] = vehicle
+            if (vehicleIndex != -1) {
+                previousWarehouse.updateVehicleAtIndex(
+                    vehicleIndex,
+                    updatedVehicle
+                )
+            }
+
             return
         }
 
-        previousWarehouse.stationedVehicles
-            .find { it.id == vehicle.id }
-            ?.let { previousVehicle ->
-                previousWarehouse.removeVehicle(previousVehicle)
-            }
-
-        newWarehouse.addVehicle(vehicle)
-        vehicles[vehicleIndex] = vehicle
+        previousWarehouse.removeVehicle(previousVehicle)
+        newWarehouse.addVehicle(updatedVehicle)
     }
 
     override suspend fun delete(vehicleId: String) {
         loadVehiclesIfNeeded()
 
-        val vehicle =
-            vehicles.find { it.id == vehicleId } ?: return
+        val vehicle = vehicles.find { it.id == vehicleId } ?: return
 
         vehicle.currentWarehouse.removeVehicle(vehicle)
         vehicles.remove(vehicle)

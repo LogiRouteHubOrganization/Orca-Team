@@ -2,11 +2,23 @@ package domain.model
 
 class Warehouse(
     val id: String,
-    val name: String,
-    val regionalZone: String,
-    val latitude: Double,
-    val longitude: Double
+     name: String,
+     regionalZone: String,
+     latitude: Double,
+     longitude: Double
 ) {
+    var name: String = name
+        private set
+
+    var regionalZone: String = regionalZone
+        private set
+
+    var latitude: Double = latitude
+        private set
+
+    var longitude: Double = longitude
+        private set
+
     private val cargoQueueList = mutableListOf<Package>()
     private val outgoingRoutesList = mutableListOf<Route>()
     private val stationedVehiclesList = mutableListOf<Vehicle>()
@@ -69,4 +81,16 @@ class Warehouse(
     ) {
         outgoingRoutesList[routeIndex] = route
     }
+    fun updateDetails(
+        name: String,
+        regionalZone: String,
+        latitude: Double,
+        longitude: Double
+    ) {
+        this.name = name
+        this.regionalZone = regionalZone
+        this.latitude = latitude
+        this.longitude = longitude
+    }
+
 }

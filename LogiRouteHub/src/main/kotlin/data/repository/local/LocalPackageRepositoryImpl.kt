@@ -3,6 +3,8 @@ package data.repository.local
 import data.datasource.PackageDataSource
 import data.mapper.PackageMapper
 import domain.model.Package
+import domain.model.Warehouse
+import domain.model.updateinput.PackageUpdateModel
 import domain.repository.PackageRepository
 import domain.repository.WarehouseRepository
 
@@ -55,43 +57,134 @@ class LocalPackageRepositoryImpl(
         return packages.toList()
     }
 
-    override suspend fun add(logisticsPackage: Package) {
+    override suspend fun add(logisticsPackage: Package): Package {
         loadPackagesIfNeeded()
 
         packages.add(logisticsPackage)
         logisticsPackage.originWarehouse.addPackage(logisticsPackage)
+
+        return logisticsPackage
     }
 
-    override suspend fun update(logisticsPackage: Package) {
+    override suspend fun update(
+        packageId: String,
+        updateModel: PackageUpdateModel
+    ): Package {
         loadPackagesIfNeeded()
 
-        val packageIndex =
-            packages.indexOfFirst { it.id == logisticsPackage.id }
+        val currentPackage = findPackageByIdOrThrow(packageId)
+        val updatedWarehouses = resolveWarehouses(
+            currentPackage,
+            updateModel
+        )
+        val updatedPackage = createUpdatedPackage(
+            currentPackage,
+            updateModel,
+            updatedWarehouses
+        )
 
-        if (packageIndex == NOT_FOUND_INDEX) return
+        applyPackageUpdate(currentPackage, updatedPackage)
 
-        val previousPackage = packages[packageIndex]
-        val previousOriginWarehouse = previousPackage.originWarehouse
-        val newOriginWarehouse = logisticsPackage.originWarehouse
+        return updatedPackage
+    }
 
-        if (previousOriginWarehouse.id == newOriginWarehouse.id) {
-            val warehousePackageIndex =
-                previousOriginWarehouse.cargoQueue.indexOfFirst {
-                    it.id == logisticsPackage.id
-                }
+    private fun findPackageByIdOrThrow(packageId: String): Package {
+        return packages.find { it.id == packageId }
+            ?: throw IllegalStateException(
+                "Package not found: $packageId"
+            )
+    }
 
-            if (warehousePackageIndex != NOT_FOUND_INDEX) {
-                previousOriginWarehouse.updatePackageAtIndex(
-                    warehousePackageIndex,
-                    logisticsPackage
+    private suspend fun resolveWarehouses(
+        currentPackage: Package,
+        updateModel: PackageUpdateModel
+    ): Pair<Warehouse, Warehouse> {
+        val originWarehouse =
+            findUpdatedWarehouse(
+                updateModel.originWarehouseId,
+                currentPackage.originWarehouse
+            )
+
+        val destinationWarehouse =
+            findUpdatedWarehouse(
+                updateModel.destinationWarehouseId,
+                currentPackage.destinationWarehouse
+            )
+
+        return originWarehouse to destinationWarehouse
+    }
+
+    private suspend fun findUpdatedWarehouse(
+        warehouseId: String?,
+        currentWarehouse: Warehouse
+    ): Warehouse {
+        return warehouseId?.let {
+            warehouseRepository.findById(it)
+                ?: throw IllegalStateException(
+                    "Warehouse not found: $it"
                 )
-            }
-        } else {
-            previousOriginWarehouse.removePackage(previousPackage)
-            newOriginWarehouse.addPackage(logisticsPackage)
+        } ?: currentWarehouse
+    }
+
+    private fun createUpdatedPackage(
+        currentPackage: Package,
+        updateModel: PackageUpdateModel,
+        warehouses: Pair<Warehouse, Warehouse>
+    ): Package {
+        return currentPackage.copy(
+            weightByKg = updateModel.weightByKg
+                ?: currentPackage.weightByKg,
+
+            priority = updateModel.priority
+                ?: currentPackage.priority,
+
+            originWarehouse = warehouses.first,
+            destinationWarehouse = warehouses.second
+        )
+    }
+
+    private fun applyPackageUpdate(
+        currentPackage: Package,
+        updatedPackage: Package
+    ) {
+        updateWarehouseCargo(currentPackage, updatedPackage)
+        replacePackageInRepository(updatedPackage)
+    }
+
+    private fun updateWarehouseCargo(
+        currentPackage: Package,
+        updatedPackage: Package
+    ) {
+        val originChanged =
+            currentPackage.originWarehouse.id !=
+                    updatedPackage.originWarehouse.id
+
+        if (originChanged) {
+            currentPackage.originWarehouse.removePackage(currentPackage)
+            updatedPackage.originWarehouse.addPackage(updatedPackage)
+            return
         }
 
-        packages[packageIndex] = logisticsPackage
+        val packageIndex =
+            updatedPackage.originWarehouse.cargoQueue.indexOfFirst {
+                it.id == updatedPackage.id
+            }
+
+        if (packageIndex != NOT_FOUND_INDEX) {
+            updatedPackage.originWarehouse.updatePackageAtIndex(
+                packageIndex,
+                updatedPackage
+            )
+        }
+    }
+
+    private fun replacePackageInRepository(
+        updatedPackage: Package
+    ) {
+        val packageIndex =
+            packages.indexOfFirst { it.id == updatedPackage.id }
+
+        packages[packageIndex] = updatedPackage
     }
 
     override suspend fun delete(packageId: String) {
