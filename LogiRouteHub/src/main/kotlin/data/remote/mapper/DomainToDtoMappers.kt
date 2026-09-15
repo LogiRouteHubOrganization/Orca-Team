@@ -9,9 +9,13 @@ import data.remote.dto.request.VehicleUpdateRequestDto
 import data.remote.dto.request.RouteCreateRequestDto
 import data.remote.dto.request.RouteUpdateRequestDto
 import domain.model.Package
+import domain.model.updateinput.PackageUpdateModel
 import domain.model.Route
+import domain.model.updateinput.RouteUpdateModel
 import domain.model.Vehicle
+import domain.model.updateinput.VehicleUpdateModel
 import domain.model.Warehouse
+import domain.model.updateinput.WarehouseUpdateModel
 
 
 fun Package.toCreateDto(): PackageCreateRequestDto {
@@ -24,12 +28,12 @@ fun Package.toCreateDto(): PackageCreateRequestDto {
     )
 }
 
-fun Package.toUpdateDto(): PackageUpdateRequestDto {
+fun PackageUpdateModel.toUpdateDto(): PackageUpdateRequestDto {
     return PackageUpdateRequestDto(
         weightByKg = weightByKg,
         priority = priority,
-        originWarehouseId = originWarehouse.id,
-        destinationWarehouseId = destinationWarehouse.id
+        originWarehouseId = originWarehouseId,
+        destinationWarehouseId = destinationWarehouseId
     )
 }
 
@@ -44,7 +48,7 @@ fun Warehouse.toCreateDto(): WarehouseCreateRequestDto {
     )
 }
 
-fun Warehouse.toUpdateDto(): WarehouseUpdateRequestDto {
+fun WarehouseUpdateModel.toUpdateDto(): WarehouseUpdateRequestDto {
     return WarehouseUpdateRequestDto(
         name = name,
         regionalZone = regionalZone,
@@ -62,11 +66,11 @@ fun Vehicle.toCreateDto(): VehicleCreateRequestDto {
     )
 }
 
-fun Vehicle.toUpdateDto(): VehicleUpdateRequestDto {
+fun VehicleUpdateModel.toUpdateDto(): VehicleUpdateRequestDto {
     return VehicleUpdateRequestDto(
         maxCapacityKg = maxCapacityKg,
         costPerKm = costPerKm,
-        currentWarehouseId = currentWarehouse.id
+        currentWarehouseId = currentWarehouseId
     )
 }
 
@@ -81,10 +85,10 @@ fun Route.toCreateDto(): RouteCreateRequestDto {
     )
 }
 
-fun Route.toUpdateDto(): RouteUpdateRequestDto {
+fun RouteUpdateModel.toUpdateDto(): RouteUpdateRequestDto {
     return RouteUpdateRequestDto(
-        originWarehouseId = originWarehouse.id,
-        destinationWarehouseId = destinationWarehouse.id,
+        originWarehouseId = originWarehouseId,
+        destinationWarehouseId = destinationWarehouseId,
         distanceKm = distanceKm,
         typicalDelayMin = typicalDelayMin
     )
