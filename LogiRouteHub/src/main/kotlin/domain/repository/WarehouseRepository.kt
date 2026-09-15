@@ -4,11 +4,13 @@ import domain.model.Warehouse
 
 interface WarehouseRepository {
 
-    fun findById(warehouseId: String): Warehouse?
+    suspend fun findById(warehouseId: String): Warehouse?
 
-    fun findAll(): List<Warehouse>
+    suspend fun findAll(): List<Warehouse>
 
-    fun add(warehouse: Warehouse)
+    suspend fun add(warehouse: Warehouse)
 
-    fun update(warehouse: Warehouse)
+    suspend fun update(warehouse: Warehouse)
+
+    suspend fun delete(warehouseId: String)
 }
