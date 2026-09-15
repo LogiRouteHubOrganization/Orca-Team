@@ -1,4 +1,4 @@
-package data.repository
+package data.repository.local
 
 import data.datasource.VehicleDataSource
 import data.mapper.VehicleMapper
@@ -6,7 +6,7 @@ import domain.model.Vehicle
 import domain.repository.VehicleRepository
 import domain.repository.WarehouseRepository
 
-class VehicleRepositoryImpl(
+class LocalVehicleRepositoryImpl(
     private val vehicleDataSource: VehicleDataSource,
     private val vehicleMapper: VehicleMapper,
     private val warehouseRepository: WarehouseRepository
@@ -19,13 +19,12 @@ class VehicleRepositoryImpl(
     private val vehicles = mutableListOf<Vehicle>()
     private var isLoaded = false
 
-    private fun loadVehiclesIfNeeded() {
+    private suspend fun loadVehiclesIfNeeded() {
         if (isLoaded) return
 
         val rawVehicles = vehicleDataSource.loadVehicles()
 
         for (rawVehicle in rawVehicles) {
-
             val currentWarehouse =
                 warehouseRepository.findById(rawVehicle.currentHubId)
 
@@ -34,42 +33,48 @@ class VehicleRepositoryImpl(
                     rawVehicle = rawVehicle,
                     currentWarehouse = currentWarehouse
                 )
+
                 vehicles.add(vehicle)
                 currentWarehouse.addVehicle(vehicle)
             }
         }
+
         isLoaded = true
     }
 
-    override fun findAll(): List<Vehicle> {
+    override suspend fun findAll(): List<Vehicle> {
         loadVehiclesIfNeeded()
         return vehicles.toList()
     }
 
-    override fun findById(vehicleId: String): Vehicle? {
+    override suspend fun findById(vehicleId: String): Vehicle? {
         loadVehiclesIfNeeded()
+
         return vehicles.find {
             it.id == vehicleId
         }
     }
 
-    override fun add(vehicle: Vehicle) {
+    override suspend fun add(vehicle: Vehicle) {
         loadVehiclesIfNeeded()
 
         vehicles.add(vehicle)
         vehicle.currentWarehouse.addVehicle(vehicle)
     }
 
-    override fun update(vehicle: Vehicle) {
+    override suspend fun update(vehicle: Vehicle) {
         loadVehiclesIfNeeded()
-        val vehicleIndex = vehicles.indexOfFirst {
-            it.id == vehicle.id
-        }
+
+        val vehicleIndex =
+            vehicles.indexOfFirst { it.id == vehicle.id }
+
         if (vehicleIndex == NOT_FOUND_INDEX) return
 
         val previousWarehouse = warehouseRepository.findAll()
             .find { warehouse ->
-                warehouse.stationedVehicles.any { it.id == vehicle.id }
+                warehouse.stationedVehicles.any {
+                    it.id == vehicle.id
+                }
             } ?: return
 
         val newWarehouse = vehicle.currentWarehouse
@@ -78,21 +83,34 @@ class VehicleRepositoryImpl(
             previousWarehouse.stationedVehicles
                 .indexOfFirst { it.id == vehicle.id }
                 .takeIf { it != NOT_FOUND_INDEX }
-                ?.let { vehicleIndex ->
+                ?.let { warehouseVehicleIndex ->
                     previousWarehouse.updateVehicleAtIndex(
-                        vehicleIndex,
+                        warehouseVehicleIndex,
                         vehicle
                     )
                 }
+
             vehicles[vehicleIndex] = vehicle
             return
         }
+
         previousWarehouse.stationedVehicles
             .find { it.id == vehicle.id }
             ?.let { previousVehicle ->
                 previousWarehouse.removeVehicle(previousVehicle)
             }
+
         newWarehouse.addVehicle(vehicle)
         vehicles[vehicleIndex] = vehicle
+    }
+
+    override suspend fun delete(vehicleId: String) {
+        loadVehiclesIfNeeded()
+
+        val vehicle =
+            vehicles.find { it.id == vehicleId } ?: return
+
+        vehicle.currentWarehouse.removeVehicle(vehicle)
+        vehicles.remove(vehicle)
     }
 }
