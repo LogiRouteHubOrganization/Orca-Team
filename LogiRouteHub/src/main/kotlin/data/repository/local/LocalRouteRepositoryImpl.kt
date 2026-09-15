@@ -3,6 +3,7 @@ package data.repository.local
 import data.datasource.RouteDataSource
 import data.mapper.RouteMapper
 import domain.model.Route
+import domain.model.updateinput.RouteUpdateModel
 import domain.repository.RouteRepository
 import domain.repository.WarehouseRepository
 
@@ -12,10 +13,6 @@ class LocalRouteRepositoryImpl(
     private val warehouseRepository: WarehouseRepository
 ) : RouteRepository {
 
-    companion object {
-        private const val NOT_FOUND_INDEX = -1
-    }
-
     private val routes = mutableListOf<Route>()
     private var isLoaded = false
 
@@ -24,7 +21,7 @@ class LocalRouteRepositoryImpl(
 
         val rawRoutes = routeDataSource.loadRoutes()
 
-        for (rawRoute in rawRoutes) {
+        rawRoutes.forEach { rawRoute ->
             val originWarehouse =
                 warehouseRepository.findById(rawRoute.originHubId)
 
@@ -42,6 +39,7 @@ class LocalRouteRepositoryImpl(
                 originWarehouse.addRoute(route)
             }
         }
+
         isLoaded = true
     }
 
@@ -55,58 +53,84 @@ class LocalRouteRepositoryImpl(
         return routes.toList()
     }
 
-    override suspend fun add(route: Route) {
+    override suspend fun add(route: Route): Route {
         loadRoutesIfNeeded()
 
         routes.add(route)
         route.originWarehouse.addRoute(route)
+
+        return route
     }
 
-    override suspend fun update(route: Route) {
+    override suspend fun update(
+        routeId: String,
+        updateModel: RouteUpdateModel
+    ): Route {
         loadRoutesIfNeeded()
 
-        val routeIndex = routes.indexOfFirst {
-            it.id == route.id
-        }
+        val currentRoute = routes.find { it.id == routeId }
+            ?: throw IllegalStateException("Route not found: $routeId")
 
-        if (routeIndex == NOT_FOUND_INDEX) return
+        val newOriginWarehouse =
+            updateModel.originWarehouseId
+                ?.let { warehouseRepository.findById(it) }
+                ?: currentRoute.originWarehouse
 
-        val previousRoute = routes[routeIndex]
+        val newDestinationWarehouse =
+            updateModel.destinationWarehouseId
+                ?.let { warehouseRepository.findById(it) }
+                ?: currentRoute.destinationWarehouse
+
+        val updatedRoute = currentRoute.copy(
+            originWarehouse = newOriginWarehouse,
+            destinationWarehouse = newDestinationWarehouse,
+            distanceKm = updateModel.distanceKm
+                ?: currentRoute.distanceKm,
+            typicalDelayMin = updateModel.typicalDelayMin
+                ?: currentRoute.typicalDelayMin
+        )
+
+        updateRouteRelations(
+            previousRoute = currentRoute,
+            updatedRoute = updatedRoute
+        )
+
+        val routeIndex = routes.indexOfFirst { it.id == routeId }
+        routes[routeIndex] = updatedRoute
+
+        return updatedRoute
+    }
+
+    private fun updateRouteRelations(
+        previousRoute: Route,
+        updatedRoute: Route
+    ) {
         val previousOriginWarehouse = previousRoute.originWarehouse
-        val newOriginWarehouse = route.originWarehouse
+        val newOriginWarehouse = updatedRoute.originWarehouse
 
         if (previousOriginWarehouse.id == newOriginWarehouse.id) {
-            previousOriginWarehouse.outgoingRoutes
-                .indexOfFirst { it.id == route.id }
-                .takeIf { it != NOT_FOUND_INDEX }
-                ?.let { warehouseRouteIndex ->
-                    previousOriginWarehouse.updateRouteAtIndex(
-                        warehouseRouteIndex,
-                        route
-                    )
-                }
+            val routeIndex =
+                previousOriginWarehouse.outgoingRoutes
+                    .indexOfFirst { it.id == previousRoute.id }
 
-            routes[routeIndex] = route
-            return
-        }
-
-        previousOriginWarehouse.outgoingRoutes
-            .find { it.id == route.id }
-            ?.let { previousRouteInWarehouse ->
-                previousOriginWarehouse.removeRoute(
-                    previousRouteInWarehouse
+            if (routeIndex != -1) {
+                previousOriginWarehouse.updateRouteAtIndex(
+                    routeIndex,
+                    updatedRoute
                 )
             }
 
-        newOriginWarehouse.addRoute(route)
-        routes[routeIndex] = route
+            return
+        }
+
+        previousOriginWarehouse.removeRoute(previousRoute)
+        newOriginWarehouse.addRoute(updatedRoute)
     }
 
     override suspend fun delete(routeId: String) {
         loadRoutesIfNeeded()
 
-        val route =
-            routes.find { it.id == routeId } ?: return
+        val route = routes.find { it.id == routeId } ?: return
 
         route.originWarehouse.removeRoute(route)
         routes.remove(route)

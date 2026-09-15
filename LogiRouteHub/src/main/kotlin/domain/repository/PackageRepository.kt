@@ -1,6 +1,7 @@
 package domain.repository
 
 import domain.model.Package
+import domain.model.updateinput.PackageUpdateModel
 
 interface PackageRepository {
 
@@ -8,9 +9,9 @@ interface PackageRepository {
 
     suspend fun findAll(): List<Package>
 
-    suspend fun add(logisticsPackage: Package)
+    suspend fun add(logisticsPackage: Package): Package
 
-    suspend fun update(logisticsPackage: Package)
+    suspend fun update(packageId: String, updateModel: PackageUpdateModel): Package
 
     suspend fun delete(packageId: String)
 }

@@ -21,7 +21,9 @@ class WarehouseRemoteDataSourceImpl : WarehouseRemoteDataSource {
         }
     }
 
-    override suspend fun getWarehouseById(id: String): WarehouseDto? {
+    override suspend fun getWarehouseById(
+        id: String
+    ): WarehouseDto? {
         return safeApiCall {
             client.from(tableName)
                 .select {

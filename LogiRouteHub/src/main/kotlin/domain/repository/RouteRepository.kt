@@ -1,6 +1,7 @@
 package domain.repository
 
 import domain.model.Route
+import domain.model.updateinput.RouteUpdateModel
 
 interface RouteRepository {
 
@@ -8,9 +9,9 @@ interface RouteRepository {
 
     suspend fun findAll(): List<Route>
 
-    suspend fun add(route: Route)
+    suspend fun add(route: Route): Route
 
-    suspend fun update(route: Route)
+    suspend fun update( routeId: String, updateModel: RouteUpdateModel): Route
 
     suspend fun delete(routeId: String)
 }
