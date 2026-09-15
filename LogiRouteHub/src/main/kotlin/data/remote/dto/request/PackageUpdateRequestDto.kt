@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class PackageUpdateRequestDto(
-    val id: String,
+
 
     @SerialName("weight_by_kg")
     val weightByKg: Double? = null,
