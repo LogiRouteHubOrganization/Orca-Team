@@ -10,7 +10,7 @@ class DispatchVehicleUseCase(
     private val warehouseRepository: WarehouseRepository
 ) {
 
-    operator fun invoke(input: DispatchVehicleRequest): List<Package> {
+    suspend operator fun invoke(input: DispatchVehicleRequest): List<Package> {
 
         val vehicle = vehicleRepository.findById(input.vehicleId)
             ?: return emptyList()
@@ -36,12 +36,10 @@ class DispatchVehicleUseCase(
             }
 
         }.first
-
         packagesToDispatch.forEach { logisticsPackage ->
             vehicle.addPackage(logisticsPackage)
             warehouse.removePackage(logisticsPackage)
         }
-
         vehicleRepository.update(vehicle)
         warehouseRepository.update(warehouse)
 

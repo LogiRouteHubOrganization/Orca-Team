@@ -15,7 +15,7 @@ class DijkstraRoutingValidation(
 ) {
     private val defaultRouteDelayMin = 10
 
-    fun validateRouting() {
+   suspend fun validateRouting() {
         validatePathExists()
         validateNoPath()
         validateSameWarehouse()
@@ -244,7 +244,7 @@ class DijkstraRoutingValidation(
         }
     }
 
-    private fun validateIntegration() {
+    private suspend fun validateIntegration() {
         val startWarehouse = warehouseIndex["WH-001"]
         val destinationWarehouse = warehouseIndex["WH-002"]
 

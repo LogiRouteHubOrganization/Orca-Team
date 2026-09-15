@@ -8,7 +8,7 @@ class AssignPackageToCargoQueueUseCase(
     private val warehouseRepository: WarehouseRepository
 ) {
 
-    operator fun invoke(logisticsPackage: Package) {
+    suspend operator fun invoke(logisticsPackage: Package) {
         val originWarehouse = logisticsPackage.originWarehouse
 
         originWarehouse.addPackage(logisticsPackage)

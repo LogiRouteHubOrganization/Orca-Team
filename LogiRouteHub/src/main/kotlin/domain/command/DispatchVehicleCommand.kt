@@ -32,27 +32,36 @@ class DispatchVehicleCommand(
 
     override val commandType = "DispatchVehicleCommand"
 
-    override fun execute(): Boolean {
-        val currentVehicle = dependencies.vehicleRepository.findById(request.vehicleId) ?: return false
+    override suspend fun execute(): Boolean {
+        val currentVehicle =
+            dependencies.vehicleRepository.findById(request.vehicleId)
+                ?: return false
 
-        val currentWarehouse = dependencies.warehouseRepository.findById(request.warehouseId) ?: return false
+        val currentWarehouse =
+            dependencies.warehouseRepository.findById(request.warehouseId)
+                ?: return false
 
         vehicle = currentVehicle
         warehouse = currentWarehouse
 
-        previousVehiclePackages = currentVehicle.assignedPackages.toList()
+        previousVehiclePackages =
+            currentVehicle.assignedPackages.toList()
 
-        previousWarehouseQueue = currentWarehouse.cargoQueue.toList()
+        previousWarehouseQueue =
+            currentWarehouse.cargoQueue.toList()
 
-        val dispatchedPackages = dependencies.dispatchVehicleUseCase(request)
+        val dispatchedPackages =
+            dependencies.dispatchVehicleUseCase(request)
 
         if (dispatchedPackages.isEmpty()) {
             return false
         }
 
-        afterVehiclePackages = currentVehicle.assignedPackages.toList()
+        afterVehiclePackages =
+            currentVehicle.assignedPackages.toList()
 
-        afterWarehouseQueue = currentWarehouse.cargoQueue.toList()
+        afterWarehouseQueue =
+            currentWarehouse.cargoQueue.toList()
 
         dependencies.telemetry.recordStateTransition(
             commandType = commandType,
@@ -69,17 +78,21 @@ class DispatchVehicleCommand(
         return true
     }
 
-    override fun undo() {
+    override suspend fun undo() {
         val executedVehicle = vehicle ?: return
         val executedWarehouse = warehouse ?: return
 
-        val oldVehiclePackages = previousVehiclePackages ?: return
+        val oldVehiclePackages =
+            previousVehiclePackages ?: return
 
-        val oldWarehouseQueue = previousWarehouseQueue ?: return
+        val oldWarehouseQueue =
+            previousWarehouseQueue ?: return
 
-        val currentVehiclePackages = afterVehiclePackages ?: return
+        val currentVehiclePackages =
+            afterVehiclePackages ?: return
 
-        val currentWarehouseQueue = afterWarehouseQueue ?: return
+        val currentWarehouseQueue =
+            afterWarehouseQueue ?: return
 
         executedVehicle.restoreAssignedPackages(oldVehiclePackages)
 
@@ -102,22 +115,30 @@ class DispatchVehicleCommand(
         )
     }
 
-    override fun redo() {
+    override suspend fun redo() {
         val executedVehicle = vehicle ?: return
         val executedWarehouse = warehouse ?: return
 
-        val oldVehiclePackages = previousVehiclePackages ?: return
+        val oldVehiclePackages =
+            previousVehiclePackages ?: return
 
-        val oldWarehouseQueue = previousWarehouseQueue ?: return
+        val oldWarehouseQueue =
+            previousWarehouseQueue ?: return
 
-        val newVehiclePackages = afterVehiclePackages ?: return
-        val newWarehouseQueue = afterWarehouseQueue ?: return
+        val newVehiclePackages =
+            afterVehiclePackages ?: return
+
+        val newWarehouseQueue =
+            afterWarehouseQueue ?: return
 
         executedVehicle.restoreAssignedPackages(newVehiclePackages)
 
         executedWarehouse.restoreCargoQueue(newWarehouseQueue)
+
         dependencies.vehicleRepository.update(executedVehicle)
+
         dependencies.warehouseRepository.update(executedWarehouse)
+
         dependencies.telemetry.recordStateTransition(
             commandType = commandType,
             beforeState = createStateDescription(
@@ -130,7 +151,6 @@ class DispatchVehicleCommand(
             )
         )
     }
-
     private fun createStateDescription(
         vehiclePackages: List<Package>?,
         warehouseQueue: List<Package>?

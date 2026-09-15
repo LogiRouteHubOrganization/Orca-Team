@@ -8,7 +8,7 @@ class LeastHopRoutingValidation(
     private val warehouseIndex: Map<String, Warehouse>,
     private val findFewestHopsRouteUseCase: FindFewestHopsRouteUseCase
 ) {
-    fun validateRouting() {
+    suspend fun validateRouting() {
         validatePathExists()
         validateNoPath()
         validateSameWarehouse()
@@ -19,7 +19,7 @@ class LeastHopRoutingValidation(
         println("Routing validation completed.")
     }
 
-    private fun validatePathExists() {
+    private suspend fun validatePathExists() {
         val startWarehouse = createWarehouse("WH-001")
         val destinationWarehouse = createWarehouse("WH-002")
 
@@ -43,7 +43,7 @@ class LeastHopRoutingValidation(
         )
     }
 
-    private fun validateNoPath() {
+    private suspend fun validateNoPath() {
         val startWarehouse = createWarehouse("WH-001")
         val destinationWarehouse = createWarehouse("WH-002")
 
@@ -61,7 +61,7 @@ class LeastHopRoutingValidation(
         }
     }
 
-    private fun validateSameWarehouse() {
+    private suspend fun validateSameWarehouse() {
         val warehouse = createWarehouse("WH-001")
 
         val warehousePath = findFewestHopsRouteUseCase(
@@ -76,7 +76,7 @@ class LeastHopRoutingValidation(
         )
     }
 
-    private fun validateCycle() {
+    private suspend fun validateCycle() {
         val startWarehouse = createWarehouse("WH-001")
         val middleWarehouse = createWarehouse("WH-002")
         val destinationWarehouse = createWarehouse("WH-003")
@@ -117,7 +117,7 @@ class LeastHopRoutingValidation(
         )
     }
 
-    private fun validateLeastHopPath() {
+    private suspend fun validateLeastHopPath() {
         val startWarehouse = createWarehouse("WH-001")
         val shortPathWarehouse = createWarehouse("WH-002")
         val alternativePathWarehouse = createWarehouse("WH-003")
@@ -152,7 +152,7 @@ class LeastHopRoutingValidation(
         )
     }
 
-    private fun validateIntegration() {
+    private suspend fun validateIntegration() {
         val startWarehouse = warehouseIndex["WH-001"]
         val destinationWarehouse = warehouseIndex["WH-002"]
 
