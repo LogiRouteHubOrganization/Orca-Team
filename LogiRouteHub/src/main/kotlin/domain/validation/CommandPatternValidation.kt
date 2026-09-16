@@ -7,14 +7,16 @@ import domain.model.Vehicle
 import domain.model.Warehouse
 import domain.model.request.DispatchVehicleRequest
 import domain.model.request.ReroutePackageRequest
-import domain.repository.VehicleRepository
+import domain.model.updateinput.PackageUpdateModel
+import domain.model.updateinput.VehicleUpdateModel
+import domain.model.updateinput.WarehouseUpdateModel
 import domain.repository.PackageRepository
+import domain.repository.VehicleRepository
 import domain.repository.WarehouseRepository
 import domain.usecase.AssignPackageToCargoQueueUseCase
 import domain.usecase.DispatchVehicleUseCase
 import domain.usecase.ReroutePackageUseCase
 import domain.usecase.SortingCargoQueueUseCase
-
 
 private data class CommandValidationResult(
     val executed: Boolean,
@@ -32,28 +34,29 @@ private class ValidationWarehouseRepository(
         return warehouseIndex[warehouseId]
     }
 
-    override suspend  fun findAll(): List<Warehouse> {
+    override suspend fun findAll(): List<Warehouse> {
         return warehouseIndex.values.toList()
     }
 
-    override suspend fun add(warehouse: Warehouse) {
+    override suspend fun add(warehouse: Warehouse): Warehouse {
         if (warehouseIndex is MutableMap) {
             warehouseIndex[warehouse.id] = warehouse
         }
+        return warehouse
     }
 
-    override suspend fun update(warehouse: Warehouse) {
-        if (warehouseIndex is MutableMap) {
-            warehouseIndex[warehouse.id] = warehouse
-        }
+    override suspend fun update(warehouseId: String, updateModel: WarehouseUpdateModel): Warehouse {
+        val target = warehouseIndex[warehouseId]
+            ?: throw IllegalArgumentException("Warehouse not found: $warehouseId")
+        return target
     }
+
     override suspend fun delete(warehouseId: String) {
         if (warehouseIndex is MutableMap) {
             warehouseIndex.remove(warehouseId)
         }
     }
-    }
-
+}
 
 private class ValidationVehicleRepository(
     private val warehouseIndex: Map<String, Warehouse>
@@ -70,16 +73,23 @@ private class ValidationVehicleRepository(
         return warehouseIndex.values.flatMap { it.stationedVehicles }
     }
 
-    override suspend fun add(vehicle: Vehicle) {
+    override suspend fun add(vehicle: Vehicle): Vehicle {
         val warehouse = warehouseIndex[vehicle.currentWarehouse.id]
         if (warehouse != null) {
             val currentVehicles = warehouse.stationedVehicles as? MutableList<Vehicle>
             currentVehicles?.add(vehicle)
         }
+        return vehicle
     }
 
-    override suspend fun update(vehicle: Vehicle) {
+    override suspend fun update(vehicleId: String, updateModel: VehicleUpdateModel): Vehicle {
+        val vehicle = warehouseIndex.values
+            .flatMap { it.stationedVehicles }
+            .firstOrNull { it.id == vehicleId }
+            ?: throw IllegalArgumentException("Vehicle not found: $vehicleId")
+        return vehicle
     }
+
     override suspend fun delete(vehicleId: String) {
         warehouseIndex.values.forEach { warehouse ->
             val vehicles =
@@ -88,8 +98,8 @@ private class ValidationVehicleRepository(
             vehicles?.removeIf { it.id == vehicleId }
         }
     }
-
 }
+
 private class ValidationPackageRepository(
     private val warehouseIndex: Map<String, Warehouse>
 ) : PackageRepository {
@@ -104,24 +114,23 @@ private class ValidationPackageRepository(
         return warehouseIndex.values.flatMap { it.cargoQueue }
     }
 
-    override suspend fun add(packageItem: Package) {
+    override suspend fun add(packageItem: Package): Package {
         val warehouse = warehouseIndex[packageItem.originWarehouse.id]
         if (warehouse != null) {
             val queue = warehouse.cargoQueue as? MutableList<Package>
             queue?.add(packageItem)
         }
+        return packageItem
     }
 
-    override suspend fun update(packageItem: Package) {
-        warehouseIndex.values.forEach { warehouse ->
-            val queue = warehouse.cargoQueue as? MutableList<Package>
-            val index = queue?.indexOfFirst { it.id == packageItem.id } ?: -1
-            if (index != -1 && queue != null) {
-                queue[index] = packageItem
-            }
-        }
-
+    override suspend fun update(packageId: String, updateModel: PackageUpdateModel): Package {
+        val packageItem = warehouseIndex.values
+            .flatMap { it.cargoQueue }
+            .firstOrNull { it.id == packageId }
+            ?: throw IllegalArgumentException("Package not found: $packageId")
+        return packageItem
     }
+
     override suspend fun delete(packageId: String) {
         warehouseIndex.values.forEach { warehouse ->
             val queue =
@@ -192,7 +201,7 @@ private suspend fun validateAllCommands(
     warehouseIndex: Map<String, Warehouse>,
     warehouseRepository: WarehouseRepository,
     vehicleRepository: VehicleRepository,
-    packageRepository:PackageRepository,
+    packageRepository: PackageRepository,
     assignUseCase: AssignPackageToCargoQueueUseCase,
     dispatchUseCase: DispatchVehicleUseCase,
     rerouteUseCase: ReroutePackageUseCase,
@@ -232,7 +241,6 @@ private fun createAssignPackageUseCase(
     )
 }
 
-
 private fun createDispatchVehicleUseCase(
     warehouseRepository: WarehouseRepository,
     vehicleRepository: VehicleRepository
@@ -243,7 +251,6 @@ private fun createDispatchVehicleUseCase(
         warehouseRepository = warehouseRepository
     )
 }
-
 
 private suspend fun validateAssignPackageCommand(
     warehouseIndex: Map<String, Warehouse>,
@@ -297,7 +304,6 @@ private fun createAssignPackageCommand(
     )
 }
 
-
 private suspend fun validateAssignExecution(
     warehouse: Warehouse,
     command: AssignPackageToQueueCommand,
@@ -317,7 +323,6 @@ private suspend fun validateAssignExecution(
     )
     printCommandResult("Assign Package Command", result)
 }
-
 
 private suspend fun testAssignHistory(
     warehouse: Warehouse,
@@ -386,7 +391,8 @@ private fun findRerouteValidationData(
 
     val destinationWarehouse = warehouseIndex.values.firstOrNull { it.id != warehouse.id } ?: return null
 
-    return Pair(warehouse,
+    return Pair(
+        warehouse,
         destinationWarehouse
     )
 }
@@ -413,10 +419,12 @@ private fun createReroutePackageCommand(
             warehouseRepository = warehouseRepository,
             packageRepository = packageRepository,
             rerouteUseCase = rerouteUseCase,
-            telemetry = telemetry),
+            telemetry = telemetry
+        ),
         input = request
     )
 }
+
 private fun createRerouteDependencies(
     warehouseRepository: WarehouseRepository,
     packageRepository: PackageRepository,
@@ -547,7 +555,6 @@ private fun findWarehouseForDispatchValidation(
         .firstOrNull { it.cargoQueue.isNotEmpty() && it.stationedVehicles.isNotEmpty() }
 }
 
-
 private fun createDispatchVehicleCommand(
     warehouse: Warehouse,
     vehicle: Vehicle,
@@ -574,7 +581,6 @@ private fun createDispatchVehicleCommand(
         request = request
     )
 }
-
 
 private suspend fun validateDispatchExecution(
     warehouse: Warehouse,
@@ -695,7 +701,6 @@ private fun printCommandResult(
     )
     println("------------------------------------------------------------")
 }
-
 
 private fun getResultText(
     passed: Boolean

@@ -3,6 +3,7 @@ package domain.command
 import domain.command.telemetry.CommandTelemetry
 import domain.model.Package
 import domain.model.Warehouse
+import domain.model.updateinput.WarehouseUpdateModel
 import domain.repository.WarehouseRepository
 import domain.usecase.AssignPackageToCargoQueueUseCase
 
@@ -31,11 +32,13 @@ class AssignPackageToQueueCommand(
 
         warehouse = currentWarehouse
 
-        previousWarehouseQueue = currentWarehouse.cargoQueue.toList()
+        previousWarehouseQueue =
+            currentWarehouse.cargoQueue.toList()
 
         dependencies.assignPackageToCargoQueueUseCase(logisticsPackage)
 
-        afterWarehouseQueue = currentWarehouse.cargoQueue.toList()
+        afterWarehouseQueue =
+            currentWarehouse.cargoQueue.toList()
 
         val isQueueChanged =
             currentWarehouse.cargoQueue != previousWarehouseQueue
@@ -60,7 +63,15 @@ class AssignPackageToQueueCommand(
 
         executedWarehouse.restoreCargoQueue(oldQueue)
 
-        dependencies.warehouseRepository.update(executedWarehouse)
+        dependencies.warehouseRepository.update(
+            executedWarehouse.id,
+            WarehouseUpdateModel(
+                name = executedWarehouse.name,
+                regionalZone = executedWarehouse.regionalZone,
+                latitude = executedWarehouse.latitude,
+                longitude = executedWarehouse.longitude
+            )
+        )
 
         dependencies.telemetry.recordStateTransition(
             commandType = commandType,
@@ -78,7 +89,15 @@ class AssignPackageToQueueCommand(
 
         executedWarehouse.restoreCargoQueue(newQueue)
 
-        dependencies.warehouseRepository.update(executedWarehouse)
+        dependencies.warehouseRepository.update(
+            executedWarehouse.id,
+            WarehouseUpdateModel(
+                name = executedWarehouse.name,
+                regionalZone = executedWarehouse.regionalZone,
+                latitude = executedWarehouse.latitude,
+                longitude = executedWarehouse.longitude
+            )
+        )
 
         dependencies.telemetry.recordStateTransition(
             commandType = commandType,

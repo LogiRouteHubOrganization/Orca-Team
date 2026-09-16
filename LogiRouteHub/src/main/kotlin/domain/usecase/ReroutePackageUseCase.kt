@@ -2,6 +2,7 @@ package domain.usecase
 
 import domain.model.Package
 import domain.model.request.ReroutePackageRequest
+import domain.model.updateinput.PackageUpdateModel
 import domain.repository.PackageRepository
 import domain.repository.WarehouseRepository
 
@@ -22,12 +23,17 @@ class ReroutePackageUseCase(
             it.id == input.packageId
         } ?: return null
 
+
         val reroutedPackage = logisticsPackage.copy(
             destinationWarehouse = input.newDestinationWarehouse
         )
 
-        packageRepository.update(reroutedPackage)
+        val packageUpdateModel = PackageUpdateModel(
+            destinationWarehouseId = input.newDestinationWarehouse.id
+        )
 
-        return reroutedPackage
+        packageRepository.update(reroutedPackage.id, packageUpdateModel)
+
+        return packageRepository.findById(reroutedPackage.id)
     }
 }

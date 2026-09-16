@@ -3,6 +3,7 @@ package domain.usecase
 import domain.model.Package
 import domain.model.Warehouse
 import domain.model.request.PackagePriorityLevels
+import domain.model.updateinput.WarehouseUpdateModel
 import domain.repository.WarehouseRepository
 
 class PrioritizeDispatchQueueUseCase(
@@ -31,9 +32,11 @@ class PrioritizeDispatchQueueUseCase(
             )
         }
 
-        warehouseRepository.update(warehouse)
+        val warehouseUpdateModel = WarehouseUpdateModel()
 
-        return warehouse
+        warehouseRepository.update(warehouse.id, warehouseUpdateModel)
+
+        return warehouseRepository.findById(warehouseId)
     }
 
     private fun getPriorityLevel(priority: String): Int {

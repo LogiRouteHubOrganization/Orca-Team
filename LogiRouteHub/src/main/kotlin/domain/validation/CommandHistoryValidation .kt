@@ -8,6 +8,9 @@ import domain.model.Vehicle
 import domain.model.Warehouse
 import domain.model.request.DispatchVehicleRequest
 import domain.model.request.ReroutePackageRequest
+import domain.model.updateinput.PackageUpdateModel
+import domain.model.updateinput.VehicleUpdateModel
+import domain.model.updateinput.WarehouseUpdateModel
 import domain.repository.PackageRepository
 import domain.repository.VehicleRepository
 import domain.repository.WarehouseRepository
@@ -50,16 +53,18 @@ private class HistoryValidationWarehouseRepository(
         return warehouseIndex.values.toList()
     }
 
-    override suspend fun add(warehouse: Warehouse) {
+    override suspend fun add(warehouse: Warehouse): Warehouse {
         if (warehouseIndex is MutableMap) {
             warehouseIndex[warehouse.id] = warehouse
         }
+        return warehouse
     }
 
-    override suspend fun update(warehouse: Warehouse) {
-        if (warehouseIndex is MutableMap) {
-            warehouseIndex[warehouse.id] = warehouse
-        }
+    override suspend fun update(warehouseId: String, updateModel: WarehouseUpdateModel): Warehouse {
+        val target = warehouseIndex[warehouseId]
+            ?: throw IllegalArgumentException("Warehouse not found: $warehouseId")
+
+        return target
     }
 
     override suspend fun delete(warehouseId: String) {
@@ -85,22 +90,24 @@ private class HistoryValidationVehicleRepository(
         return warehouseIndex.values.flatMap { it.stationedVehicles }
     }
 
-    override suspend fun add(vehicle: Vehicle) {
+    override suspend fun add(vehicle: Vehicle): Vehicle {
         val warehouse = warehouseIndex[vehicle.currentWarehouse.id]
         if (warehouse != null) {
             val currentVehicles = warehouse.stationedVehicles as? MutableList<Vehicle>
             currentVehicles?.add(vehicle)
         }
+        return vehicle
     }
 
-    override suspend  fun update(vehicle: Vehicle) {
-        val warehouse = warehouseIndex[vehicle.currentWarehouse.id]
-        val vehicles = warehouse?.stationedVehicles as? MutableList<Vehicle>
-        val index = vehicles?.indexOfFirst { it.id == vehicle.id } ?: -1
-        if (index != -1 && vehicles != null) {
-            vehicles[index] = vehicle
-        }
+    override suspend fun update(vehicleId: String, updateModel: VehicleUpdateModel): Vehicle {
+        val vehicle = warehouseIndex.values
+            .flatMap { it.stationedVehicles }
+            .firstOrNull { it.id == vehicleId }
+            ?: throw IllegalArgumentException("Vehicle not found: $vehicleId")
+
+        return vehicle
     }
+
     override suspend fun delete(vehicleId: String) {
         warehouseIndex.values.forEach { warehouse ->
             val vehicles =
@@ -115,33 +122,34 @@ private class HistoryValidationPackageRepository(
     private val warehouseIndex: Map<String, Warehouse>
 ) : PackageRepository {
 
-    override suspend  fun findById(packageId: String): Package? {
+    override suspend fun findById(packageId: String): Package? {
         return warehouseIndex.values
             .flatMap { it.cargoQueue }
             .firstOrNull { it.id == packageId }
     }
 
-    override suspend  fun findAll(): List<Package> {
+    override suspend fun findAll(): List<Package> {
         return warehouseIndex.values.flatMap { it.cargoQueue }
     }
 
-    override suspend  fun add(packageItem: Package) {
+    override suspend fun add(packageItem: Package): Package {
         val warehouse = warehouseIndex[packageItem.originWarehouse.id]
         if (warehouse != null) {
             val queue = warehouse.cargoQueue as? MutableList<Package>
             queue?.add(packageItem)
         }
+        return packageItem
     }
 
-    override suspend  fun update(packageItem: Package) {
-        warehouseIndex.values.forEach { warehouse ->
-            val queue = warehouse.cargoQueue as? MutableList<Package>
-            val index = queue?.indexOfFirst { it.id == packageItem.id } ?: -1
-            if (index != -1 && queue != null) {
-                queue[index] = packageItem
-            }
-        }
+    override suspend fun update(packageId: String, updateModel: PackageUpdateModel): Package {
+        val packageItem = warehouseIndex.values
+            .flatMap { it.cargoQueue }
+            .firstOrNull { it.id == packageId }
+            ?: throw IllegalArgumentException("Package not found: $packageId")
+
+        return packageItem
     }
+
     override suspend fun delete(vehicleId: String) {
         warehouseIndex.values.forEach { warehouse ->
             val vehicles =
@@ -384,7 +392,7 @@ class CommandHistoryValidation {
         printResult(result)
     }
 
-    private suspend  fun validateHistory(
+    private suspend fun validateHistory(
         history: CommandHistory,
         invoker: CommandInvoker,
         stateSnapshot: () -> String
@@ -444,7 +452,7 @@ class CommandHistoryValidation {
         )
     }
 
-    private suspend  fun executeInitialCommands(
+    private suspend fun executeInitialCommands(
         history: CommandHistory,
         invoker: CommandInvoker,
         stateSnapshot: () -> String
@@ -466,7 +474,7 @@ class CommandHistoryValidation {
         )
     }
 
-    private suspend  fun validateMultiLevelUndo(
+    private suspend fun validateMultiLevelUndo(
         invoker: CommandInvoker,
         stateSnapshot: () -> String,
         initialState: String,
@@ -486,7 +494,7 @@ class CommandHistoryValidation {
         return firstUndoPassed && secondUndoPassed
     }
 
-    private suspend  fun validateMultiLevelRedo(
+    private suspend fun validateMultiLevelRedo(
         invoker: CommandInvoker,
         stateSnapshot: () -> String,
         forwardStates: Pair<String, String>
@@ -505,7 +513,7 @@ class CommandHistoryValidation {
         return firstRedoPassed && secondRedoPassed
     }
 
-    private suspend  fun validateRedoClearance(
+    private suspend fun validateRedoClearance(
         history: CommandHistory,
         invoker: CommandInvoker,
         stateSnapshot: () -> String,
@@ -529,7 +537,7 @@ class CommandHistoryValidation {
         return Pair(undoPassed && redoWasCleared, finalState)
     }
 
-    private suspend  fun restoreInitialState(
+    private suspend fun restoreInitialState(
         invoker: CommandInvoker,
         stateSnapshot: () -> String
     ): String {

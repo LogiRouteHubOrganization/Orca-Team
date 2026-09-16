@@ -4,6 +4,8 @@ import domain.command.telemetry.CommandTelemetry
 import domain.model.Package
 import domain.model.Vehicle
 import domain.model.Warehouse
+import domain.model.updateinput.VehicleUpdateModel
+import domain.model.updateinput.WarehouseUpdateModel
 import domain.model.request.DispatchVehicleRequest
 import domain.repository.VehicleRepository
 import domain.repository.WarehouseRepository
@@ -98,9 +100,24 @@ class DispatchVehicleCommand(
 
         executedWarehouse.restoreCargoQueue(oldWarehouseQueue)
 
-        dependencies.vehicleRepository.update(executedVehicle)
+        dependencies.vehicleRepository.update(
+            executedVehicle.id,
+            VehicleUpdateModel(
+                maxCapacityKg = executedVehicle.maxCapacityKg,
+                costPerKm = executedVehicle.costPerKm,
+                currentWarehouseId = executedVehicle.currentWarehouse?.id
+            )
+        )
 
-        dependencies.warehouseRepository.update(executedWarehouse)
+        dependencies.warehouseRepository.update(
+            executedWarehouse.id,
+            WarehouseUpdateModel(
+                name = executedWarehouse.name,
+                regionalZone = executedWarehouse.regionalZone,
+                latitude = executedWarehouse.latitude,
+                longitude = executedWarehouse.longitude
+            )
+        )
 
         dependencies.telemetry.recordStateTransition(
             commandType = commandType,
@@ -135,9 +152,24 @@ class DispatchVehicleCommand(
 
         executedWarehouse.restoreCargoQueue(newWarehouseQueue)
 
-        dependencies.vehicleRepository.update(executedVehicle)
+        dependencies.vehicleRepository.update(
+            executedVehicle.id,
+            VehicleUpdateModel(
+                maxCapacityKg = executedVehicle.maxCapacityKg,
+                costPerKm = executedVehicle.costPerKm,
+                currentWarehouseId = executedVehicle.currentWarehouse?.id
+            )
+        )
 
-        dependencies.warehouseRepository.update(executedWarehouse)
+        dependencies.warehouseRepository.update(
+            executedWarehouse.id,
+            WarehouseUpdateModel(
+                name = executedWarehouse.name,
+                regionalZone = executedWarehouse.regionalZone,
+                latitude = executedWarehouse.latitude,
+                longitude = executedWarehouse.longitude
+            )
+        )
 
         dependencies.telemetry.recordStateTransition(
             commandType = commandType,
@@ -151,6 +183,7 @@ class DispatchVehicleCommand(
             )
         )
     }
+
     private fun createStateDescription(
         vehiclePackages: List<Package>?,
         warehouseQueue: List<Package>?
