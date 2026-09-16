@@ -2,7 +2,6 @@ package domain.validator.common
 
 import domain.validator.ValidationError
 import domain.validator.ValidationResult
-import java.util.UUID
 
 object CommonValidators {
 
@@ -15,8 +14,8 @@ object CommonValidators {
             return ValidationResult.Failure(
                 listOf(
                     ValidationError(
-                        field,
-                        "ID must not be blank"
+                        field = field,
+                        reason = "ID must not be blank"
                     )
                 )
             )
@@ -26,60 +25,53 @@ object CommonValidators {
             value.startsWith(prefix)
         }
 
-        val isValidUuid = try {
-            UUID.fromString(value)
-            true
-        } catch (_: IllegalArgumentException) {
-            false
-        }
-
-        if (!hasValidPrefix && !isValidUuid) {
-            return ValidationResult.Failure(
+        return if (hasValidPrefix) {
+            ValidationResult.Success
+        } else {
+            ValidationResult.Failure(
                 listOf(
                     ValidationError(
-                        field,
-                        "ID must have a valid prefix or UUID format"
+                        field = field,
+                        reason = "ID must have a valid prefix"
                     )
                 )
             )
         }
-
-        return ValidationResult.Success
     }
 
     fun validateString(
         field: String,
         value: String?
     ): ValidationResult {
-        if (value.isNullOrBlank()) {
-            return ValidationResult.Failure(
+        return if (value.isNullOrBlank()) {
+            ValidationResult.Failure(
                 listOf(
                     ValidationError(
-                        field,
-                        "Value must not be blank"
+                        field = field,
+                        reason = "Value must not be blank"
                     )
                 )
             )
+        } else {
+            ValidationResult.Success
         }
-
-        return ValidationResult.Success
     }
 
     fun validatePositiveNumber(
         field: String,
         value: Number?
     ): ValidationResult {
-        if (value == null || value.toDouble() <= 0) {
-            return ValidationResult.Failure(
+        return if (value == null || value.toDouble() <= 0) {
+            ValidationResult.Failure(
                 listOf(
                     ValidationError(
-                        field,
-                        "Value must be greater than 0"
+                        field = field,
+                        reason = "Value must be greater than 0"
                     )
                 )
             )
+        } else {
+            ValidationResult.Success
         }
-
-        return ValidationResult.Success
     }
 }

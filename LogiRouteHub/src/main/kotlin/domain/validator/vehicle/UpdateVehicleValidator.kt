@@ -7,14 +7,17 @@ import domain.validator.common.CommonValidators
 
 class UpdateVehicleValidator {
 
-    operator fun invoke(updateModel: VehicleUpdateModel): ValidationResult {
+    operator fun invoke(
+        updateModel: VehicleUpdateModel
+    ): ValidationResult {
 
-        val errors = mutableListOf<ValidationError>()
+        val hasUpdate = listOf(
+            updateModel.maxCapacityKg,
+            updateModel.costPerKm,
+            updateModel.currentWarehouseId
+        ).any { it != null }
 
-        if (updateModel.maxCapacityKg == null &&
-            updateModel.costPerKm == null &&
-            updateModel.currentWarehouseId == null
-        ) {
+        if (!hasUpdate) {
             return ValidationResult.Failure(
                 listOf(
                     ValidationError(
@@ -25,50 +28,38 @@ class UpdateVehicleValidator {
             )
         }
 
-        updateModel.maxCapacityKg?.let { maxCapacity ->
-            collectErrors(
+        val results = listOf(
+            updateModel.maxCapacityKg?.let { maxCapacity ->
                 CommonValidators.validatePositiveNumber(
                     field = "maxCapacityKg",
                     value = maxCapacity
-                ),
-                errors
-            )
-        }
+                )
+            },
 
-        updateModel.costPerKm?.let { costPerKm ->
-            collectErrors(
+            updateModel.costPerKm?.let { costPerKm ->
                 CommonValidators.validatePositiveNumber(
                     field = "costPerKm",
                     value = costPerKm
-                ),
-                errors
-            )
-        }
+                )
+            },
 
-        updateModel.currentWarehouseId?.let { warehouseId ->
-            collectErrors(
+            updateModel.currentWarehouseId?.let { warehouseId ->
                 CommonValidators.validateId(
                     field = "currentWarehouseId",
                     value = warehouseId,
                     allowedPrefixes = setOf("WH-")
-                ),
-                errors
-            )
-        }
+                )
+            }
+        ).filterNotNull()
 
-        if (errors.isNotEmpty()) {
-            return ValidationResult.Failure(errors)
-        }
+        val errors = results
+            .filterIsInstance<ValidationResult.Failure>()
+            .flatMap { it.errors }
 
-        return ValidationResult.Success
-    }
-
-    private fun collectErrors(
-        result: ValidationResult,
-        errors: MutableList<ValidationError>
-    ) {
-        if (result is ValidationResult.Failure) {
-            errors.addAll(result.errors)
+        return if (errors.isEmpty()) {
+            ValidationResult.Success
+        } else {
+            ValidationResult.Failure(errors)
         }
     }
 }
