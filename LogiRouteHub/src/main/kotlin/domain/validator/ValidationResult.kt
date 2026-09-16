@@ -1,4 +1,4 @@
-package domain.validation.common
+package domain.validator
 
 sealed class ValidationResult {
 

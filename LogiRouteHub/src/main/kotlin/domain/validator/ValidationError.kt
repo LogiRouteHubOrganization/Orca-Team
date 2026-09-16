@@ -1,4 +1,4 @@
-package domain.validation.common
+package domain.validator
 
 data class ValidationError(
     val field: String,

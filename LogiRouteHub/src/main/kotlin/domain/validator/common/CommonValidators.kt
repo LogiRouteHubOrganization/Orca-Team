@@ -1,5 +1,7 @@
-package domain.validation.common
+package domain.validator.common
 
+import domain.validator.ValidationError
+import domain.validator.ValidationResult
 import java.util.UUID
 
 object CommonValidators {
