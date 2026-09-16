@@ -9,48 +9,42 @@ class CreatePackageValidator {
 
     operator fun invoke(logisticsPackage: Package): ValidationResult {
 
-        val errors = mutableListOf<ValidationError>()
-        collectErrors(
+        val results = listOf(
             CommonValidators.validateId(
                 field = "id",
                 value = logisticsPackage.id,
                 allowedPrefixes = setOf("PKG-")
             ),
-            errors
-        )
-        collectErrors(
+
             CommonValidators.validatePositiveNumber(
                 field = "weightByKg",
                 value = logisticsPackage.weightByKg
             ),
-            errors
-        )
-        collectErrors(
+
             validatePriority(logisticsPackage.priority),
-            errors
-        )
-        collectErrors(
+
             CommonValidators.validateId(
                 field = "originWarehouseId",
                 value = logisticsPackage.originWarehouse.id,
                 allowedPrefixes = setOf("WH-")
             ),
-            errors
-        )
-        collectErrors(
+
             CommonValidators.validateId(
                 field = "destinationWarehouseId",
                 value = logisticsPackage.destinationWarehouse.id,
                 allowedPrefixes = setOf("WH-")
-            ),
-            errors
+            )
         )
 
-        if (errors.isNotEmpty()) {
-            return ValidationResult.Failure(errors)
-        }
+        val errors = results
+            .filterIsInstance<ValidationResult.Failure>()
+            .flatMap { it.errors }
 
-        return ValidationResult.Success
+        return if (errors.isEmpty()) {
+            ValidationResult.Success
+        } else {
+            ValidationResult.Failure(errors)
+        }
     }
 
     private fun validatePriority(
@@ -63,8 +57,10 @@ class CreatePackageValidator {
             "URGENT"
         )
 
-        if (priority !in allowedPriorities) {
-            return ValidationResult.Failure(
+        return if (priority in allowedPriorities) {
+            ValidationResult.Success
+        } else {
+            ValidationResult.Failure(
                 listOf(
                     ValidationError(
                         field = "priority",
@@ -72,16 +68,6 @@ class CreatePackageValidator {
                     )
                 )
             )
-        }
-
-        return ValidationResult.Success
-    }
-    private fun collectErrors(
-        result: ValidationResult,
-        errors: MutableList<ValidationError>
-    ) {
-        if (result is ValidationResult.Failure) {
-            errors.addAll(result.errors)
         }
     }
 }

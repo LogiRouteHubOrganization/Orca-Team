@@ -7,16 +7,18 @@ import domain.validator.common.CommonValidators
 
 class UpdatePackageValidator {
 
-    operator fun invoke(updateModel: PackageUpdateModel): ValidationResult {
+    operator fun invoke(
+        updateModel: PackageUpdateModel
+    ): ValidationResult {
 
-        val errors = mutableListOf<ValidationError>()
+        val hasUpdate = listOf(
+            updateModel.weightByKg,
+            updateModel.priority,
+            updateModel.originWarehouseId,
+            updateModel.destinationWarehouseId
+        ).any { it != null }
 
-        if (
-            updateModel.weightByKg == null &&
-            updateModel.priority == null &&
-            updateModel.originWarehouseId == null &&
-            updateModel.destinationWarehouseId == null
-        ) {
+        if (!hasUpdate) {
             return ValidationResult.Failure(
                 listOf(
                     ValidationError(
@@ -27,53 +29,50 @@ class UpdatePackageValidator {
             )
         }
 
-        updateModel.weightByKg?.let { weight ->
-            collectErrors(
+        val results = listOf(
+            updateModel.weightByKg?.let { weight ->
                 CommonValidators.validatePositiveNumber(
                     field = "weightByKg",
                     value = weight
-                ),
-                errors
-            )
-        }
+                )
+            },
 
-        updateModel.priority?.let { priority ->
-            collectErrors(
-                validatePriority(priority),
-                errors
-            )
-        }
+            updateModel.priority?.let { priority ->
+                validatePriority(priority)
+            },
 
-        updateModel.originWarehouseId?.let { warehouseId ->
-            collectErrors(
+            updateModel.originWarehouseId?.let { warehouseId ->
                 CommonValidators.validateId(
                     field = "originWarehouseId",
                     value = warehouseId,
                     allowedPrefixes = setOf("WH-")
-                ),
-                errors
-            )
-        }
+                )
+            },
 
-        updateModel.destinationWarehouseId?.let { warehouseId ->
-            collectErrors(
+            updateModel.destinationWarehouseId?.let { warehouseId ->
                 CommonValidators.validateId(
                     field = "destinationWarehouseId",
                     value = warehouseId,
                     allowedPrefixes = setOf("WH-")
-                ),
-                errors
-            )
-        }
+                )
+            }
+        )
+            .filterNotNull()
 
-        if (errors.isNotEmpty()) {
-            return ValidationResult.Failure(errors)
-        }
+        val errors = results
+            .filterIsInstance<ValidationResult.Failure>()
+            .flatMap { it.errors }
 
-        return ValidationResult.Success
+        return if (errors.isEmpty()) {
+            ValidationResult.Success
+        } else {
+            ValidationResult.Failure(errors)
+        }
     }
 
-    private fun validatePriority(priority: String): ValidationResult {
+    private fun validatePriority(
+        priority: String
+    ): ValidationResult {
 
         val allowedPriorities = setOf(
             "STANDARD",
@@ -81,8 +80,10 @@ class UpdatePackageValidator {
             "URGENT"
         )
 
-        if (priority !in allowedPriorities) {
-            return ValidationResult.Failure(
+        return if (priority in allowedPriorities) {
+            ValidationResult.Success
+        } else {
+            ValidationResult.Failure(
                 listOf(
                     ValidationError(
                         field = "priority",
@@ -90,17 +91,6 @@ class UpdatePackageValidator {
                     )
                 )
             )
-        }
-
-        return ValidationResult.Success
-    }
-
-    private fun collectErrors(
-        result: ValidationResult,
-        errors: MutableList<ValidationError>
-    ) {
-        if (result is ValidationResult.Failure) {
-            errors.addAll(result.errors)
         }
     }
 }
