@@ -1,8 +1,10 @@
 package domain.usecase
 
 import domain.model.Warehouse
-import domain.repository.WarehouseRepository
+import domain.model.updateinput.VehicleUpdateModel
+import domain.model.updateinput.WarehouseUpdateModel
 import domain.repository.VehicleRepository
+import domain.repository.WarehouseRepository
 
 class AddVehicleToHubUseCase(
     private val warehouseRepository: WarehouseRepository,
@@ -20,12 +22,20 @@ class AddVehicleToHubUseCase(
         val vehicle = vehicleRepository.findById(vehicleId)
             ?: return null
 
+
         warehouse.addVehicle(vehicle)
         vehicle.currentWarehouse = warehouse
 
-        warehouseRepository.update(warehouse)
-        vehicleRepository.update(vehicle)
 
-        return warehouse
+        val vehicleUpdateModel = VehicleUpdateModel(
+            currentWarehouseId = warehouse.id
+        )
+
+        val warehouseUpdateModel = WarehouseUpdateModel()
+
+        vehicleRepository.update(vehicle.id, vehicleUpdateModel)
+        warehouseRepository.update(warehouse.id, warehouseUpdateModel)
+
+        return warehouseRepository.findById(warehouseId)
     }
 }

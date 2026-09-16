@@ -2,6 +2,8 @@ package domain.usecase
 
 import domain.model.Package
 import domain.model.request.DispatchVehicleRequest
+import domain.model.updateinput.VehicleUpdateModel
+import domain.model.updateinput.WarehouseUpdateModel
 import domain.repository.VehicleRepository
 import domain.repository.WarehouseRepository
 
@@ -36,12 +38,19 @@ class DispatchVehicleUseCase(
             }
 
         }.first
+
         packagesToDispatch.forEach { logisticsPackage ->
             vehicle.addPackage(logisticsPackage)
             warehouse.removePackage(logisticsPackage)
         }
-        vehicleRepository.update(vehicle)
-        warehouseRepository.update(warehouse)
+
+        val vehicleUpdateModel = VehicleUpdateModel(
+            currentWarehouseId = vehicle.currentWarehouse.id
+        )
+        val warehouseUpdateModel = WarehouseUpdateModel()
+
+        vehicleRepository.update(vehicle.id, vehicleUpdateModel)
+        warehouseRepository.update(warehouse.id, warehouseUpdateModel)
 
         return packagesToDispatch
     }

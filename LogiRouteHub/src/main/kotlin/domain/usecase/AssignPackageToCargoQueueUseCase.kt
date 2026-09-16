@@ -1,6 +1,7 @@
 package domain.usecase
 
 import domain.model.Package
+import domain.model.updateinput.WarehouseUpdateModel
 import domain.repository.WarehouseRepository
 
 class AssignPackageToCargoQueueUseCase(
@@ -15,6 +16,8 @@ class AssignPackageToCargoQueueUseCase(
 
         sortCargoQueue(originWarehouse)
 
-        warehouseRepository.update(originWarehouse)
+        val warehouseUpdateModel = WarehouseUpdateModel()
+
+        warehouseRepository.update(originWarehouse.id, warehouseUpdateModel)
     }
 }

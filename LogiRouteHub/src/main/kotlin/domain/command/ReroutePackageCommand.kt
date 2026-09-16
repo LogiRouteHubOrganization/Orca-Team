@@ -3,6 +3,7 @@ package domain.command
 import domain.command.telemetry.CommandTelemetry
 import domain.model.Package
 import domain.model.request.ReroutePackageRequest
+import domain.model.updateinput.PackageUpdateModel
 import domain.repository.PackageRepository
 import domain.repository.WarehouseRepository
 import domain.usecase.ReroutePackageUseCase
@@ -41,7 +42,7 @@ class ReroutePackageCommand(
         previousIndex = indexedPackage.index
 
         val reroutedPackage = dependencies.reroutePackageUseCase(input)
-                ?: return false
+            ?: return false
 
         afterPackageState = reroutedPackage
 
@@ -64,7 +65,14 @@ class ReroutePackageCommand(
         val newPackage = afterPackageState ?: return
         val index = previousIndex ?: return
 
-        dependencies.packageRepository.update(oldPackage)
+        dependencies.packageRepository.update(
+            oldPackage.id,
+            PackageUpdateModel(
+                weightByKg = oldPackage.weightByKg,
+                originWarehouseId = oldPackage.originWarehouse?.id,
+                destinationWarehouseId = oldPackage.destinationWarehouse?.id
+            )
+        )
 
         dependencies.telemetry.recordStateTransition(
             commandType = commandType,
@@ -78,7 +86,14 @@ class ReroutePackageCommand(
         val newPackage = afterPackageState ?: return
         val index = previousIndex ?: return
 
-        dependencies.packageRepository.update(newPackage)
+        dependencies.packageRepository.update(
+            newPackage.id,
+            PackageUpdateModel(
+                weightByKg = newPackage.weightByKg,
+                originWarehouseId = newPackage.originWarehouse?.id,
+                destinationWarehouseId = newPackage.destinationWarehouse?.id
+            )
+        )
 
         dependencies.telemetry.recordStateTransition(
             commandType = commandType,
