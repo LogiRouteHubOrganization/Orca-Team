@@ -9,9 +9,9 @@ class UpdateVehicleUseCase(
 ) {
     suspend operator fun invoke(
         id: String,
-        updateRequest: VehicleUpdateModel
+        updateModel: VehicleUpdateModel
     ): Vehicle {
-        return vehicleRepository.update(id, updateRequest)
+        return vehicleRepository.update(id, updateModel)
     }
 }
 
