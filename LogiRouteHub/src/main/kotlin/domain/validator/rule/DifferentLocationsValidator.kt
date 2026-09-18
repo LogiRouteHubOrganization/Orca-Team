@@ -17,7 +17,7 @@ class DifferentLocationsValidator <T> : Validator<Pair<T, T>> {
                 listOf(
                     ValidationError(
                         field = "values",
-                        reason = "Values must be different"
+                        reason = "Origin and destination must be different"
                     )
                 )
             )

@@ -14,7 +14,6 @@ class UpdateRouteValidator {
         updateModel: RouteUpdateModel
     ): ValidationResult {
 
-        // 1. التحقق من وجود قيمة واحدة على الأقل للتحديث
         val hasUpdate = listOf(
             updateModel.originWarehouseId,
             updateModel.destinationWarehouseId,
@@ -33,12 +32,10 @@ class UpdateRouteValidator {
             )
         }
 
-
         val results = listOfNotNull(IdValidator(
                 field = "routeId",
                 allowedPrefixes = setOf("RT-")
             ).validate(routeId),
-
 
             updateModel.originWarehouseId?.let { originId ->
                 IdValidator(
@@ -47,7 +44,6 @@ class UpdateRouteValidator {
                 ).validate(originId)
             },
 
-
             updateModel.destinationWarehouseId?.let { destinationId ->
                 IdValidator(
                     field = "destinationWarehouseId",
@@ -55,13 +51,11 @@ class UpdateRouteValidator {
                 ).validate(destinationId)
             },
 
-
             updateModel.distanceKm?.let { distance ->
                 PositiveNumberValidator(
                     field = "distanceKm"
                 ).validate(distance)
             },
-
 
             updateModel.typicalDelayMin?.let { delay ->
                 NonNegativeNumberValidator(
@@ -70,9 +64,7 @@ class UpdateRouteValidator {
             }
         )
 
-
-        val errors = results
-            .filterIsInstance<ValidationResult.Failure>()
+        val errors = results.filterIsInstance<ValidationResult.Failure>()
             .flatMap { it.errors }
 
         return if (errors.isEmpty()) {
