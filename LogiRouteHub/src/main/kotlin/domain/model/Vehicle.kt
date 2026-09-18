@@ -1,4 +1,7 @@
 package domain.model
+import domain.exception.EntityValidationException
+import domain.validator.ValidationResult
+import domain.validator.vehicle.CreateVehicleValidator
 
 data class Vehicle(
     val id: String,
@@ -6,6 +9,19 @@ data class Vehicle(
     val costPerKm: Double,
     var currentWarehouse: Warehouse
 ) {
+    init {
+        val validationResult = CreateVehicleValidator().invoke(
+            id = id,
+            maxCapacityKg = maxCapacityKg,
+            costPerKm = costPerKm,
+            currentWarehouse = currentWarehouse
+        )
+
+        if (validationResult is ValidationResult.Failure) {
+            throw EntityValidationException(validationResult.errors)
+        }
+    }
+
     private val packages = mutableListOf<Package>()
 
     val assignedPackages: List<Package>
