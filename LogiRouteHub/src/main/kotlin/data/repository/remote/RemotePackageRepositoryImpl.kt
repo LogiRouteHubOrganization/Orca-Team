@@ -1,3 +1,4 @@
+
 package data.repository.remote
 
 import data.remote.datasource.PackageRemoteDataSource
@@ -16,100 +17,173 @@ class RemotePackageRepository(
     private val warehouseRepository: WarehouseRepository
 ) : PackageRepository {
 
-    override suspend fun findById(packageId: String): Package? {
-        return try {
+    override suspend fun findById(
+        packageId: String
+    ): Result<Package?> {
+
+        return runCatching {
             val packageDto = packageRemoteDataSource.getPackageById(packageId)
-                ?: return null
+                ?: return@runCatching null
 
-            val originWarehouse = warehouseRepository.findById(packageDto.originWarehouseId)
-                ?: throw ResourceNotFoundException("Warehouse", packageDto.originWarehouseId)
+            val originWarehouse = warehouseRepository
+                .findById(packageDto.originWarehouseId)
+                .getOrThrow()
+                ?: throw ResourceNotFoundException(
+                    "Warehouse",
+                    packageDto.originWarehouseId
+                )
 
-            val destinationWarehouse = warehouseRepository.findById(packageDto.destinationWarehouseId)
-                ?: throw ResourceNotFoundException("Warehouse", packageDto.destinationWarehouseId)
+            val destinationWarehouse = warehouseRepository
+                .findById(packageDto.destinationWarehouseId)
+                .getOrThrow()
+                ?: throw ResourceNotFoundException(
+                    "Warehouse",
+                    packageDto.destinationWarehouseId
+                )
 
             packageDto.toDomain(
                 originWarehouse = originWarehouse,
                 destinationWarehouse = destinationWarehouse
             )
-        } catch (e: Exception) {
-            throw e.toDomainException(resourceType = "Package", resourceId = packageId)
+        }.recoverCatching { exception ->
+            throw exception.toDomainException(
+                resourceType = "Package",
+                resourceId = packageId
+            )
         }
     }
 
-    override suspend fun findAll(): List<Package> {
-        return try {
-            val packageDto = packageRemoteDataSource.getAllPackages()
-            val warehouses = warehouseRepository.findAll()
+    override suspend fun findAll(): Result<List<Package>> {
+
+        return runCatching {
+            val packageDtos = packageRemoteDataSource.getAllPackages()
+
+            val warehouses = warehouseRepository
+                .findAll()
+                .getOrThrow()
+
             val warehousesById = warehouses.associateBy { it.id }
 
-            packageDto.map { packageDto ->
-                val originWarehouse = warehousesById[packageDto.originWarehouseId]
-                    ?: throw ResourceNotFoundException("Warehouse", packageDto.originWarehouseId)
+            packageDtos.map { packageDto ->
 
-                val destinationWarehouse = warehousesById[packageDto.destinationWarehouseId]
-                    ?: throw ResourceNotFoundException("Warehouse", packageDto.destinationWarehouseId)
+                val originWarehouse = warehousesById[
+                    packageDto.originWarehouseId
+                ] ?: throw ResourceNotFoundException(
+                    "Warehouse",
+                    packageDto.originWarehouseId
+                )
+
+                val destinationWarehouse = warehousesById[
+                    packageDto.destinationWarehouseId
+                ] ?: throw ResourceNotFoundException(
+                    "Warehouse",
+                    packageDto.destinationWarehouseId
+                )
 
                 packageDto.toDomain(
                     originWarehouse = originWarehouse,
                     destinationWarehouse = destinationWarehouse
                 )
             }
-        } catch (e: Exception) {
-            throw e.toDomainException(resourceType = "Package")
+        }.recoverCatching { exception ->
+            throw exception.toDomainException(
+                resourceType = "Package"
+            )
         }
     }
 
-    override suspend fun add(logisticsPackage: Package): Package {
-        return try {
+    override suspend fun add(
+        logisticsPackage: Package
+    ): Result<Package> {
+
+        return runCatching {
             val requestDto = logisticsPackage.toCreateDto()
-            val createdDto = packageRemoteDataSource.createPackage(requestDto)
 
-            val originWarehouse = warehouseRepository.findById(createdDto.originWarehouseId)
-                ?: throw ResourceNotFoundException("Warehouse", createdDto.originWarehouseId)
+            val createdDto = packageRemoteDataSource.createPackage(
+                requestDto
+            )
 
-            val destinationWarehouse = warehouseRepository.findById(createdDto.destinationWarehouseId)
-                ?: throw ResourceNotFoundException("Warehouse", createdDto.destinationWarehouseId)
+            val originWarehouse = warehouseRepository
+                .findById(createdDto.originWarehouseId)
+                .getOrThrow()
+                ?: throw ResourceNotFoundException(
+                    "Warehouse",
+                    createdDto.originWarehouseId
+                )
+
+            val destinationWarehouse = warehouseRepository
+                .findById(createdDto.destinationWarehouseId)
+                .getOrThrow()
+                ?: throw ResourceNotFoundException(
+                    "Warehouse",
+                    createdDto.destinationWarehouseId
+                )
 
             createdDto.toDomain(
                 originWarehouse = originWarehouse,
                 destinationWarehouse = destinationWarehouse
             )
-        } catch (e: Exception) {
-            throw e.toDomainException(resourceType = "Package", resourceId = logisticsPackage.id)
+        }.recoverCatching { exception ->
+            throw exception.toDomainException(
+                resourceType = "Package",
+                resourceId = logisticsPackage.id
+            )
         }
     }
 
     override suspend fun update(
         packageId: String,
         updateModel: PackageUpdateModel
-    ): Package {
-        return try {
+    ): Result<Package> {
+
+        return runCatching {
             val requestDto = updateModel.toUpdateDto()
+
             val updatedDto = packageRemoteDataSource.updatePackage(
                 id = packageId,
                 packageRequest = requestDto
             )
 
-            val originWarehouse = warehouseRepository.findById(updatedDto.originWarehouseId)
-                ?: throw ResourceNotFoundException("Warehouse", updatedDto.originWarehouseId)
+            val originWarehouse = warehouseRepository
+                .findById(updatedDto.originWarehouseId)
+                .getOrThrow()
+                ?: throw ResourceNotFoundException(
+                    "Warehouse",
+                    updatedDto.originWarehouseId
+                )
 
-            val destinationWarehouse = warehouseRepository.findById(updatedDto.destinationWarehouseId)
-                ?: throw ResourceNotFoundException("Warehouse", updatedDto.destinationWarehouseId)
+            val destinationWarehouse = warehouseRepository
+                .findById(updatedDto.destinationWarehouseId)
+                .getOrThrow()
+                ?: throw ResourceNotFoundException(
+                    "Warehouse",
+                    updatedDto.destinationWarehouseId
+                )
 
             updatedDto.toDomain(
                 originWarehouse = originWarehouse,
                 destinationWarehouse = destinationWarehouse
             )
-        } catch (e: Exception) {
-            throw e.toDomainException(resourceType = "Package", resourceId = packageId)
+        }.recoverCatching { exception ->
+            throw exception.toDomainException(
+                resourceType = "Package",
+                resourceId = packageId
+            )
         }
     }
 
-    override suspend fun delete(packageId: String) {
-        try {
+    override suspend fun delete(
+        packageId: String
+    ): Result<Unit> {
+
+        return runCatching {
             packageRemoteDataSource.deletePackage(packageId)
-        } catch (e: Exception) {
-            throw e.toDomainException(resourceType = "Package", resourceId = packageId)
+        }.recoverCatching { exception ->
+            throw exception.toDomainException(
+                resourceType = "Package",
+                resourceId = packageId
+            )
         }
     }
 }
+
