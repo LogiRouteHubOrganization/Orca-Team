@@ -1,38 +1,54 @@
 package domain.validator.logisticspackage
 
-import domain.model.Package
-import domain.validator.ValidationError
+import domain.model.Warehouse
 import domain.validator.ValidationResult
-import domain.validator.common.CommonValidators
+import domain.validator.rule.DifferentLocationsValidator
+import domain.validator.rule.IdValidator
+import domain.validator.rule.PositiveNumberValidator
+import domain.validator.rule.PriorityValidator
 
 class CreatePackageValidator {
 
-    operator fun invoke(logisticsPackage: Package): ValidationResult {
+    operator fun invoke(
+        id: String,
+        weightByKg: Double,
+        priority: String,
+        originWarehouse: Warehouse,
+        destinationWarehouse: Warehouse
+    ): ValidationResult {
 
         val results = listOf(
-            CommonValidators.validateId(
+
+            IdValidator(
                 field = "id",
-                value = logisticsPackage.id,
                 allowedPrefixes = setOf("PKG-")
-            ),
+            ).validate(id),
 
-            CommonValidators.validatePositiveNumber(
-                field = "weightByKg",
-                value = logisticsPackage.weightByKg
-            ),
 
-            validatePriority(logisticsPackage.priority),
+            PositiveNumberValidator(
+                field = "weightByKg"
+            ).validate(weightByKg),
 
-            CommonValidators.validateId(
+
+            PriorityValidator(
+                field = "priority"
+            ).validate(priority),
+
+
+            IdValidator(
                 field = "originWarehouseId",
-                value = logisticsPackage.originWarehouse.id,
                 allowedPrefixes = setOf("WH-")
-            ),
+            ).validate(originWarehouse.id),
 
-            CommonValidators.validateId(
+
+            IdValidator(
                 field = "destinationWarehouseId",
-                value = logisticsPackage.destinationWarehouse.id,
                 allowedPrefixes = setOf("WH-")
+            ).validate(destinationWarehouse.id),
+
+
+            DifferentLocationsValidator<String>().validate(
+                Pair(originWarehouse.id, destinationWarehouse.id)
             )
         )
 
@@ -44,30 +60,6 @@ class CreatePackageValidator {
             ValidationResult.Success
         } else {
             ValidationResult.Failure(errors)
-        }
-    }
-
-    private fun validatePriority(
-        priority: String
-    ): ValidationResult {
-
-        val allowedPriorities = setOf(
-            "STANDARD",
-            "LOW",
-            "URGENT"
-        )
-
-        return if (priority in allowedPriorities) {
-            ValidationResult.Success
-        } else {
-            ValidationResult.Failure(
-                listOf(
-                    ValidationError(
-                        field = "priority",
-                        reason = "Priority must be STANDARD, LOW, or URGENT"
-                    )
-                )
-            )
         }
     }
 }

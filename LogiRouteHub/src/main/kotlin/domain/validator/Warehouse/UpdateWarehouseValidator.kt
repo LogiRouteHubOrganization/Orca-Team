@@ -1,15 +1,18 @@
-package domain.validator.warehouse
+package domain.validator.Warehouse
 
 import domain.model.updateinput.WarehouseUpdateModel
 import domain.validator.ValidationError
 import domain.validator.ValidationResult
-import domain.validator.common.CommonValidators
+import domain.validator.rule.LatitudeValidator
+import domain.validator.rule.LongitudeValidator
+import domain.validator.rule.NonBlankStringValidator
 
 class UpdateWarehouseValidator {
 
     operator fun invoke(
         updateModel: WarehouseUpdateModel
     ): ValidationResult {
+
 
         val hasUpdate = listOf(
             updateModel.name,
@@ -29,35 +32,33 @@ class UpdateWarehouseValidator {
             )
         }
 
-        val results = listOf(
-            updateModel.name?.let {
-                CommonValidators.validateString(
-                    field = "name",
-                    value = it
-                )
+
+        val results = listOfNotNull(
+            updateModel.name?.let { name ->
+                NonBlankStringValidator(
+                    field = "name"
+                ).validate(name)
             },
 
-            updateModel.regionalZone?.let {
-                CommonValidators.validateString(
-                    field = "regionalZone",
-                    value = it
-                )
+            updateModel.regionalZone?.let { zone ->
+                NonBlankStringValidator(
+                    field = "regionalZone"
+                ).validate(zone)
             },
 
-            updateModel.latitude?.let {
-                CommonValidators.validatePositiveNumber(
-                    field = "latitude",
-                    value = it
-                )
+            updateModel.latitude?.let { lat ->
+                LatitudeValidator(
+                    field = "latitude"
+                ).validate(lat)
             },
 
-            updateModel.longitude?.let {
-                CommonValidators.validatePositiveNumber(
-                    field = "longitude",
-                    value = it
-                )
+            updateModel.longitude?.let { lng ->
+                LongitudeValidator(
+                    field = "longitude"
+                ).validate(lng)
             }
-        ).filterNotNull()
+        )
+
 
         val errors = results
             .filterIsInstance<ValidationResult.Failure>()
