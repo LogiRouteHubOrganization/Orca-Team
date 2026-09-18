@@ -3,13 +3,15 @@ package domain.validator.vehicle
 import domain.model.updateinput.VehicleUpdateModel
 import domain.validator.ValidationError
 import domain.validator.ValidationResult
-import domain.validator.common.CommonValidators
+import domain.validator.rule.IdValidator
+import domain.validator.rule.PositiveNumberValidator
 
 class UpdateVehicleValidator {
 
     operator fun invoke(
         updateModel: VehicleUpdateModel
     ): ValidationResult {
+
 
         val hasUpdate = listOf(
             updateModel.maxCapacityKg,
@@ -28,29 +30,28 @@ class UpdateVehicleValidator {
             )
         }
 
-        val results = listOf(
+
+        val results = listOfNotNull(
             updateModel.maxCapacityKg?.let { maxCapacity ->
-                CommonValidators.validatePositiveNumber(
-                    field = "maxCapacityKg",
-                    value = maxCapacity
-                )
+                PositiveNumberValidator(
+                    field = "maxCapacityKg"
+                ).validate(maxCapacity)
             },
 
-            updateModel.costPerKm?.let { costPerKm ->
-                CommonValidators.validatePositiveNumber(
-                    field = "costPerKm",
-                    value = costPerKm
-                )
+            updateModel.costPerKm?.let { cost ->
+                PositiveNumberValidator(
+                    field = "costPerKm"
+                ).validate(cost)
             },
 
             updateModel.currentWarehouseId?.let { warehouseId ->
-                CommonValidators.validateId(
+                IdValidator(
                     field = "currentWarehouseId",
-                    value = warehouseId,
                     allowedPrefixes = setOf("WH-")
-                )
+                ).validate(warehouseId)
             }
-        ).filterNotNull()
+        )
+
 
         val errors = results
             .filterIsInstance<ValidationResult.Failure>()

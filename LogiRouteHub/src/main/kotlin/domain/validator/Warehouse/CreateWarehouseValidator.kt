@@ -1,35 +1,47 @@
 package domain.validator.Warehouse
 
-import domain.model.Warehouse
 import domain.validator.ValidationResult
-import domain.validator.common.CommonValidators
+import domain.validator.rule.IdValidator
+import domain.validator.rule.LatitudeValidator
+import domain.validator.rule.LongitudeValidator
+import domain.validator.rule.NonBlankStringValidator
 
 class CreateWarehouseValidator {
 
-    operator fun invoke(warehouse: Warehouse): ValidationResult {
+    operator fun invoke(
+        id: String,
+        name: String,
+        regionalZone: String,
+        latitude: Double,
+        longitude: Double
+    ): ValidationResult {
 
         val results = listOf(
-            CommonValidators.validateId(
+
+            IdValidator(
                 field = "id",
-                value = warehouse.id,
                 allowedPrefixes = setOf("WH-")
-            ),
-            CommonValidators.validateString(
-                field = "name",
-                value = warehouse.name
-            ),
-            CommonValidators.validateString(
-                field = "regionalZone",
-                value = warehouse.regionalZone
-            ),
-            CommonValidators.validatePositiveNumber(
-                field = "latitude",
-                value = warehouse.latitude
-            ),
-            CommonValidators.validatePositiveNumber(
-                field = "longitude",
-                value = warehouse.longitude
-            )
+            ).validate(id),
+
+
+            NonBlankStringValidator(
+                field = "name"
+            ).validate(name),
+
+
+            NonBlankStringValidator(
+                field = "regionalZone"
+            ).validate(regionalZone),
+
+
+            LatitudeValidator(
+                field = "latitude"
+            ).validate(latitude),
+
+
+            LongitudeValidator(
+                field = "longitude"
+            ).validate(longitude)
         )
 
         val errors = results

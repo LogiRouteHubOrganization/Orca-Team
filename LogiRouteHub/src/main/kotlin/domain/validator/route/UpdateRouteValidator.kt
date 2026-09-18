@@ -3,7 +3,9 @@ package domain.validator.route
 import domain.model.updateinput.RouteUpdateModel
 import domain.validator.ValidationError
 import domain.validator.ValidationResult
-import domain.validator.common.CommonValidators
+import domain.validator.rule.IdValidator
+import domain.validator.rule.NonNegativeNumberValidator
+import domain.validator.rule.PositiveNumberValidator
 
 class UpdateRouteValidator {
 
@@ -12,6 +14,7 @@ class UpdateRouteValidator {
         updateModel: RouteUpdateModel
     ): ValidationResult {
 
+        // 1. التحقق من وجود قيمة واحدة على الأقل للتحديث
         val hasUpdate = listOf(
             updateModel.originWarehouseId,
             updateModel.destinationWarehouseId,
@@ -30,40 +33,43 @@ class UpdateRouteValidator {
             )
         }
 
-        val results = listOf(
-            CommonValidators.validateId(
+
+        val results = listOfNotNull(IdValidator(
                 field = "routeId",
-                value = routeId,
                 allowedPrefixes = setOf("RT-")
-            ),
+            ).validate(routeId),
 
-            updateModel.originWarehouseId?.let {
-                CommonValidators.validateId(
+
+            updateModel.originWarehouseId?.let { originId ->
+                IdValidator(
                     field = "originWarehouseId",
-                    value = it,
                     allowedPrefixes = setOf("WH-")
-                )
+                ).validate(originId)
             },
 
-            updateModel.destinationWarehouseId?.let {
-                CommonValidators.validateId(
+
+            updateModel.destinationWarehouseId?.let { destinationId ->
+                IdValidator(
                     field = "destinationWarehouseId",
-                    value = it,
                     allowedPrefixes = setOf("WH-")
-                )
+                ).validate(destinationId)
             },
 
-            updateModel.distanceKm?.let {
-                CommonValidators.validatePositiveNumber(
-                    field = "distanceKm",
-                    value = it
-                )
+
+            updateModel.distanceKm?.let { distance ->
+                PositiveNumberValidator(
+                    field = "distanceKm"
+                ).validate(distance)
             },
 
-            updateModel.typicalDelayMin?.let {
-                validateTypicalDelay(it)
+
+            updateModel.typicalDelayMin?.let { delay ->
+                NonNegativeNumberValidator(
+                    field = "typicalDelayMin"
+                ).validate(delay)
             }
-        ).filterNotNull()
+        )
+
 
         val errors = results
             .filterIsInstance<ValidationResult.Failure>()
@@ -73,23 +79,6 @@ class UpdateRouteValidator {
             ValidationResult.Success
         } else {
             ValidationResult.Failure(errors)
-        }
-    }
-
-    private fun validateTypicalDelay(
-        typicalDelayMin: Int
-    ): ValidationResult {
-        return if (typicalDelayMin < 0) {
-            ValidationResult.Failure(
-                listOf(
-                    ValidationError(
-                        field = "typicalDelayMin",
-                        reason = "Typical delay must be greater than or equal to 0"
-                    )
-                )
-            )
-        } else {
-            ValidationResult.Success
         }
     }
 }

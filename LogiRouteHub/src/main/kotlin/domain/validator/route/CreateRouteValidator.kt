@@ -1,39 +1,55 @@
 package domain.validator.route
 
-import domain.model.Route
-import domain.validator.ValidationError
+import domain.model.Warehouse
 import domain.validator.ValidationResult
-import domain.validator.common.CommonValidators
+import domain.validator.rule.DifferentLocationsValidator
+import domain.validator.rule.IdValidator
+import domain.validator.rule.NonNegativeNumberValidator
+import domain.validator.rule.PositiveNumberValidator
 
 class CreateRouteValidator {
 
-    operator fun invoke(route: Route): ValidationResult {
+    operator fun invoke(
+        id: String,
+        originWarehouse: Warehouse,
+        destinationWarehouse: Warehouse,
+        distanceKm: Double,
+        typicalDelayMin: Int
+    ): ValidationResult {
 
         val results = listOf(
-            CommonValidators.validateId(
+
+            IdValidator(
                 field = "id",
-                value = route.id,
                 allowedPrefixes = setOf("RT-")
-            ),
+            ).validate(id),
 
-            CommonValidators.validateId(
+
+            IdValidator(
                 field = "originWarehouseId",
-                value = route.originWarehouse.id,
                 allowedPrefixes = setOf("WH-")
-            ),
+            ).validate(originWarehouse.id),
 
-            CommonValidators.validateId(
+
+            IdValidator(
                 field = "destinationWarehouseId",
-                value = route.destinationWarehouse.id,
                 allowedPrefixes = setOf("WH-")
+            ).validate(destinationWarehouse.id),
+
+
+            DifferentLocationsValidator<String>().validate(
+                Pair(originWarehouse.id, destinationWarehouse.id)
             ),
 
-            CommonValidators.validatePositiveNumber(
-                field = "distanceKm",
-                value = route.distanceKm
-            ),
 
-            validateTypicalDelay(route.typicalDelayMin)
+            PositiveNumberValidator(
+                field = "distanceKm"
+            ).validate(distanceKm),
+
+
+            NonNegativeNumberValidator(
+                field = "typicalDelayMin"
+            ).validate(typicalDelayMin)
         )
 
         val errors = results
@@ -44,23 +60,6 @@ class CreateRouteValidator {
             ValidationResult.Success
         } else {
             ValidationResult.Failure(errors)
-        }
-    }
-
-    private fun validateTypicalDelay(
-        typicalDelayMin: Int
-    ): ValidationResult {
-        return if (typicalDelayMin < 0) {
-            ValidationResult.Failure(
-                listOf(
-                    ValidationError(
-                        field = "typicalDelayMin",
-                        reason = "Typical delay must be greater than or equal to 0"
-                    )
-                )
-            )
-        } else {
-            ValidationResult.Success
         }
     }
 }

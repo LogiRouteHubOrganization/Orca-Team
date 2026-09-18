@@ -3,13 +3,16 @@ package domain.validator.logisticspackage
 import domain.model.updateinput.PackageUpdateModel
 import domain.validator.ValidationError
 import domain.validator.ValidationResult
-import domain.validator.common.CommonValidators
+import domain.validator.rule.IdValidator
+import domain.validator.rule.PositiveNumberValidator
+import domain.validator.rule.PriorityValidator
 
 class UpdatePackageValidator {
 
     operator fun invoke(
         updateModel: PackageUpdateModel
     ): ValidationResult {
+
 
         val hasUpdate = listOf(
             updateModel.weightByKg,
@@ -29,35 +32,35 @@ class UpdatePackageValidator {
             )
         }
 
-        val results = listOf(
+
+        val results = listOfNotNull(
             updateModel.weightByKg?.let { weight ->
-                CommonValidators.validatePositiveNumber(
-                    field = "weightByKg",
-                    value = weight
-                )
+                PositiveNumberValidator(
+                    field = "weightByKg"
+                ).validate(weight)
             },
 
             updateModel.priority?.let { priority ->
-                validatePriority(priority)
+                PriorityValidator(
+                    field = "priority"
+                ).validate(priority)
             },
 
             updateModel.originWarehouseId?.let { warehouseId ->
-                CommonValidators.validateId(
+                IdValidator(
                     field = "originWarehouseId",
-                    value = warehouseId,
                     allowedPrefixes = setOf("WH-")
-                )
+                ).validate(warehouseId)
             },
 
             updateModel.destinationWarehouseId?.let { warehouseId ->
-                CommonValidators.validateId(
+                IdValidator(
                     field = "destinationWarehouseId",
-                    value = warehouseId,
                     allowedPrefixes = setOf("WH-")
-                )
+                ).validate(warehouseId)
             }
         )
-            .filterNotNull()
+
 
         val errors = results
             .filterIsInstance<ValidationResult.Failure>()
@@ -67,30 +70,6 @@ class UpdatePackageValidator {
             ValidationResult.Success
         } else {
             ValidationResult.Failure(errors)
-        }
-    }
-
-    private fun validatePriority(
-        priority: String
-    ): ValidationResult {
-
-        val allowedPriorities = setOf(
-            "STANDARD",
-            "LOW",
-            "URGENT"
-        )
-
-        return if (priority in allowedPriorities) {
-            ValidationResult.Success
-        } else {
-            ValidationResult.Failure(
-                listOf(
-                    ValidationError(
-                        field = "priority",
-                        reason = "Priority must be STANDARD, LOW, or URGENT"
-                    )
-                )
-            )
         }
     }
 }

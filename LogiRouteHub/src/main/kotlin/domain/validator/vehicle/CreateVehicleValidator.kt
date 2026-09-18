@@ -1,35 +1,41 @@
 package domain.validator.vehicle
 
-import domain.model.Vehicle
+import domain.model.Warehouse
 import domain.validator.ValidationResult
-import domain.validator.common.CommonValidators
+import domain.validator.rule.IdValidator
+import domain.validator.rule.PositiveNumberValidator
 
 class CreateVehicleValidator {
 
-    operator fun invoke(vehicle: Vehicle): ValidationResult {
+    operator fun invoke(
+        id: String,
+        maxCapacityKg: Double,
+        costPerKm: Double,
+        currentWarehouse: Warehouse
+    ): ValidationResult {
 
         val results = listOf(
-            CommonValidators.validateId(
+
+            IdValidator(
                 field = "id",
-                value = vehicle.id,
                 allowedPrefixes = setOf("TRK-")
-            ),
+            ).validate(id),
 
-            CommonValidators.validatePositiveNumber(
-                field = "maxCapacityKg",
-                value = vehicle.maxCapacityKg
-            ),
 
-            CommonValidators.validatePositiveNumber(
-                field = "costPerKm",
-                value = vehicle.costPerKm
-            ),
+            PositiveNumberValidator(
+                field = "maxCapacityKg"
+            ).validate(maxCapacityKg),
 
-            CommonValidators.validateId(
+
+            PositiveNumberValidator(
+                field = "costPerKm"
+            ).validate(costPerKm),
+
+
+            IdValidator(
                 field = "currentWarehouseId",
-                value = vehicle.currentWarehouse.id,
                 allowedPrefixes = setOf("WH-")
-            )
+            ).validate(currentWarehouse.id)
         )
 
         val errors = results
