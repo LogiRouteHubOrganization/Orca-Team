@@ -23,7 +23,7 @@ class UpdateVehicleValidator {
             return ValidationResult.Failure(
                 listOf(
                     ValidationError(
-                        field = "request",
+                        field = "update",
                         reason = "At least one field must be provided for update"
                     )
                 )

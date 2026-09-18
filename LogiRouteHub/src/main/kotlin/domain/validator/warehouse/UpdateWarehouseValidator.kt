@@ -1,4 +1,4 @@
-package domain.validator.Warehouse
+package domain.validator.warehouse
 
 import domain.model.updateinput.WarehouseUpdateModel
 import domain.validator.ValidationError
@@ -13,7 +13,6 @@ class UpdateWarehouseValidator {
         updateModel: WarehouseUpdateModel
     ): ValidationResult {
 
-
         val hasUpdate = listOf(
             updateModel.name,
             updateModel.regionalZone,
@@ -25,13 +24,12 @@ class UpdateWarehouseValidator {
             return ValidationResult.Failure(
                 listOf(
                     ValidationError(
-                        field = "warehouse",
+                        field = "update",
                         reason = "At least one field must be provided for update"
                     )
                 )
             )
         }
-
 
         val results = listOfNotNull(
             updateModel.name?.let { name ->
@@ -58,7 +56,6 @@ class UpdateWarehouseValidator {
                 ).validate(lng)
             }
         )
-
 
         val errors = results
             .filterIsInstance<ValidationResult.Failure>()

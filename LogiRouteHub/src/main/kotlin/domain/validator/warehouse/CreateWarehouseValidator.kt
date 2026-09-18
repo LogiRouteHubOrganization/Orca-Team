@@ -1,4 +1,4 @@
-package domain.validator.Warehouse
+package domain.validator.warehouse
 
 import domain.validator.ValidationResult
 import domain.validator.rule.IdValidator
