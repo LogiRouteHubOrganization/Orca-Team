@@ -2,7 +2,7 @@ package data.remote.datasource.supabase
 
 import data.remote.SupabaseClientProvider
 import data.remote.datasource.RouteRemoteDataSource
-import data.remote.dto.RouteDto
+import data.remote.dto.response.RouteDto
 import data.remote.dto.request.RouteCreateRequestDto
 import data.remote.dto.request.RouteUpdateRequestDto
 import data.remote.utils.safeApiCall

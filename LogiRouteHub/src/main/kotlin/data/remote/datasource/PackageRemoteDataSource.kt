@@ -1,6 +1,6 @@
 package data.remote.datasource
 
-import data.remote.dto.PackageDto
+import data.remote.dto.response.PackageDto
 import data.remote.dto.request.PackageCreateRequestDto
 import data.remote.dto.request.PackageUpdateRequestDto
 
