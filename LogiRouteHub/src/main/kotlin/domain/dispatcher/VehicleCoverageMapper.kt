@@ -4,26 +4,26 @@ import domain.model.Vehicle
 
 class VehicleCoverageMapper {
 
-    fun map(
+    fun prepareVehicleCoverage(
         vehicles: List<Vehicle>,
         routes: List<Route>
     ): List<VehicleCoverage> {
-
         return vehicles.map { vehicle ->
-
-            val coveredZones = routes
-                .filter { route ->
-                    route.originWarehouse.id == vehicle.currentWarehouse.id
-                }
-                .map { route ->
-                    route.destinationWarehouse.regionalZone
-                }
-                .toSet()
-
+            val coveredZones = extractCoveredZonesForVehicle(vehicle, routes)
             VehicleCoverage(
                 vehicle = vehicle,
                 coveredZones = coveredZones
             )
         }
+    }
+
+    private fun extractCoveredZonesForVehicle(
+        vehicle: Vehicle,
+        routes: List<Route>
+    ): Set<String> {
+        return routes
+            .filter { route -> route.originWarehouse.id == vehicle.currentWarehouse.id }
+            .map { route -> route.destinationWarehouse.regionalZone }
+            .toSet()
     }
 }
