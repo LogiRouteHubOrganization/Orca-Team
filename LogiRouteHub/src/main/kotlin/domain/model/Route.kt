@@ -2,10 +2,7 @@ package domain.model
 
 import domain.exception.EntityValidationException
 import domain.validator.ValidationResult
-import domain.validator.rule.DifferentLocationsValidator
-import domain.validator.rule.IdValidator
-import domain.validator.rule.NonNegativeNumberValidator
-import domain.validator.rule.PositiveNumberValidator
+import domain.validator.route.CreateRouteValidator
 
 data class Route(
     val id: String,
@@ -16,44 +13,16 @@ data class Route(
 ) {
 
     init {
-        val validationResults = listOf(
-            IdValidator(
-                field = "id",
-                allowedPrefixes = setOf("RT-")
-            ).validate(id),
-
-            IdValidator(
-                field = "originWarehouseId",
-                allowedPrefixes = setOf("WH-")
-            ).validate(originWarehouse.id),
-
-            IdValidator(
-                field = "destinationWarehouseId",
-                allowedPrefixes = setOf("WH-")
-            ).validate(destinationWarehouse.id),
-
-            DifferentLocationsValidator<String>().validate(
-                Pair(
-                    originWarehouse.id,
-                    destinationWarehouse.id
-                )
-            ),
-
-            PositiveNumberValidator(
-                field = "distanceKm"
-            ).validate(distanceKm),
-
-            NonNegativeNumberValidator(
-                field = "typicalDelayMin"
-            ).validate(typicalDelayMin)
+        val validationResult = CreateRouteValidator().invoke(
+            id = id,
+            originWarehouse = originWarehouse,
+            destinationWarehouse = destinationWarehouse,
+            distanceKm = distanceKm,
+            typicalDelayMin = typicalDelayMin
         )
 
-        val errors = validationResults
-            .filterIsInstance<ValidationResult.Failure>()
-            .flatMap { it.errors }
-
-        if (errors.isNotEmpty()) {
-            throw EntityValidationException(errors)
+        if (validationResult is ValidationResult.Failure) {
+            throw EntityValidationException(validationResult.errors)
         }
     }
 }

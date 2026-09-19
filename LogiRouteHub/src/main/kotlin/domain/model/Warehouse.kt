@@ -2,10 +2,7 @@ package domain.model
 
 import domain.exception.EntityValidationException
 import domain.validator.ValidationResult
-import domain.validator.rule.IdValidator
-import domain.validator.rule.LatitudeValidator
-import domain.validator.rule.LongitudeValidator
-import domain.validator.rule.NonBlankStringValidator
+import domain.validator.warehouse.CreateWarehouseValidator
 
 class Warehouse(
     val id: String,
@@ -16,35 +13,16 @@ class Warehouse(
 ) {
 
     init {
-        val validationResults = listOf(
-            IdValidator(
-                field = "id",
-                allowedPrefixes = setOf("WH-")
-            ).validate(id),
-
-            NonBlankStringValidator(
-                field = "name"
-            ).validate(name),
-
-            NonBlankStringValidator(
-                field = "regionalZone"
-            ).validate(regionalZone),
-
-            LatitudeValidator(
-                field = "latitude"
-            ).validate(latitude),
-
-            LongitudeValidator(
-                field = "longitude"
-            ).validate(longitude)
+        val validationResult = CreateWarehouseValidator().invoke(
+            id = id,
+            name = name,
+            regionalZone = regionalZone,
+            latitude = latitude,
+            longitude = longitude
         )
 
-        val errors = validationResults
-            .filterIsInstance<ValidationResult.Failure>()
-            .flatMap { it.errors }
-
-        if (errors.isNotEmpty()) {
-            throw EntityValidationException(errors)
+        if (validationResult is ValidationResult.Failure) {
+            throw EntityValidationException(validationResult.errors)
         }
     }
 
