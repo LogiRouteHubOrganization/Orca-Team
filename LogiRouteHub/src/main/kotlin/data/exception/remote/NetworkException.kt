@@ -1,4 +1,4 @@
-package data.remote.exception
+package data.exception.remote
 
 sealed class NetworkException(
     message: String,

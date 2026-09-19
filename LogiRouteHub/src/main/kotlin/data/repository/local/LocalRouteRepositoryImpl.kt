@@ -2,6 +2,7 @@ package data.repository.local
 
 import data.datasource.RouteDataSource
 import data.mapper.RouteMapper
+import domain.exception.ResourceNotFoundException
 import domain.model.Route
 import domain.model.updateinput.RouteUpdateModel
 import domain.repository.RouteRepository
@@ -22,93 +23,140 @@ class LocalRouteRepositoryImpl(
         val rawRoutes = routeDataSource.loadRoutes()
 
         rawRoutes.forEach { rawRoute ->
+
             val originWarehouse =
-                warehouseRepository.findById(rawRoute.originHubId)
+                warehouseRepository
+                    .findById(rawRoute.originHubId)
+                    .getOrThrow()
+                    ?: throw ResourceNotFoundException(
+                        "Warehouse",
+                        rawRoute.originHubId
+                    )
 
             val destinationWarehouse =
-                warehouseRepository.findById(rawRoute.destinationHubId)
+                warehouseRepository
+                    .findById(rawRoute.destinationHubId)
+                    .getOrThrow()
+                    ?: throw ResourceNotFoundException(
+                        "Warehouse",
+                        rawRoute.destinationHubId
+                    )
 
-            if (originWarehouse != null && destinationWarehouse != null) {
-                val route = routeMapper.mapToDomainModel(
-                    rawRoute = rawRoute,
-                    originWarehouse = originWarehouse,
-                    destinationWarehouse = destinationWarehouse
-                )
+            val route = routeMapper.mapToDomainModel(
+                rawRoute = rawRoute,
+                originWarehouse = originWarehouse,
+                destinationWarehouse = destinationWarehouse
+            )
 
-                routes.add(route)
-                originWarehouse.addRoute(route)
-            }
+            routes.add(route)
+            originWarehouse.addRoute(route)
         }
 
         isLoaded = true
     }
 
-    override suspend fun findById(routeId: String): Route? {
-        loadRoutesIfNeeded()
-        return routes.find { it.id == routeId }
-    }
+    override suspend fun findById(
+        routeId: String
+    ): Result<Route?> =
+        runCatching {
+            loadRoutesIfNeeded()
 
-    override suspend fun findAll(): List<Route> {
-        loadRoutesIfNeeded()
-        return routes.toList()
-    }
+            routes.find { it.id == routeId }
+        }
 
-    override suspend fun add(route: Route): Route {
-        loadRoutesIfNeeded()
+    override suspend fun findAll(): Result<List<Route>> =
+        runCatching {
+            loadRoutesIfNeeded()
 
-        routes.add(route)
-        route.originWarehouse.addRoute(route)
+            routes.toList()
+        }
 
-        return route
-    }
+    override suspend fun add(
+        route: Route
+    ): Result<Route> =
+        runCatching {
+            loadRoutesIfNeeded()
+
+            routes.add(route)
+            route.originWarehouse.addRoute(route)
+
+            route
+        }
 
     override suspend fun update(
         routeId: String,
         updateModel: RouteUpdateModel
-    ): Route {
-        loadRoutesIfNeeded()
+    ): Result<Route> =
+        runCatching {
+            loadRoutesIfNeeded()
 
-        val currentRoute = routes.find { it.id == routeId }
-            ?: throw IllegalStateException("Route not found: $routeId")
+            val currentRoute =
+                routes.find { it.id == routeId }
+                    ?: throw ResourceNotFoundException(
+                        "Route",
+                        routeId
+                    )
 
-        val newOriginWarehouse =
-            updateModel.originWarehouseId
-                ?.let { warehouseRepository.findById(it) }
-                ?: currentRoute.originWarehouse
+            val newOriginWarehouse =
+                updateModel.originWarehouseId
+                    ?.let { warehouseId ->
+                        warehouseRepository
+                            .findById(warehouseId)
+                            .getOrThrow()
+                            ?: throw ResourceNotFoundException(
+                                "Warehouse",
+                                warehouseId
+                            )
+                    }
+                    ?: currentRoute.originWarehouse
 
-        val newDestinationWarehouse =
-            updateModel.destinationWarehouseId
-                ?.let { warehouseRepository.findById(it) }
-                ?: currentRoute.destinationWarehouse
+            val newDestinationWarehouse =
+                updateModel.destinationWarehouseId
+                    ?.let { warehouseId ->
+                        warehouseRepository
+                            .findById(warehouseId)
+                            .getOrThrow()
+                            ?: throw ResourceNotFoundException(
+                                "Warehouse",
+                                warehouseId
+                            )
+                    }
+                    ?: currentRoute.destinationWarehouse
 
-        val updatedRoute = currentRoute.copy(
-            originWarehouse = newOriginWarehouse,
-            destinationWarehouse = newDestinationWarehouse,
-            distanceKm = updateModel.distanceKm
-                ?: currentRoute.distanceKm,
-            typicalDelayMin = updateModel.typicalDelayMin
-                ?: currentRoute.typicalDelayMin
-        )
+            val updatedRoute = currentRoute.copy(
+                originWarehouse = newOriginWarehouse,
+                destinationWarehouse = newDestinationWarehouse,
+                distanceKm = updateModel.distanceKm
+                    ?: currentRoute.distanceKm,
+                typicalDelayMin = updateModel.typicalDelayMin
+                    ?: currentRoute.typicalDelayMin
+            )
 
-        updateRouteRelations(
-            previousRoute = currentRoute,
-            updatedRoute = updatedRoute
-        )
+            updateRouteRelations(
+                previousRoute = currentRoute,
+                updatedRoute = updatedRoute
+            )
 
-        val routeIndex = routes.indexOfFirst { it.id == routeId }
-        routes[routeIndex] = updatedRoute
+            val routeIndex =
+                routes.indexOfFirst { it.id == routeId }
 
-        return updatedRoute
-    }
+            routes[routeIndex] = updatedRoute
+
+            updatedRoute
+        }
 
     private fun updateRouteRelations(
         previousRoute: Route,
         updatedRoute: Route
     ) {
-        val previousOriginWarehouse = previousRoute.originWarehouse
-        val newOriginWarehouse = updatedRoute.originWarehouse
+        val previousOriginWarehouse =
+            previousRoute.originWarehouse
+
+        val newOriginWarehouse =
+            updatedRoute.originWarehouse
 
         if (previousOriginWarehouse.id == newOriginWarehouse.id) {
+
             val routeIndex =
                 previousOriginWarehouse.outgoingRoutes
                     .indexOfFirst { it.id == previousRoute.id }
@@ -127,12 +175,20 @@ class LocalRouteRepositoryImpl(
         newOriginWarehouse.addRoute(updatedRoute)
     }
 
-    override suspend fun delete(routeId: String) {
-        loadRoutesIfNeeded()
+    override suspend fun delete(
+        routeId: String
+    ): Result<Unit> =
+        runCatching {
+            loadRoutesIfNeeded()
 
-        val route = routes.find { it.id == routeId } ?: return
+            val route =
+                routes.find { it.id == routeId }
+                    ?: throw ResourceNotFoundException(
+                        "Route",
+                        routeId
+                    )
 
-        route.originWarehouse.removeRoute(route)
-        routes.remove(route)
-    }
+            route.originWarehouse.removeRoute(route)
+            routes.remove(route)
+        }
 }

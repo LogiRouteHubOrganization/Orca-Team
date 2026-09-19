@@ -2,38 +2,37 @@ package data.datasource.csv
 
 import data.dataholder.WarehouseRaw
 import data.datasource.WarehouseDataSource
+import data.exception.LocalDataException
 import data.parser.WarehouseParser
+import data.validation.CsvFileValidator
 import java.io.File
-
 
 class CsvWarehouseDataSource(
     private val warehouseFile: File,
-    private val warehouseParser: WarehouseParser
+    private val warehouseParser: WarehouseParser,
+    private val csvFileValidator: CsvFileValidator
 ) : WarehouseDataSource {
 
     private val headerLineCount = 1
 
     override fun loadWarehouses(): List<WarehouseRaw> {
-
-        if (!warehouseFile.exists()) {
-            println("Diagnostic Warning: " + "File ${warehouseFile.name} does not exist.")
-            return emptyList()
-        }
+        csvFileValidator.validate(warehouseFile)
 
         val warehouseRows = warehouseFile.readLines()
 
+        if (warehouseRows.size <= headerLineCount) {
+            throw LocalDataException(
+                "CSV file contains no data rows: ${warehouseFile.name}"
+            )
+        }
+
         val dataRows = warehouseRows.drop(headerLineCount)
 
-        val validWarehouses = mutableListOf<WarehouseRaw>()
-
-        for (warehouseRow in dataRows) {
-
-            val parsedWarehouse = warehouseParser.parseWarehouseRow(warehouseRow)
-
-            if (parsedWarehouse != null) {
-                validWarehouses.add(parsedWarehouse)
-            }
+        return dataRows.mapIndexed { index, row ->
+            warehouseParser.parseWarehouseRow(row)
+                ?: throw LocalDataException(
+                    "Invalid warehouse row at line ${index + headerLineCount + 1}"
+                )
         }
-        return validWarehouses
     }
 }

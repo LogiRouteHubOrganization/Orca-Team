@@ -2,37 +2,39 @@ package data.datasource.csv
 
 import data.dataholder.RouteRaw
 import data.datasource.RouteDataSource
+import data.exception.LocalDataException
 import data.parser.RouteParser
+import data.validation.CsvFileValidator
 import java.io.File
-
 
 class CsvRouteDataSource(
     private val routeFile: File,
-    private val routeParser: RouteParser
+    private val routeParser: RouteParser,
+    private val csvFileValidator: CsvFileValidator
 ) : RouteDataSource {
+
     private val headerLineCount = 1
 
     override fun loadRoutes(): List<RouteRaw> {
+        csvFileValidator.validate(routeFile)
 
-        if (!routeFile.exists()) {
-            println("Diagnostic Warning: " + "File ${routeFile.name} does not exist.")
-            return emptyList()
-        }
         val lines = routeFile.readLines()
-        val validRoutes = mutableListOf<RouteRaw>()
 
-        for ((rowNumber, line) in lines.withIndex()) {
-
-            if (rowNumber < headerLineCount) continue
-
-            val parsedRoute = routeParser.parseRouteRow(
-                row = line,
-                rowNumber = rowNumber
+        if (lines.size <= headerLineCount) {
+            throw LocalDataException(
+                "CSV file contains no data rows: ${routeFile.name}"
             )
-            if (parsedRoute != null) {
-                validRoutes.add(parsedRoute)
-            }
         }
-        return validRoutes
+
+        val dataRows = lines.drop(headerLineCount)
+
+        return dataRows.mapIndexed { index, row ->
+            routeParser.parseRouteRow(
+                row = row,
+                rowNumber = index + headerLineCount
+            ) ?: throw LocalDataException(
+                "Invalid route row at line ${index + headerLineCount + 1}"
+            )
+        }
     }
 }

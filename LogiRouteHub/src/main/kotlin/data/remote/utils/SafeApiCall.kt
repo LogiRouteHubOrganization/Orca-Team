@@ -1,6 +1,6 @@
 package data.remote.utils
 
-import data.remote.exception.NetworkException
+import data.exception.remote.NetworkException
 import io.github.jan.supabase.exceptions.RestException
 import io.ktor.client.plugins.HttpRequestTimeoutException
 import java.net.UnknownHostException

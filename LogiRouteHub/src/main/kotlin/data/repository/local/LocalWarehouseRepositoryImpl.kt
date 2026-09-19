@@ -2,6 +2,7 @@ package data.repository.local
 
 import data.datasource.WarehouseDataSource
 import data.mapper.WarehouseMapper
+import domain.exception.ResourceNotFoundException
 import domain.model.Warehouse
 import domain.model.updateinput.WarehouseUpdateModel
 import domain.repository.WarehouseRepository
@@ -17,7 +18,8 @@ class LocalWarehouseRepositoryImpl(
     private fun loadWarehousesIfNeeded() {
         if (isLoaded) return
 
-        val rawWarehouses = warehouseDataSource.loadWarehouses()
+        val rawWarehouses =
+            warehouseDataSource.loadWarehouses()
 
         rawWarehouses
             .map(warehouseMapper::mapToDomainModel)
@@ -26,46 +28,77 @@ class LocalWarehouseRepositoryImpl(
         isLoaded = true
     }
 
-    override suspend fun findAll(): List<Warehouse> {
-        loadWarehousesIfNeeded()
-        return warehouses.toList()
-    }
+    override suspend fun findAll(): Result<List<Warehouse>> =
+        runCatching {
+            loadWarehousesIfNeeded()
 
-    override suspend fun findById(warehouseId: String): Warehouse? {
-        loadWarehousesIfNeeded()
-        return warehouses.find { it.id == warehouseId }
-    }
+            warehouses.toList()
+        }
 
-    override suspend fun add(warehouse: Warehouse): Warehouse {
-        loadWarehousesIfNeeded()
+    override suspend fun findById(
+        warehouseId: String
+    ): Result<Warehouse?> =
+        runCatching {
+            loadWarehousesIfNeeded()
 
-        warehouses.add(warehouse)
+            warehouses.find { it.id == warehouseId }
+        }
 
-        return warehouse
-    }
+    override suspend fun add(
+        warehouse: Warehouse
+    ): Result<Warehouse> =
+        runCatching {
+            loadWarehousesIfNeeded()
+
+            warehouses.add(warehouse)
+
+            warehouse
+        }
 
     override suspend fun update(
         warehouseId: String,
         updateModel: WarehouseUpdateModel
-    ): Warehouse {
-        loadWarehousesIfNeeded()
+    ): Result<Warehouse> =
+        runCatching {
+            loadWarehousesIfNeeded()
 
-        val warehouse = warehouses.find { it.id == warehouseId }
-            ?: throw IllegalStateException("Warehouse not found: $warehouseId")
+            val warehouse =
+                warehouses.find { it.id == warehouseId }
+                    ?: throw ResourceNotFoundException(
+                        "Warehouse",
+                        warehouseId
+                    )
 
-        warehouse.updateDetails(
-            name = updateModel.name ?: warehouse.name,
-            regionalZone = updateModel.regionalZone ?: warehouse.regionalZone,
-            latitude = updateModel.latitude ?: warehouse.latitude,
-            longitude = updateModel.longitude ?: warehouse.longitude
-        )
+            warehouse.updateDetails(
+                name = updateModel.name
+                    ?: warehouse.name,
 
-        return warehouse
-    }
+                regionalZone = updateModel.regionalZone
+                    ?: warehouse.regionalZone,
 
-    override suspend fun delete(warehouseId: String) {
-        loadWarehousesIfNeeded()
+                latitude = updateModel.latitude
+                    ?: warehouse.latitude,
 
-        warehouses.removeIf { it.id == warehouseId }
-    }
+                longitude = updateModel.longitude
+                    ?: warehouse.longitude
+            )
+
+            warehouse
+        }
+
+    override suspend fun delete(
+        warehouseId: String
+    ): Result<Unit> =
+        runCatching {
+            loadWarehousesIfNeeded()
+
+            val warehouse =
+                warehouses.find { it.id == warehouseId }
+                    ?: throw ResourceNotFoundException(
+                        "Warehouse",
+                        warehouseId
+                    )
+
+            warehouses.remove(warehouse)
+        }
 }
