@@ -1,3 +1,4 @@
+
 package data.repository.remote
 
 import data.remote.datasource.WarehouseRemoteDataSource
@@ -13,57 +14,84 @@ class RemoteWarehouseRepositoryImpl(
     private val warehouseRemoteDataSource: WarehouseRemoteDataSource
 ) : WarehouseRepository {
 
-    override suspend fun findById(warehouseId: String): Warehouse? {
-        return try {
+    override suspend fun findById(
+        warehouseId: String
+    ): Result<Warehouse?> {
+
+        return runCatching {
             warehouseRemoteDataSource
                 .getWarehouseById(warehouseId)
                 ?.toDomain()
-        } catch (e: Exception) {
-            throw e.toDomainException(resourceType = "Warehouse", resourceId = warehouseId)
+        }.recoverCatching { exception ->
+            throw exception.toDomainException(
+                resourceType = "Warehouse",
+                resourceId = warehouseId
+            )
         }
     }
 
-    override suspend fun findAll(): List<Warehouse> {
-        return try {
+    override suspend fun findAll(): Result<List<Warehouse>> {
+
+        return runCatching {
             warehouseRemoteDataSource
                 .getAllWarehouses()
                 .map { it.toDomain() }
-        } catch (e: Exception) {
-            throw e.toDomainException(resourceType = "Warehouse")
+        }.recoverCatching { exception ->
+            throw exception.toDomainException(
+                resourceType = "Warehouse"
+            )
         }
     }
 
-    override suspend fun add(warehouse: Warehouse): Warehouse {
-        return try {
+    override suspend fun add(
+        warehouse: Warehouse
+    ): Result<Warehouse> {
+
+        return runCatching {
             val createdDto = warehouseRemoteDataSource.createWarehouse(
                 warehouse.toCreateDto()
             )
+
             createdDto.toDomain()
-        } catch (e: Exception) {
-            throw e.toDomainException(resourceType = "Warehouse", resourceId = warehouse.id)
+        }.recoverCatching { exception ->
+            throw exception.toDomainException(
+                resourceType = "Warehouse",
+                resourceId = warehouse.id
+            )
         }
     }
 
     override suspend fun update(
         warehouseId: String,
         updateModel: WarehouseUpdateModel
-    ): Warehouse {
-        return try {
+    ): Result<Warehouse> {
+
+        return runCatching {
             val updatedDto = warehouseRemoteDataSource.updateWarehouse(
                 id = warehouseId,
                 warehouseRequest = updateModel.toUpdateDto()
             )
+
             updatedDto.toDomain()
-        } catch (e: Exception) {
-            throw e.toDomainException(resourceType = "Warehouse", resourceId = warehouseId)
+        }.recoverCatching { exception ->
+            throw exception.toDomainException(
+                resourceType = "Warehouse",
+                resourceId = warehouseId
+            )
         }
     }
 
-    override suspend fun delete(warehouseId: String) {
-        try {
+    override suspend fun delete(
+        warehouseId: String
+    ): Result<Unit> {
+
+        return runCatching {
             warehouseRemoteDataSource.deleteWarehouse(warehouseId)
-        } catch (e: Exception) {
-            throw e.toDomainException(resourceType = "Warehouse", resourceId = warehouseId)
+        }.recoverCatching { exception ->
+            throw exception.toDomainException(
+                resourceType = "Warehouse",
+                resourceId = warehouseId
+            )
         }
     }
 }

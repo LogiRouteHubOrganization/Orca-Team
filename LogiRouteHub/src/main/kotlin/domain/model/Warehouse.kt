@@ -1,12 +1,53 @@
 package domain.model
 
+import domain.exception.EntityValidationException
+import domain.validator.ValidationResult
+import domain.validator.rule.IdValidator
+import domain.validator.rule.LatitudeValidator
+import domain.validator.rule.LongitudeValidator
+import domain.validator.rule.NonBlankStringValidator
+
 class Warehouse(
     val id: String,
-     name: String,
-     regionalZone: String,
-     latitude: Double,
-     longitude: Double
+    name: String,
+    regionalZone: String,
+    latitude: Double,
+    longitude: Double
 ) {
+
+    init {
+        val validationResults = listOf(
+            IdValidator(
+                field = "id",
+                allowedPrefixes = setOf("WH-")
+            ).validate(id),
+
+            NonBlankStringValidator(
+                field = "name"
+            ).validate(name),
+
+            NonBlankStringValidator(
+                field = "regionalZone"
+            ).validate(regionalZone),
+
+            LatitudeValidator(
+                field = "latitude"
+            ).validate(latitude),
+
+            LongitudeValidator(
+                field = "longitude"
+            ).validate(longitude)
+        )
+
+        val errors = validationResults
+            .filterIsInstance<ValidationResult.Failure>()
+            .flatMap { it.errors }
+
+        if (errors.isNotEmpty()) {
+            throw EntityValidationException(errors)
+        }
+    }
+
     var name: String = name
         private set
 
@@ -81,6 +122,7 @@ class Warehouse(
     ) {
         outgoingRoutesList[routeIndex] = route
     }
+
     fun updateDetails(
         name: String,
         regionalZone: String,
@@ -92,5 +134,4 @@ class Warehouse(
         this.latitude = latitude
         this.longitude = longitude
     }
-
 }

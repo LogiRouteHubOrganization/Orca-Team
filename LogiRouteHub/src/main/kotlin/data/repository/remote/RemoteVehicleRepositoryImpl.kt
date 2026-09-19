@@ -1,3 +1,4 @@
+
 package data.repository.remote
 
 import data.remote.datasource.VehicleRemoteDataSource
@@ -16,84 +17,134 @@ class RemoteVehicleRepositoryImpl(
     private val warehouseRepository: WarehouseRepository
 ) : VehicleRepository {
 
-    override suspend fun findById(vehicleId: String): Vehicle? {
-        return try {
-            val vehicleDto = vehicleRemoteDataSource.getVehicleById(vehicleId)
-                ?: return null
+    override suspend fun findById(
+        vehicleId: String
+    ): Result<Vehicle?> {
 
-            val currentWarehouse = warehouseRepository.findById(vehicleDto.currentWarehouseId)
-                ?: throw ResourceNotFoundException("Warehouse", vehicleDto.currentWarehouseId)
+        return runCatching {
+            val vehicleDto = vehicleRemoteDataSource.getVehicleById(vehicleId)
+                ?: return@runCatching null
+
+            val currentWarehouse = warehouseRepository
+                .findById(vehicleDto.currentWarehouseId)
+                .getOrThrow()
+                ?: throw ResourceNotFoundException(
+                    "Warehouse",
+                    vehicleDto.currentWarehouseId
+                )
 
             vehicleDto.toDomain(
                 currentWarehouse = currentWarehouse
             )
-        } catch (e: Exception) {
-            throw e.toDomainException(resourceType = "Vehicle", resourceId = vehicleId)
+        }.recoverCatching { exception ->
+            throw exception.toDomainException(
+                resourceType = "Vehicle",
+                resourceId = vehicleId
+            )
         }
     }
 
-    override suspend fun findAll(): List<Vehicle> {
-        return try {
+    override suspend fun findAll(): Result<List<Vehicle>> {
+
+        return runCatching {
             val vehicleDtos = vehicleRemoteDataSource.getAllVehicles()
-            val warehouses = warehouseRepository.findAll()
+
+            val warehouses = warehouseRepository
+                .findAll()
+                .getOrThrow()
+
             val warehousesById = warehouses.associateBy { it.id }
 
             vehicleDtos.map { vehicleDto ->
-                val currentWarehouse = warehousesById[vehicleDto.currentWarehouseId]
-                    ?: throw ResourceNotFoundException("Warehouse", vehicleDto.currentWarehouseId)
+
+                val currentWarehouse = warehousesById[
+                    vehicleDto.currentWarehouseId
+                ] ?: throw ResourceNotFoundException(
+                    "Warehouse",
+                    vehicleDto.currentWarehouseId
+                )
 
                 vehicleDto.toDomain(
                     currentWarehouse = currentWarehouse
                 )
             }
-        } catch (e: Exception) {
-            throw e.toDomainException(resourceType = "Vehicle")
+        }.recoverCatching { exception ->
+            throw exception.toDomainException(
+                resourceType = "Vehicle"
+            )
         }
     }
 
-    override suspend fun add(vehicle: Vehicle): Vehicle {
-        return try {
+    override suspend fun add(
+        vehicle: Vehicle
+    ): Result<Vehicle> {
+
+        return runCatching {
             val createdDto = vehicleRemoteDataSource.createVehicle(
                 vehicle.toCreateDto()
             )
 
-            val currentWarehouse = warehouseRepository.findById(createdDto.currentWarehouseId)
-                ?: throw ResourceNotFoundException("Warehouse", createdDto.currentWarehouseId)
+            val currentWarehouse = warehouseRepository
+                .findById(createdDto.currentWarehouseId)
+                .getOrThrow()
+                ?: throw ResourceNotFoundException(
+                    "Warehouse",
+                    createdDto.currentWarehouseId
+                )
 
             createdDto.toDomain(
                 currentWarehouse = currentWarehouse
             )
-        } catch (e: Exception) {
-            throw e.toDomainException(resourceType = "Vehicle", resourceId = vehicle.id)
+        }.recoverCatching { exception ->
+            throw exception.toDomainException(
+                resourceType = "Vehicle",
+                resourceId = vehicle.id
+            )
         }
     }
 
     override suspend fun update(
         vehicleId: String,
         updateModel: VehicleUpdateModel
-    ): Vehicle {
-        return try {
+    ): Result<Vehicle> {
+
+        return runCatching {
             val updatedDto = vehicleRemoteDataSource.updateVehicle(
                 id = vehicleId,
                 vehicleRequest = updateModel.toUpdateDto()
             )
 
-            val currentWarehouse = warehouseRepository.findById(updatedDto.currentWarehouseId)
-                ?: throw ResourceNotFoundException("Warehouse", updatedDto.currentWarehouseId)
+            val currentWarehouse = warehouseRepository
+                .findById(updatedDto.currentWarehouseId)
+                .getOrThrow()
+                ?: throw ResourceNotFoundException(
+                    "Warehouse",
+                    updatedDto.currentWarehouseId
+                )
 
             updatedDto.toDomain(
                 currentWarehouse = currentWarehouse
             )
-        } catch (e: Exception) {
-            throw e.toDomainException(resourceType = "Vehicle", resourceId = vehicleId)
+        }.recoverCatching { exception ->
+            throw exception.toDomainException(
+                resourceType = "Vehicle",
+                resourceId = vehicleId
+            )
         }
     }
 
-    override suspend fun delete(vehicleId: String) {
-        try {
+    override suspend fun delete(
+        vehicleId: String
+    ): Result<Unit> {
+
+        return runCatching {
             vehicleRemoteDataSource.deleteVehicle(vehicleId)
-        } catch (e: Exception) {
-            throw e.toDomainException(resourceType = "Vehicle", resourceId = vehicleId)
+        }.recoverCatching { exception ->
+            throw exception.toDomainException(
+                resourceType = "Vehicle",
+                resourceId = vehicleId
+            )
         }
     }
 }
+

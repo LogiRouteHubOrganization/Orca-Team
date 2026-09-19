@@ -32,6 +32,8 @@ import domain.usecase.*
 import domain.validation.*
 import java.io.File
 import java.util.*
+import domain.usecase.crud.warehouse.CreateWarehouseUseCase
+import domain.validator.warehouse.CreateWarehouseValidator
 
 private const val PACKAGES_FILE_PATH = "src/main/resources/packages.csv"
 private const val WAREHOUSES_FILE_PATH = "src/main/resources/warehouses.csv"
@@ -104,13 +106,13 @@ suspend fun main() {
     val warehouseIndex = warehouses.associateBy { it.id }
 
     // Step 6: Validate package sorting
-    validateSorting(warehouseIndex)
+    // validateSorting(warehouseIndex)
 
     // Step 7: Validate pricing strategies and package decorators
     validatePricingAndDecorators(warehouseIndex)
 
     // Step 8: Validate routing algorithms
-    validateRoutingAlgorithms(warehouseIndex,warehouseRepository)
+    validateRoutingAlgorithms(warehouseIndex, warehouseRepository)
 
     // Step 9: Validate HubTree
     HubTreeValidation(warehouseIndex).validateHubTree()
@@ -135,17 +137,46 @@ suspend fun main() {
     // Step 10: Validate Command Pattern
     validateCommandPattern(warehouseIndex)
     validateCommandHistory(warehouseIndex)
-}
 
-private fun validateSorting(
-    warehouseIndex: Map<String, Warehouse>
-) {
-    val sortCargoQueueUseCase = SortingCargoQueueUseCase()
-
-    validateQuickSort(
-        warehouseIndex = warehouseIndex,
-        sortCargoQueueUseCase = sortCargoQueueUseCase
+    val createWarehouseUseCase = CreateWarehouseUseCase(
+        warehouseRepository = warehouseRepository,
+        warehouseValidator = CreateWarehouseValidator()
     )
+
+//    private fun validateSorting(
+//        warehouseIndex: Map<String, Warehouse>
+//    ) {
+//        val sortCargoQueueUseCase = SortingCargoQueueUseCase()
+//
+//        validateQuickSort(
+//            warehouseIndex = warehouseIndex,
+//            sortCargoQueueUseCase = sortCargoQueueUseCase
+//        )
+//    }
+    val warehouse = Warehouse(
+        id = "WH-000001",
+        name = "Nablus Warehouse",
+        regionalZone = "North",
+        latitude = 32.2211,
+        longitude = 35.2544
+    )
+
+   // val createWarehouseUseCase = CreateWarehouseUseCase(
+    //    warehouseRepository = warehouseRepository,
+  //      warehouseValidator = CreateWarehouseValidator()
+  //  )
+
+    createWarehouseUseCase(warehouse)
+        .onSuccess { createdWarehouse ->
+            println(
+                "Warehouse created successfully: ${createdWarehouse.id}"
+            )
+        }
+        .onFailure { exception ->
+            println(
+                "Failed to create warehouse: ${exception.message}"
+            )
+        }
 }
 
 private fun validatePricingAndDecorators(
