@@ -1,8 +1,8 @@
 package data.remote.mapper
-import data.remote.dto.PackageDto
-import data.remote.dto.RouteDto
-import data.remote.dto.VehicleDto
-import data.remote.dto.WarehouseDto
+import data.remote.dto.response.PackageDto
+import data.remote.dto.response.RouteDto
+import data.remote.dto.response.VehicleDto
+import data.remote.dto.response.WarehouseDto
 import domain.model.Package
 import domain.model.Route
 import domain.model.Vehicle

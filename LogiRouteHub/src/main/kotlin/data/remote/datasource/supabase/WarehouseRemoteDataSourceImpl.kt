@@ -2,7 +2,7 @@ package data.remote.datasource.supabase
 
 import data.remote.SupabaseClientProvider
 import data.remote.datasource.WarehouseRemoteDataSource
-import data.remote.dto.WarehouseDto
+import data.remote.dto.response.WarehouseDto
 import data.remote.dto.request.WarehouseCreateRequestDto
 import data.remote.dto.request.WarehouseUpdateRequestDto
 import data.remote.utils.safeApiCall

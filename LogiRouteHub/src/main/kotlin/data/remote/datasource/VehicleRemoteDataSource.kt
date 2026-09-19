@@ -1,6 +1,6 @@
 package data.remote.datasource
 
-import data.remote.dto.VehicleDto
+import data.remote.dto.response.VehicleDto
 import data.remote.dto.request.VehicleCreateRequestDto
 import data.remote.dto.request.VehicleUpdateRequestDto
 
