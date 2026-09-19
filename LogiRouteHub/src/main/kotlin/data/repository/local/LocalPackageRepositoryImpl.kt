@@ -2,6 +2,7 @@ package data.repository.local
 
 import data.datasource.PackageDataSource
 import data.mapper.PackageMapper
+import domain.exception.ResourceNotFoundException
 import domain.model.Package
 import domain.model.Warehouse
 import domain.model.updateinput.PackageUpdateModel
@@ -27,71 +28,107 @@ class LocalPackageRepositoryImpl(
         val rawPackages = packageDataSource.loadPackages()
 
         for (rawPackage in rawPackages) {
+
             val originWarehouse =
-                warehouseRepository.findById(rawPackage.originHubId)
+                warehouseRepository
+                    .findById(rawPackage.originHubId)
+                    .getOrThrow()
+                    ?: throw ResourceNotFoundException(
+                        "Warehouse",
+                        rawPackage.originHubId
+                    )
 
             val destinationWarehouse =
-                warehouseRepository.findById(rawPackage.destinationHubId)
+                warehouseRepository
+                    .findById(rawPackage.destinationHubId)
+                    .getOrThrow()
+                    ?: throw ResourceNotFoundException(
+                        "Warehouse",
+                        rawPackage.destinationHubId
+                    )
 
-            if (originWarehouse != null && destinationWarehouse != null) {
-                val logisticsPackage = packageMapper.mapToDomainModel(
+            val logisticsPackage =
+                packageMapper.mapToDomainModel(
                     rawPackage = rawPackage,
                     originWarehouse = originWarehouse,
                     destinationWarehouse = destinationWarehouse
                 )
 
-                packages.add(logisticsPackage)
-                originWarehouse.addPackage(logisticsPackage)
-            }
+            packages.add(logisticsPackage)
+            originWarehouse.addPackage(logisticsPackage)
         }
+
         isLoaded = true
     }
 
-    override suspend fun findById(packageId: String): Package? {
-        loadPackagesIfNeeded()
-        return packages.find { it.id == packageId }
-    }
+    override suspend fun findById(
+        packageId: String
+    ): Result<Package?> =
+        runCatching {
+            loadPackagesIfNeeded()
 
-    override suspend fun findAll(): List<Package> {
-        loadPackagesIfNeeded()
-        return packages.toList()
-    }
+            packages.find { it.id == packageId }
+        }
 
-    override suspend fun add(logisticsPackage: Package): Package {
-        loadPackagesIfNeeded()
+    override suspend fun findAll(): Result<List<Package>> =
+        runCatching {
+            loadPackagesIfNeeded()
 
-        packages.add(logisticsPackage)
-        logisticsPackage.originWarehouse.addPackage(logisticsPackage)
+            packages.toList()
+        }
 
-        return logisticsPackage
-    }
+    override suspend fun add(
+        logisticsPackage: Package
+    ): Result<Package> =
+        runCatching {
+            loadPackagesIfNeeded()
+
+            packages.add(logisticsPackage)
+            logisticsPackage.originWarehouse
+                .addPackage(logisticsPackage)
+
+            logisticsPackage
+        }
 
     override suspend fun update(
         packageId: String,
         updateModel: PackageUpdateModel
+    ): Result<Package> =
+        runCatching {
+            loadPackagesIfNeeded()
+
+            val currentPackage =
+                findPackageByIdOrThrow(packageId)
+
+            val updatedWarehouses =
+                resolveWarehouses(
+                    currentPackage,
+                    updateModel
+                )
+
+            val updatedPackage =
+                createUpdatedPackage(
+                    currentPackage,
+                    updateModel,
+                    updatedWarehouses
+                )
+
+            applyPackageUpdate(
+                currentPackage,
+                updatedPackage
+            )
+
+            updatedPackage
+        }
+
+    private fun findPackageByIdOrThrow(
+        packageId: String
     ): Package {
-        loadPackagesIfNeeded()
 
-        val currentPackage = findPackageByIdOrThrow(packageId)
-        val updatedWarehouses = resolveWarehouses(
-            currentPackage,
-            updateModel
-        )
-        val updatedPackage = createUpdatedPackage(
-            currentPackage,
-            updateModel,
-            updatedWarehouses
-        )
-
-        applyPackageUpdate(currentPackage, updatedPackage)
-
-        return updatedPackage
-    }
-
-    private fun findPackageByIdOrThrow(packageId: String): Package {
         return packages.find { it.id == packageId }
-            ?: throw IllegalStateException(
-                "Package not found: $packageId"
+            ?: throw ResourceNotFoundException(
+                "Package",
+                packageId
             )
     }
 
@@ -99,6 +136,7 @@ class LocalPackageRepositoryImpl(
         currentPackage: Package,
         updateModel: PackageUpdateModel
     ): Pair<Warehouse, Warehouse> {
+
         val originWarehouse =
             findUpdatedWarehouse(
                 updateModel.originWarehouseId,
@@ -118,11 +156,17 @@ class LocalPackageRepositoryImpl(
         warehouseId: String?,
         currentWarehouse: Warehouse
     ): Warehouse {
-        return warehouseId?.let {
-            warehouseRepository.findById(it)
-                ?: throw IllegalStateException(
-                    "Warehouse not found: $it"
+
+        return warehouseId?.let { id ->
+
+            warehouseRepository
+                .findById(id)
+                .getOrThrow()
+                ?: throw ResourceNotFoundException(
+                    "Warehouse",
+                    id
                 )
+
         } ?: currentWarehouse
     }
 
@@ -131,6 +175,7 @@ class LocalPackageRepositoryImpl(
         updateModel: PackageUpdateModel,
         warehouses: Pair<Warehouse, Warehouse>
     ): Package {
+
         return currentPackage.copy(
             weightByKg = updateModel.weightByKg
                 ?: currentPackage.weightByKg,
@@ -147,7 +192,11 @@ class LocalPackageRepositoryImpl(
         currentPackage: Package,
         updatedPackage: Package
     ) {
-        updateWarehouseCargo(currentPackage, updatedPackage)
+        updateWarehouseCargo(
+            currentPackage,
+            updatedPackage
+        )
+
         replacePackageInRepository(updatedPackage)
     }
 
@@ -155,45 +204,68 @@ class LocalPackageRepositoryImpl(
         currentPackage: Package,
         updatedPackage: Package
     ) {
+
         val originChanged =
             currentPackage.originWarehouse.id !=
                     updatedPackage.originWarehouse.id
 
         if (originChanged) {
-            currentPackage.originWarehouse.removePackage(currentPackage)
-            updatedPackage.originWarehouse.addPackage(updatedPackage)
+
+            currentPackage.originWarehouse
+                .removePackage(currentPackage)
+
+            updatedPackage.originWarehouse
+                .addPackage(updatedPackage)
+
             return
         }
 
         val packageIndex =
-            updatedPackage.originWarehouse.cargoQueue.indexOfFirst {
-                it.id == updatedPackage.id
-            }
+            updatedPackage.originWarehouse
+                .cargoQueue
+                .indexOfFirst {
+                    it.id == updatedPackage.id
+                }
 
         if (packageIndex != NOT_FOUND_INDEX) {
-            updatedPackage.originWarehouse.updatePackageAtIndex(
-                packageIndex,
-                updatedPackage
-            )
+
+            updatedPackage.originWarehouse
+                .updatePackageAtIndex(
+                    packageIndex,
+                    updatedPackage
+                )
         }
     }
 
     private fun replacePackageInRepository(
         updatedPackage: Package
     ) {
+
         val packageIndex =
-            packages.indexOfFirst { it.id == updatedPackage.id }
+            packages.indexOfFirst {
+                it.id == updatedPackage.id
+            }
 
         packages[packageIndex] = updatedPackage
     }
 
-    override suspend fun delete(packageId: String) {
-        loadPackagesIfNeeded()
+    override suspend fun delete(
+        packageId: String
+    ): Result<Unit> =
+        runCatching {
+            loadPackagesIfNeeded()
 
-        val logisticsPackage =
-            packages.find { it.id == packageId } ?: return
+            val logisticsPackage =
+                packages.find {
+                    it.id == packageId
+                } ?: throw ResourceNotFoundException(
+                    "Package",
+                    packageId
+                )
 
-        logisticsPackage.originWarehouse.removePackage(logisticsPackage)
-        packages.remove(logisticsPackage)
-    }
+            logisticsPackage.originWarehouse
+                .removePackage(logisticsPackage)
+
+            packages.remove(logisticsPackage)
+        }
 }

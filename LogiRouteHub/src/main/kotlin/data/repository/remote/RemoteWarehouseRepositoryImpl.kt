@@ -2,7 +2,7 @@
 package data.repository.remote
 
 import data.remote.datasource.WarehouseRemoteDataSource
-import data.remote.exception.toDomainException
+import data.exception.remote.toDomainException
 import data.remote.mapper.toCreateDto
 import data.remote.mapper.toDomain
 import data.remote.mapper.toUpdateDto

@@ -2,6 +2,7 @@ package data.repository.local
 
 import data.datasource.VehicleDataSource
 import data.mapper.VehicleMapper
+import domain.exception.ResourceNotFoundException
 import domain.model.Vehicle
 import domain.model.updateinput.VehicleUpdateModel
 import domain.repository.VehicleRepository
@@ -22,87 +23,121 @@ class LocalVehicleRepositoryImpl(
         val rawVehicles = vehicleDataSource.loadVehicles()
 
         rawVehicles.forEach { rawVehicle ->
+
             val currentWarehouse =
-                warehouseRepository.findById(rawVehicle.currentHubId)
+                warehouseRepository
+                    .findById(rawVehicle.currentHubId)
+                    .getOrThrow()
+                    ?: throw ResourceNotFoundException(
+                        "Warehouse",
+                        rawVehicle.currentHubId
+                    )
 
-            if (currentWarehouse != null) {
-                val vehicle = vehicleMapper.mapToDomainModel(
-                    rawVehicle = rawVehicle,
-                    currentWarehouse = currentWarehouse
-                )
+            val vehicle = vehicleMapper.mapToDomainModel(
+                rawVehicle = rawVehicle,
+                currentWarehouse = currentWarehouse
+            )
 
-                vehicles.add(vehicle)
-                currentWarehouse.addVehicle(vehicle)
-            }
+            vehicles.add(vehicle)
+            currentWarehouse.addVehicle(vehicle)
         }
 
         isLoaded = true
     }
 
-    override suspend fun findAll(): List<Vehicle> {
-        loadVehiclesIfNeeded()
-        return vehicles.toList()
-    }
+    override suspend fun findAll(): Result<List<Vehicle>> =
+        runCatching {
+            loadVehiclesIfNeeded()
 
-    override suspend fun findById(vehicleId: String): Vehicle? {
-        loadVehiclesIfNeeded()
+            vehicles.toList()
+        }
 
-        return vehicles.find { it.id == vehicleId }
-    }
+    override suspend fun findById(
+        vehicleId: String
+    ): Result<Vehicle?> =
+        runCatching {
+            loadVehiclesIfNeeded()
 
-    override suspend fun add(vehicle: Vehicle): Vehicle {
-        loadVehiclesIfNeeded()
+            vehicles.find { it.id == vehicleId }
+        }
 
-        vehicles.add(vehicle)
-        vehicle.currentWarehouse.addVehicle(vehicle)
+    override suspend fun add(
+        vehicle: Vehicle
+    ): Result<Vehicle> =
+        runCatching {
+            loadVehiclesIfNeeded()
 
-        return vehicle
-    }
+            vehicles.add(vehicle)
+            vehicle.currentWarehouse.addVehicle(vehicle)
+
+            vehicle
+        }
 
     override suspend fun update(
         vehicleId: String,
         updateModel: VehicleUpdateModel
-    ): Vehicle {
-        loadVehiclesIfNeeded()
+    ): Result<Vehicle> =
+        runCatching {
+            loadVehiclesIfNeeded()
 
-        val currentVehicle = vehicles.find { it.id == vehicleId }
-            ?: throw IllegalStateException("Vehicle not found: $vehicleId")
+            val currentVehicle =
+                vehicles.find { it.id == vehicleId }
+                    ?: throw ResourceNotFoundException(
+                        "Vehicle",
+                        vehicleId
+                    )
 
-        val newWarehouse =
-            updateModel.currentWarehouseId
-                ?.let { warehouseRepository.findById(it) }
-                ?: currentVehicle.currentWarehouse
+            val newWarehouse =
+                updateModel.currentWarehouseId
+                    ?.let { warehouseId ->
+                        warehouseRepository
+                            .findById(warehouseId)
+                            .getOrThrow()
+                            ?: throw ResourceNotFoundException(
+                                "Warehouse",
+                                warehouseId
+                            )
+                    }
+                    ?: currentVehicle.currentWarehouse
 
-        val updatedVehicle = currentVehicle.copy(
-            maxCapacityKg = updateModel.maxCapacityKg
-                ?: currentVehicle.maxCapacityKg,
-            costPerKm = updateModel.costPerKm
-                ?: currentVehicle.costPerKm,
-            currentWarehouse = newWarehouse
-        )
+            val updatedVehicle = currentVehicle.copy(
+                maxCapacityKg = updateModel.maxCapacityKg
+                    ?: currentVehicle.maxCapacityKg,
+                costPerKm = updateModel.costPerKm
+                    ?: currentVehicle.costPerKm,
+                currentWarehouse = newWarehouse
+            )
 
-        updateVehicleRelations(
-            previousVehicle = currentVehicle,
-            updatedVehicle = updatedVehicle
-        )
+            updateVehicleRelations(
+                previousVehicle = currentVehicle,
+                updatedVehicle = updatedVehicle
+            )
 
-        val vehicleIndex = vehicles.indexOfFirst { it.id == vehicleId }
-        vehicles[vehicleIndex] = updatedVehicle
+            val vehicleIndex =
+                vehicles.indexOfFirst { it.id == vehicleId }
 
-        return updatedVehicle
-    }
+            vehicles[vehicleIndex] = updatedVehicle
+
+            updatedVehicle
+        }
 
     private fun updateVehicleRelations(
         previousVehicle: Vehicle,
         updatedVehicle: Vehicle
     ) {
-        val previousWarehouse = previousVehicle.currentWarehouse
-        val newWarehouse = updatedVehicle.currentWarehouse
+        val previousWarehouse =
+            previousVehicle.currentWarehouse
+
+        val newWarehouse =
+            updatedVehicle.currentWarehouse
 
         if (previousWarehouse.id == newWarehouse.id) {
+
             val vehicleIndex =
                 previousWarehouse.stationedVehicles
-                    .indexOfFirst { it.id == previousVehicle.id }
+                    .indexOfFirst {
+                        it.id == previousVehicle.id
+                    }
 
             if (vehicleIndex != -1) {
                 previousWarehouse.updateVehicleAtIndex(
@@ -118,12 +153,20 @@ class LocalVehicleRepositoryImpl(
         newWarehouse.addVehicle(updatedVehicle)
     }
 
-    override suspend fun delete(vehicleId: String) {
-        loadVehiclesIfNeeded()
+    override suspend fun delete(
+        vehicleId: String
+    ): Result<Unit> =
+        runCatching {
+            loadVehiclesIfNeeded()
 
-        val vehicle = vehicles.find { it.id == vehicleId } ?: return
+            val vehicle =
+                vehicles.find { it.id == vehicleId }
+                    ?: throw ResourceNotFoundException(
+                        "Vehicle",
+                        vehicleId
+                    )
 
-        vehicle.currentWarehouse.removeVehicle(vehicle)
-        vehicles.remove(vehicle)
-    }
+            vehicle.currentWarehouse.removeVehicle(vehicle)
+            vehicles.remove(vehicle)
+        }
 }

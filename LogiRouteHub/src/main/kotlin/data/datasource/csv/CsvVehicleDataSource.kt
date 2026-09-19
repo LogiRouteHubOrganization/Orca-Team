@@ -2,24 +2,37 @@ package data.datasource.csv
 
 import data.dataholder.FleetRaw
 import data.datasource.VehicleDataSource
+import data.exception.LocalDataException
 import data.parser.FleetParser
+import data.validation.CsvFileValidator
 import java.io.File
-
 
 class CsvVehicleDataSource(
     private val vehicleFile: File,
-    private val fleetParser: FleetParser
+    private val fleetParser: FleetParser,
+    private val csvFileValidator: CsvFileValidator
 ) : VehicleDataSource {
+
     private val headerLineCount = 1
 
     override fun loadVehicles(): List<FleetRaw> {
-        if (!vehicleFile.exists()) {
-            println("Warning: Fleet CSV file does not exist at ${vehicleFile.path}")
-            return emptyList()
+        csvFileValidator.validate(vehicleFile)
+
+        val lines = vehicleFile.readLines()
+
+        if (lines.size <= headerLineCount) {
+            throw LocalDataException(
+                "CSV file contains no data rows: ${vehicleFile.name}"
+            )
         }
 
-        return vehicleFile.readLines()
-            .drop(headerLineCount)
-            .mapNotNull { row -> fleetParser.parseFleetRow(row) }
+        val dataRows = lines.drop(headerLineCount)
+
+        return dataRows.mapIndexed { index, row ->
+            fleetParser.parseFleetRow(row)
+                ?: throw LocalDataException(
+                    "Invalid vehicle row at line ${index + headerLineCount + 1}"
+                )
+        }
     }
 }

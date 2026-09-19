@@ -1,5 +1,6 @@
-package data.remote.exception
+package data.exception.remote
 
+import data.exception.remote.NetworkException
 import domain.exception.DatabaseConflictException
 import domain.exception.DomainException
 import domain.exception.NetworkUnavailableException

@@ -2,32 +2,38 @@ package data.datasource.csv
 
 import data.dataholder.LogisticsPackageRaw
 import data.datasource.PackageDataSource
+import data.exception.LocalDataException
 import data.parser.PackageParser
+import data.validation.CsvFileValidator
 import java.io.File
-
 
 class CsvPackageDataSource(
     private val packageFile: File,
-    private val packageParser: PackageParser
+    private val packageParser: PackageParser,
+    private val csvFileValidator: CsvFileValidator
 ) : PackageDataSource {
 
     private val headerLineCount = 1
 
     override fun loadPackages(): List<LogisticsPackageRaw> {
-        if (!packageFile.exists()) {
-            println("Diagnostic Warning: File ${packageFile.name} does not exist.")
-            return emptyList()
-        }
-        val packageRows = packageFile.readLines()
-        val dataRows = packageRows.drop(headerLineCount)
-        val validPackages = mutableListOf<LogisticsPackageRaw>()
+        csvFileValidator.validate(packageFile)
 
-        for (packageRow in dataRows) {
-            val parsedPackage = packageParser.parsePackageRow(packageRow)
-            if (parsedPackage != null) {
-                validPackages.add(parsedPackage)
-            }
+        val packageRows = packageFile.readLines()
+
+        if (packageRows.size <= headerLineCount) {
+            throw LocalDataException(
+                "CSV file contains no data rows: ${packageFile.name}"
+            )
         }
-        return validPackages
+
+        val dataRows = packageRows.drop(headerLineCount)
+
+        return dataRows.mapIndexed { index, packageRow ->
+
+            packageParser.parsePackageRow(packageRow)
+                ?: throw LocalDataException(
+                    "Invalid package row at line ${index + headerLineCount + 1}"
+                )
+        }
     }
 }
