@@ -2,8 +2,6 @@ package domain.usecase
 
 import domain.model.Package
 import domain.model.request.DispatchVehicleRequest
-import domain.model.updateinput.VehicleUpdateModel
-import domain.model.updateinput.WarehouseUpdateModel
 import domain.repository.VehicleRepository
 import domain.repository.WarehouseRepository
 
@@ -12,17 +10,17 @@ class DispatchVehicleUseCase(
     private val warehouseRepository: WarehouseRepository
 ) {
 
-    suspend operator fun invoke(input: DispatchVehicleRequest): List<Package> {
+    suspend operator fun invoke(
+        input: DispatchVehicleRequest
+    ): Result<List<Package>> = runCatching {
 
-        val vehicle = vehicleRepository.findById(input.vehicleId)
-            ?: return emptyList()
+        val vehicle = vehicleRepository.findById(input.vehicleId).getOrThrow()
+            ?: return@runCatching emptyList()
 
-        val warehouse = warehouseRepository.findById(input.warehouseId)
-            ?: return emptyList()
+        val warehouse = warehouseRepository.findById(input.warehouseId).getOrThrow()
+            ?: return@runCatching emptyList()
 
-        val availableCapacity =
-            vehicle.maxCapacityKg -
-                    vehicle.calculateTotalLoadedWeightKg()
+        val availableCapacity = vehicle.maxCapacityKg - vehicle.calculateTotalLoadedWeightKg()
 
         val packagesToDispatch = warehouse.cargoQueue.fold(
             emptyList<Package>() to availableCapacity
@@ -38,20 +36,11 @@ class DispatchVehicleUseCase(
             }
 
         }.first
-
         packagesToDispatch.forEach { logisticsPackage ->
             vehicle.addPackage(logisticsPackage)
             warehouse.removePackage(logisticsPackage)
         }
 
-        val vehicleUpdateModel = VehicleUpdateModel(
-            currentWarehouseId = vehicle.currentWarehouse.id
-        )
-        val warehouseUpdateModel = WarehouseUpdateModel()
-
-        vehicleRepository.update(vehicle.id, vehicleUpdateModel)
-        warehouseRepository.update(warehouse.id, warehouseUpdateModel)
-
-        return packagesToDispatch
+        packagesToDispatch
     }
 }

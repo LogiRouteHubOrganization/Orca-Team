@@ -3,7 +3,6 @@ package domain.usecase
 import domain.model.Package
 import domain.model.Warehouse
 import domain.model.request.PackagePriorityLevels
-import domain.model.updateinput.WarehouseUpdateModel
 import domain.repository.WarehouseRepository
 
 class PrioritizeDispatchQueueUseCase(
@@ -11,14 +10,15 @@ class PrioritizeDispatchQueueUseCase(
     private val priorityLevels: PackagePriorityLevels
 ) {
 
-    suspend operator fun invoke(warehouseId: String): Warehouse? {
+    suspend operator fun invoke(
+        warehouseId: String
+    ): Result<Warehouse?> = runCatching {
 
-        val warehouse = warehouseRepository.findById(warehouseId)
-            ?: return null
+        val warehouse = warehouseRepository.findById(warehouseId).getOrThrow()
+            ?: return@runCatching null
 
         val prioritizedPackages = warehouse.cargoQueue
-            .sortedWith(
-                compareByDescending<Package> {
+            .sortedWith(compareByDescending<Package> {
                     getPriorityLevel(it.priority)
                 }.thenByDescending {
                     it.weightByKg
@@ -31,14 +31,8 @@ class PrioritizeDispatchQueueUseCase(
                 logisticsPackage = logisticsPackage
             )
         }
-
-        val warehouseUpdateModel = WarehouseUpdateModel()
-
-        warehouseRepository.update(warehouse.id, warehouseUpdateModel)
-
-        return warehouseRepository.findById(warehouseId)
+        warehouse
     }
-
     private fun getPriorityLevel(priority: String): Int {
         return when (priority.uppercase()) {
             "URGENT" -> priorityLevels.urgent

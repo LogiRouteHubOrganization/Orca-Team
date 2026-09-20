@@ -1,41 +1,43 @@
 package domain.usecase
 
+import domain.exception.EntityValidationException
 import domain.model.Warehouse
 import domain.model.updateinput.VehicleUpdateModel
-import domain.model.updateinput.WarehouseUpdateModel
 import domain.repository.VehicleRepository
 import domain.repository.WarehouseRepository
+import domain.validator.ValidationResult
+import domain.validator.vehicle.UpdateVehicleValidator
 
 class AddVehicleToHubUseCase(
     private val warehouseRepository: WarehouseRepository,
-    private val vehicleRepository: VehicleRepository
+    private val vehicleRepository: VehicleRepository,
+    private val updateVehicleValidator: UpdateVehicleValidator
 ) {
 
     suspend operator fun invoke(
         warehouseId: String,
         vehicleId: String
-    ): Warehouse? {
+    ): Result<Warehouse?> = runCatching {
 
-        val warehouse = warehouseRepository.findById(warehouseId)
-            ?: return null
+        val warehouse = warehouseRepository.findById(warehouseId).getOrThrow() ?: return@runCatching null
 
-        val vehicle = vehicleRepository.findById(vehicleId)
-            ?: return null
-
-
-        warehouse.addVehicle(vehicle)
-        vehicle.currentWarehouse = warehouse
-
+        val vehicle = vehicleRepository.findById(vehicleId).getOrThrow() ?: return@runCatching null
 
         val vehicleUpdateModel = VehicleUpdateModel(
             currentWarehouseId = warehouse.id
         )
 
-        val warehouseUpdateModel = WarehouseUpdateModel()
+        val validationResult = updateVehicleValidator(vehicleUpdateModel)
 
-        vehicleRepository.update(vehicle.id, vehicleUpdateModel)
-        warehouseRepository.update(warehouse.id, warehouseUpdateModel)
+        if (validationResult is ValidationResult.Failure) {
+            throw EntityValidationException(
+                validationResult.errors
+            )
+        }
+        val updatedVehicle = vehicleRepository.update(vehicle.id, vehicleUpdateModel)
+            .getOrThrow()
 
-        return warehouseRepository.findById(warehouseId)
+        warehouse.addVehicle(updatedVehicle)
+        warehouse
     }
 }

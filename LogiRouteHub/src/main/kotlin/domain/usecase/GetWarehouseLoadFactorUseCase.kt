@@ -8,13 +8,14 @@ class GetWarehouseLoadFactorUseCase(
     private val initialValueForTheSum = 0.0
     private val zeroCapacity = 0.0
 
-    suspend operator fun invoke(warehouseId: String): Double {
+    suspend operator fun invoke(
+        warehouseId: String
+    ): Result<Double> = runCatching {
 
-        val warehouse =
-            warehouseRepository.findById(warehouseId) ?: return zeroCapacity
+        val warehouse = warehouseRepository.findById(warehouseId).getOrThrow()
+            ?: return@runCatching zeroCapacity
 
-        val totalPackageWeight = warehouse.cargoQueue
-            .map { packageItem -> packageItem.weightByKg }
+        val totalPackageWeight = warehouse.cargoQueue.map { packageItem -> packageItem.weightByKg }
             .fold(initialValueForTheSum) { totalWeight, packageWeight ->
                 totalWeight + packageWeight
             }
@@ -25,7 +26,7 @@ class GetWarehouseLoadFactorUseCase(
                 totalCapacity + vehicleCapacity
             }
 
-        return if (totalVehicleCapacity == zeroCapacity) {
+        if (totalVehicleCapacity == zeroCapacity) {
             zeroCapacity
         } else {
             totalPackageWeight / totalVehicleCapacity
