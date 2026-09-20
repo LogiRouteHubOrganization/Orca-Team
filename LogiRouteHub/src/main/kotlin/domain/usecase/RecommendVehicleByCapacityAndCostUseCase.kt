@@ -10,25 +10,22 @@ class RecommendVehicleByCapacityAndCostUseCase(
     suspend operator fun invoke(
         warehouseId: String,
         requiredLoadKg: Double
-    ): Vehicle? {
+    ): Result<Vehicle?> = runCatching {
 
         val suitableVehicles = findStationedVehiclesByCapacityUseCase(
             warehouseId = warehouseId,
             requiredLoadKg = requiredLoadKg
-        )
+        ).getOrThrow()
 
-        return suitableVehicles.minWithOrNull(
+        suitableVehicles.minWithOrNull(
             compareBy<Vehicle> { vehicle ->
                 calculateRemainingCapacityAfterLoad(
                     vehicle = vehicle,
                     requiredLoadKg = requiredLoadKg
                 )
-            }.thenBy { vehicle ->
-                vehicle.costPerKm
-            }
+            }.thenBy { vehicle -> vehicle.costPerKm }
         )
     }
-
     private fun calculateRemainingCapacityAfterLoad(
         vehicle: Vehicle,
         requiredLoadKg: Double
