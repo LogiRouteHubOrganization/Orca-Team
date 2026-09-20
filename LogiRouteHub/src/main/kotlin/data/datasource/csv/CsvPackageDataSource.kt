@@ -2,21 +2,21 @@ package data.datasource.csv
 
 import data.dataholder.LogisticsPackageRaw
 import data.datasource.PackageDataSource
-import data.exception.LocalDataException
+import data.exception.local.LocalDataException
 import data.parser.PackageParser
-import data.validation.CsvFileValidator
+import data.validation.LocalDataSourceValidator
 import java.io.File
 
 class CsvPackageDataSource(
     private val packageFile: File,
     private val packageParser: PackageParser,
-    private val csvFileValidator: CsvFileValidator
+    private val localDataSourceValidator: LocalDataSourceValidator
 ) : PackageDataSource {
 
     private val headerLineCount = 1
 
     override fun loadPackages(): List<LogisticsPackageRaw> {
-        csvFileValidator.validate(packageFile)
+        localDataSourceValidator.validate(packageFile)
 
         val packageRows = packageFile.readLines()
 

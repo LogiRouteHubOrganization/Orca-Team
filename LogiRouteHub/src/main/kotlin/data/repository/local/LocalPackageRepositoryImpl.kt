@@ -1,6 +1,8 @@
 package data.repository.local
 
 import data.datasource.PackageDataSource
+import data.exception.local.LocalDataException
+import data.exception.local.toDomainException
 import data.mapper.PackageMapper
 import domain.exception.ResourceNotFoundException
 import domain.model.Package
@@ -33,19 +35,13 @@ class LocalPackageRepositoryImpl(
                 warehouseRepository
                     .findById(rawPackage.originHubId)
                     .getOrThrow()
-                    ?: throw ResourceNotFoundException(
-                        "Warehouse",
-                        rawPackage.originHubId
-                    )
+                    ?: throw ResourceNotFoundException.WarehouseNotFound(rawPackage.originHubId)
 
             val destinationWarehouse =
                 warehouseRepository
                     .findById(rawPackage.destinationHubId)
                     .getOrThrow()
-                    ?: throw ResourceNotFoundException(
-                        "Warehouse",
-                        rawPackage.destinationHubId
-                    )
+                    ?: throw ResourceNotFoundException.WarehouseNotFound(rawPackage.destinationHubId)
 
             val logisticsPackage =
                 packageMapper.mapToDomainModel(
@@ -66,16 +62,14 @@ class LocalPackageRepositoryImpl(
     ): Result<Package?> =
         runCatching {
             loadPackagesIfNeeded()
-
             packages.find { it.id == packageId }
-        }
+        }.mapLocalDataException()
 
     override suspend fun findAll(): Result<List<Package>> =
         runCatching {
             loadPackagesIfNeeded()
-
             packages.toList()
-        }
+        }.mapLocalDataException()
 
     override suspend fun add(
         logisticsPackage: Package
@@ -88,7 +82,7 @@ class LocalPackageRepositoryImpl(
                 .addPackage(logisticsPackage)
 
             logisticsPackage
-        }
+        }.mapLocalDataException()
 
     override suspend fun update(
         packageId: String,
@@ -97,39 +91,24 @@ class LocalPackageRepositoryImpl(
         runCatching {
             loadPackagesIfNeeded()
 
-            val currentPackage =
-                findPackageByIdOrThrow(packageId)
+            val currentPackage = findPackageByIdOrThrow(packageId)
 
-            val updatedWarehouses =
-                resolveWarehouses(
-                    currentPackage,
-                    updateModel
-                )
+            val updatedWarehouses = resolveWarehouses(currentPackage, updateModel)
 
-            val updatedPackage =
-                createUpdatedPackage(
-                    currentPackage,
-                    updateModel,
-                    updatedWarehouses
-                )
-
-            applyPackageUpdate(
+            val updatedPackage = createUpdatedPackage(
                 currentPackage,
-                updatedPackage
+                updateModel,
+                updatedWarehouses
             )
+
+            applyPackageUpdate(currentPackage, updatedPackage)
 
             updatedPackage
-        }
+        }.mapLocalDataException()
 
-    private fun findPackageByIdOrThrow(
-        packageId: String
-    ): Package {
-
+    private fun findPackageByIdOrThrow(packageId: String): Package {
         return packages.find { it.id == packageId }
-            ?: throw ResourceNotFoundException(
-                "Package",
-                packageId
-            )
+            ?: throw ResourceNotFoundException.PackageNotFound(packageId)
     }
 
     private suspend fun resolveWarehouses(
@@ -137,17 +116,15 @@ class LocalPackageRepositoryImpl(
         updateModel: PackageUpdateModel
     ): Pair<Warehouse, Warehouse> {
 
-        val originWarehouse =
-            findUpdatedWarehouse(
-                updateModel.originWarehouseId,
-                currentPackage.originWarehouse
-            )
+        val originWarehouse = findUpdatedWarehouse(
+            updateModel.originWarehouseId,
+            currentPackage.originWarehouse
+        )
 
-        val destinationWarehouse =
-            findUpdatedWarehouse(
-                updateModel.destinationWarehouseId,
-                currentPackage.destinationWarehouse
-            )
+        val destinationWarehouse = findUpdatedWarehouse(
+            updateModel.destinationWarehouseId,
+            currentPackage.destinationWarehouse
+        )
 
         return originWarehouse to destinationWarehouse
     }
@@ -158,15 +135,10 @@ class LocalPackageRepositoryImpl(
     ): Warehouse {
 
         return warehouseId?.let { id ->
-
             warehouseRepository
                 .findById(id)
                 .getOrThrow()
-                ?: throw ResourceNotFoundException(
-                    "Warehouse",
-                    id
-                )
-
+                ?: throw ResourceNotFoundException.WarehouseNotFound(id)
         } ?: currentWarehouse
     }
 
@@ -192,11 +164,7 @@ class LocalPackageRepositoryImpl(
         currentPackage: Package,
         updatedPackage: Package
     ) {
-        updateWarehouseCargo(
-            currentPackage,
-            updatedPackage
-        )
-
+        updateWarehouseCargo(currentPackage, updatedPackage)
         replacePackageInRepository(updatedPackage)
     }
 
@@ -204,49 +172,32 @@ class LocalPackageRepositoryImpl(
         currentPackage: Package,
         updatedPackage: Package
     ) {
-
         val originChanged =
-            currentPackage.originWarehouse.id !=
-                    updatedPackage.originWarehouse.id
+            currentPackage.originWarehouse.id != updatedPackage.originWarehouse.id
 
         if (originChanged) {
-
-            currentPackage.originWarehouse
-                .removePackage(currentPackage)
-
-            updatedPackage.originWarehouse
-                .addPackage(updatedPackage)
-
+            currentPackage.originWarehouse.removePackage(currentPackage)
+            updatedPackage.originWarehouse.addPackage(updatedPackage)
             return
         }
 
-        val packageIndex =
-            updatedPackage.originWarehouse
-                .cargoQueue
-                .indexOfFirst {
-                    it.id == updatedPackage.id
-                }
+        val packageIndex = updatedPackage.originWarehouse.cargoQueue.indexOfFirst {
+            it.id == updatedPackage.id
+        }
 
         if (packageIndex != NOT_FOUND_INDEX) {
-
-            updatedPackage.originWarehouse
-                .updatePackageAtIndex(
-                    packageIndex,
-                    updatedPackage
-                )
+            updatedPackage.originWarehouse.updatePackageAtIndex(
+                packageIndex,
+                updatedPackage
+            )
         }
     }
 
-    private fun replacePackageInRepository(
-        updatedPackage: Package
-    ) {
-
-        val packageIndex =
-            packages.indexOfFirst {
-                it.id == updatedPackage.id
-            }
-
-        packages[packageIndex] = updatedPackage
+    private fun replacePackageInRepository(updatedPackage: Package) {
+        val packageIndex = packages.indexOfFirst { it.id == updatedPackage.id }
+        if (packageIndex != NOT_FOUND_INDEX) {
+            packages[packageIndex] = updatedPackage
+        }
     }
 
     override suspend fun delete(
@@ -255,17 +206,21 @@ class LocalPackageRepositoryImpl(
         runCatching {
             loadPackagesIfNeeded()
 
-            val logisticsPackage =
-                packages.find {
-                    it.id == packageId
-                } ?: throw ResourceNotFoundException(
-                    "Package",
-                    packageId
-                )
+            val logisticsPackage = packages.find { it.id == packageId }
+                ?: throw ResourceNotFoundException.PackageNotFound(packageId)
 
-            logisticsPackage.originWarehouse
-                .removePackage(logisticsPackage)
-
+            logisticsPackage.originWarehouse.removePackage(logisticsPackage)
             packages.remove(logisticsPackage)
+            Unit
+        }.mapLocalDataException()
+
+
+    private fun <T> Result<T>.mapLocalDataException(): Result<T> {
+        return recoverCatching { throwable ->
+            throw when (throwable) {
+                is LocalDataException -> throwable.toDomainException()
+                else -> throwable
+            }
         }
+    }
 }

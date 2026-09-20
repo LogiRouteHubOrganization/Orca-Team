@@ -1,6 +1,8 @@
 package data.repository.local
 
 import data.datasource.VehicleDataSource
+import data.exception.local.LocalDataException
+import data.exception.local.toDomainException
 import data.mapper.VehicleMapper
 import domain.exception.ResourceNotFoundException
 import domain.model.Vehicle
@@ -28,10 +30,7 @@ class LocalVehicleRepositoryImpl(
                 warehouseRepository
                     .findById(rawVehicle.currentHubId)
                     .getOrThrow()
-                    ?: throw ResourceNotFoundException(
-                        "Warehouse",
-                        rawVehicle.currentHubId
-                    )
+                    ?: throw ResourceNotFoundException.WarehouseNotFound(rawVehicle.currentHubId)
 
             val vehicle = vehicleMapper.mapToDomainModel(
                 rawVehicle = rawVehicle,
@@ -50,7 +49,7 @@ class LocalVehicleRepositoryImpl(
             loadVehiclesIfNeeded()
 
             vehicles.toList()
-        }
+        }.mapLocalDataException()
 
     override suspend fun findById(
         vehicleId: String
@@ -59,7 +58,7 @@ class LocalVehicleRepositoryImpl(
             loadVehiclesIfNeeded()
 
             vehicles.find { it.id == vehicleId }
-        }
+        }.mapLocalDataException()
 
     override suspend fun add(
         vehicle: Vehicle
@@ -71,7 +70,7 @@ class LocalVehicleRepositoryImpl(
             vehicle.currentWarehouse.addVehicle(vehicle)
 
             vehicle
-        }
+        }.mapLocalDataException()
 
     override suspend fun update(
         vehicleId: String,
@@ -82,10 +81,7 @@ class LocalVehicleRepositoryImpl(
 
             val currentVehicle =
                 vehicles.find { it.id == vehicleId }
-                    ?: throw ResourceNotFoundException(
-                        "Vehicle",
-                        vehicleId
-                    )
+                    ?: throw ResourceNotFoundException.VehicleNotFound(vehicleId)
 
             val newWarehouse =
                 updateModel.currentWarehouseId
@@ -93,10 +89,7 @@ class LocalVehicleRepositoryImpl(
                         warehouseRepository
                             .findById(warehouseId)
                             .getOrThrow()
-                            ?: throw ResourceNotFoundException(
-                                "Warehouse",
-                                warehouseId
-                            )
+                            ?: throw ResourceNotFoundException.WarehouseNotFound(warehouseId)
                     }
                     ?: currentVehicle.currentWarehouse
 
@@ -116,10 +109,12 @@ class LocalVehicleRepositoryImpl(
             val vehicleIndex =
                 vehicles.indexOfFirst { it.id == vehicleId }
 
-            vehicles[vehicleIndex] = updatedVehicle
+            if (vehicleIndex != -1) {
+                vehicles[vehicleIndex] = updatedVehicle
+            }
 
             updatedVehicle
-        }
+        }.mapLocalDataException()
 
     private fun updateVehicleRelations(
         previousVehicle: Vehicle,
@@ -161,12 +156,20 @@ class LocalVehicleRepositoryImpl(
 
             val vehicle =
                 vehicles.find { it.id == vehicleId }
-                    ?: throw ResourceNotFoundException(
-                        "Vehicle",
-                        vehicleId
-                    )
+                    ?: throw ResourceNotFoundException.VehicleNotFound(vehicleId)
 
             vehicle.currentWarehouse.removeVehicle(vehicle)
             vehicles.remove(vehicle)
+            Unit
+        }.mapLocalDataException()
+
+
+    private fun <T> Result<T>.mapLocalDataException(): Result<T> {
+        return recoverCatching { throwable ->
+            throw when (throwable) {
+                is LocalDataException -> throwable.toDomainException()
+                else -> throwable
+            }
         }
+    }
 }

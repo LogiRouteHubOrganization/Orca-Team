@@ -1,6 +1,8 @@
 package data.repository.local
 
 import data.datasource.WarehouseDataSource
+import data.exception.local.LocalDataException
+import data.exception.local.toDomainException
 import data.mapper.WarehouseMapper
 import domain.exception.ResourceNotFoundException
 import domain.model.Warehouse
@@ -18,8 +20,7 @@ class LocalWarehouseRepositoryImpl(
     private fun loadWarehousesIfNeeded() {
         if (isLoaded) return
 
-        val rawWarehouses =
-            warehouseDataSource.loadWarehouses()
+        val rawWarehouses = warehouseDataSource.loadWarehouses()
 
         rawWarehouses
             .map(warehouseMapper::mapToDomainModel)
@@ -33,7 +34,7 @@ class LocalWarehouseRepositoryImpl(
             loadWarehousesIfNeeded()
 
             warehouses.toList()
-        }
+        }.mapLocalDataException()
 
     override suspend fun findById(
         warehouseId: String
@@ -42,7 +43,7 @@ class LocalWarehouseRepositoryImpl(
             loadWarehousesIfNeeded()
 
             warehouses.find { it.id == warehouseId }
-        }
+        }.mapLocalDataException()
 
     override suspend fun add(
         warehouse: Warehouse
@@ -53,7 +54,7 @@ class LocalWarehouseRepositoryImpl(
             warehouses.add(warehouse)
 
             warehouse
-        }
+        }.mapLocalDataException()
 
     override suspend fun update(
         warehouseId: String,
@@ -64,10 +65,7 @@ class LocalWarehouseRepositoryImpl(
 
             val warehouse =
                 warehouses.find { it.id == warehouseId }
-                    ?: throw ResourceNotFoundException(
-                        "Warehouse",
-                        warehouseId
-                    )
+                    ?: throw ResourceNotFoundException.WarehouseNotFound(warehouseId)
 
             warehouse.updateDetails(
                 name = updateModel.name
@@ -84,7 +82,7 @@ class LocalWarehouseRepositoryImpl(
             )
 
             warehouse
-        }
+        }.mapLocalDataException()
 
     override suspend fun delete(
         warehouseId: String
@@ -94,11 +92,19 @@ class LocalWarehouseRepositoryImpl(
 
             val warehouse =
                 warehouses.find { it.id == warehouseId }
-                    ?: throw ResourceNotFoundException(
-                        "Warehouse",
-                        warehouseId
-                    )
+                    ?: throw ResourceNotFoundException.WarehouseNotFound(warehouseId)
 
             warehouses.remove(warehouse)
+            Unit
+        }.mapLocalDataException()
+
+
+    private fun <T> Result<T>.mapLocalDataException(): Result<T> {
+        return recoverCatching { throwable ->
+            throw when (throwable) {
+                is LocalDataException -> throwable.toDomainException()
+                else -> throwable
+            }
         }
+    }
 }
