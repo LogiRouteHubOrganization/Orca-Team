@@ -445,7 +445,7 @@ DomainException
 ├── NetworkUnavailableException
 ├── EntityValidationException
 ├── ResourceNotFoundException
-└── DatabaseConflictException
+└── EntityConflictException
 ```
 
 This allows failures to retain meaningful business-level information.
