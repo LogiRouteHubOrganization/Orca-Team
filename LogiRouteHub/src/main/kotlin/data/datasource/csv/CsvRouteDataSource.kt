@@ -2,21 +2,21 @@ package data.datasource.csv
 
 import data.dataholder.RouteRaw
 import data.datasource.RouteDataSource
-import data.exception.LocalDataException
+import data.exception.local.LocalDataException
 import data.parser.RouteParser
-import data.validation.CsvFileValidator
+import data.validation.LocalDataSourceValidator
 import java.io.File
 
 class CsvRouteDataSource(
     private val routeFile: File,
     private val routeParser: RouteParser,
-    private val csvFileValidator: CsvFileValidator
+    private val localDataSourceValidator: LocalDataSourceValidator
 ) : RouteDataSource {
 
     private val headerLineCount = 1
 
     override fun loadRoutes(): List<RouteRaw> {
-        csvFileValidator.validate(routeFile)
+        localDataSourceValidator.validate(routeFile)
 
         val lines = routeFile.readLines()
 

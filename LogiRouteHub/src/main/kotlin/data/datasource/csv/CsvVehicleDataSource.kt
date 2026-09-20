@@ -2,21 +2,21 @@ package data.datasource.csv
 
 import data.dataholder.FleetRaw
 import data.datasource.VehicleDataSource
-import data.exception.LocalDataException
+import data.exception.local.LocalDataException
 import data.parser.FleetParser
-import data.validation.CsvFileValidator
+import data.validation.LocalDataSourceValidator
 import java.io.File
 
 class CsvVehicleDataSource(
     private val vehicleFile: File,
     private val fleetParser: FleetParser,
-    private val csvFileValidator: CsvFileValidator
+    private val localDataSourceValidator: LocalDataSourceValidator
 ) : VehicleDataSource {
 
     private val headerLineCount = 1
 
     override fun loadVehicles(): List<FleetRaw> {
-        csvFileValidator.validate(vehicleFile)
+        localDataSourceValidator.validate(vehicleFile)
 
         val lines = vehicleFile.readLines()
 
