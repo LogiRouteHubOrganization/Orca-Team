@@ -12,16 +12,16 @@ suspend fun <T> safeApiCall(
         block()
     } catch (e: RestException) {
         when (e.statusCode) {
-            401, 403 -> throw NetworkException.Unauthorized(e.message ?: "Unauthorized access")
-            404 -> throw NetworkException.NotFound(e.message ?: "Resource not found")
-            in 500..599 -> throw NetworkException.ServerError(e.message ?: "Server error")
-            else -> throw NetworkException.Unknown(e.message ?: "Unknown Supabase error", e)
+            401, 403 -> throw NetworkException.UnauthorizedException(e.message ?: "Unauthorized access")
+            404 -> throw NetworkException.NotFoundException(e.message ?: "Resource not found")
+            in 500..599 -> throw NetworkException.ServerErrorException(e.message ?: "Server error")
+            else -> throw NetworkException.UnknownNetworkException(e.message ?: "Unknown Supabase error", e)
         }
     } catch (e: UnknownHostException) {
-        throw NetworkException.NoInternet("No internet connection available")
+        throw NetworkException.NoInternetException("No internet connection available")
     } catch (e: HttpRequestTimeoutException) {
-        throw NetworkException.NoInternet("Request timed out")
+        throw NetworkException.NoInternetException("Request timed out")
     } catch (e: Exception) {
-        throw NetworkException.Unknown(e.message ?: "An unexpected error occurred", e)
+        throw NetworkException.UnknownNetworkException(e.message ?: "An unexpected error occurred", e)
     }
 }
