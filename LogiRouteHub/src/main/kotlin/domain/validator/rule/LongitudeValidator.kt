@@ -1,5 +1,6 @@
 package domain.validator.rule
 
+import domain.validator.FieldViolation
 import domain.validator.ValidationError
 import domain.validator.ValidationResult
 import domain.validator.Validator
@@ -15,10 +16,7 @@ class LongitudeValidator(
         } else {
             ValidationResult.Failure(
                 listOf(
-                    ValidationError(
-                        field = field,
-                        reason = "Longitude must be between -180 and 180"
-                    )
+                    FieldViolation(field = field, error = ValidationError.InvalidLongitude)
                 )
             )
         }

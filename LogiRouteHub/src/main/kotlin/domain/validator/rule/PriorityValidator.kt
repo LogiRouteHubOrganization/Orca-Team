@@ -1,5 +1,6 @@
 package domain.validator.rule
 
+import domain.validator.FieldViolation
 import domain.validator.ValidationError
 import domain.validator.ValidationResult
 import domain.validator.Validator
@@ -18,22 +19,20 @@ class PriorityValidator(
         if (value.isNullOrBlank()) {
             return ValidationResult.Failure(
                 listOf(
-                    ValidationError(
-                        field = field,
-                        reason = "Priority must not be blank"
-                    )
+                    FieldViolation(field = field, error = ValidationError.BlankPriority)
                 )
             )
         }
-
         return if (value in allowedPriorities) {
             ValidationResult.Success
         } else {
             ValidationResult.Failure(
                 listOf(
-                    ValidationError(
+                    FieldViolation(
                         field = field,
-                        reason = "Priority must be one of: ${allowedPriorities.joinToString()}"
+                        error = ValidationError.InvalidPriority(
+                            allowedPriorities = allowedPriorities
+                        )
                     )
                 )
             )
