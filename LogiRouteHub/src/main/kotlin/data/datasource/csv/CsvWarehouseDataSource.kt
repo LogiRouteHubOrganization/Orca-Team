@@ -28,11 +28,8 @@ class CsvWarehouseDataSource(
 
         val dataRows = warehouseRows.drop(headerLineCount)
 
-        return dataRows.mapIndexed { index, row ->
+        return dataRows.mapNotNull { row ->
             warehouseParser.parseWarehouseRow(row)
-                ?: throw LocalDataException(
-                    "Invalid warehouse row at line ${index + headerLineCount + 1}"
-                )
         }
     }
 }

@@ -28,12 +28,8 @@ class CsvPackageDataSource(
 
         val dataRows = packageRows.drop(headerLineCount)
 
-        return dataRows.mapIndexed { index, packageRow ->
-
+        return dataRows.mapNotNull { packageRow ->
             packageParser.parsePackageRow(packageRow)
-                ?: throw LocalDataException(
-                    "Invalid package row at line ${index + headerLineCount + 1}"
-                )
         }
     }
 }

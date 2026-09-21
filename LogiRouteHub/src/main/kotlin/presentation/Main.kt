@@ -74,12 +74,17 @@ suspend fun main() {
         println()
         println("===== APPLICATION ERROR =====")
         println(formatApplicationError(exception))
+
+        println()
+        println("===== ROOT CAUSE =====")
+        exception.printStackTrace()
+
         println("The application completed without an unexpected crash.")
     }
 }
 
 private suspend fun runApplication() {
-
+/*
     /*
      * -------------------------------------------------------------
      * PART 1: Existing local CSV flow
@@ -178,13 +183,13 @@ private suspend fun runApplication() {
 
     displayTreePerformanceResult(simulationResult)
 
-
+*/
     /*
      * -------------------------------------------------------------
      * PART 2: Existing successful CRUD demonstration
      * -------------------------------------------------------------
      */
-
+/*
     val createWarehouseUseCase = CreateWarehouseUseCase(warehouseRepository = warehouseRepository)
 
     val warehouse = Warehouse(
@@ -209,7 +214,7 @@ private suspend fun runApplication() {
             println("===== LOCAL CRUD FAILURE =====")
             println(formatApplicationError(exception))
         }
-
+*/
     /*
      * -------------------------------------------------------------
      * PART 3: Live Supabase repositories
