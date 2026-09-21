@@ -74,11 +74,6 @@ suspend fun main() {
         println()
         println("===== APPLICATION ERROR =====")
         println(formatApplicationError(exception))
-
-        println()
-        println("===== ROOT CAUSE =====")
-        exception.printStackTrace()
-
         println("The application completed without an unexpected crash.")
     }
 }
