@@ -1,5 +1,6 @@
 package domain.validator.rule
 
+import domain.validator.FieldViolation
 import domain.validator.ValidationError
 import domain.validator.ValidationResult
 import domain.validator.Validator
@@ -15,10 +16,7 @@ class LatitudeValidator(
         } else {
             ValidationResult.Failure(
                 listOf(
-                    ValidationError(
-                        field = field,
-                        reason = "Latitude must be between -90 and 90"
-                    )
+                    FieldViolation(field = field, error = ValidationError.InvalidLatitude)
                 )
             )
         }

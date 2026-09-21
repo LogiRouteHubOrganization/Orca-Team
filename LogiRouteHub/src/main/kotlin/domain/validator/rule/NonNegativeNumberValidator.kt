@@ -1,5 +1,6 @@
 package domain.validator.rule
 
+import domain.validator.FieldViolation
 import domain.validator.ValidationError
 import domain.validator.ValidationResult
 import domain.validator.Validator
@@ -15,10 +16,7 @@ class NonNegativeNumberValidator(
         } else {
             ValidationResult.Failure(
                 listOf(
-                    ValidationError(
-                        field = field,
-                        reason = "Value must be greater than or equal to 0"
-                    )
+                    FieldViolation(field = field, error = ValidationError.MustBeNonNegative)
                 )
             )
         }
