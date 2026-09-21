@@ -39,7 +39,7 @@ import domain.exception.ServerErrorException
 import domain.exception.UnauthorizedException
 import domain.exception.UnknownDomainException
 import domain.model.Warehouse
-import domain.validation.*
+import domain.demo.*
 import domain.repository.WarehouseRepository
 import domain.model.request.AnalyzeTreePerformanceRequest
 import domain.pricing.EcoStrategy
@@ -159,7 +159,7 @@ private suspend fun runApplication() {
         warehouseRepository = warehouseRepository
     )
 
-    HubTreeValidation(warehouseIndex).validateHubTree()
+    HubTreeDemo(warehouseIndex).validateHubTree()
 
     val trackingIdGenerator = SequentialTrackingIdGenerator()
     val unbalancedBST = UnbalancedBST()
@@ -602,28 +602,28 @@ private suspend fun validateRoutingAlgorithms(
             shortestPathFinder = shortestPathRouter
         )
 
-    val dijkstraRoutingValidation =
-        DijkstraRoutingValidation(
+    val dijkstraRoutingDemo =
+        DijkstraRoutingDemo(
             warehouseIndex = warehouseIndex,
             router = shortestPathRouter,
             findOptimalPathUseCase =
                 findOptimalPathUseCase
         )
 
-    dijkstraRoutingValidation.validateRouting()
+    dijkstraRoutingDemo.validateRouting()
 
     val bidirectionalRouter =
         BidirectionalRouter(
             warehouseIndex.values.toList()
         )
 
-    val bidirectionalRoutingValidation =
-        BidirectionalRoutingValidation(
+    val bidirectionalRoutingDemo =
+        BidirectionalRoutingDemo(
             warehouseIndex = warehouseIndex,
             router = bidirectionalRouter
         )
 
-    bidirectionalRoutingValidation.validateRouting()
+    bidirectionalRoutingDemo.validateRouting()
 }
 
 private fun validateQuickSort(

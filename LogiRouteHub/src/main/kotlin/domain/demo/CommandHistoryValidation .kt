@@ -1,4 +1,4 @@
-package domain.validation
+package domain.demo
 
 import domain.command.*
 import domain.command.telemetry.CommandTelemetry

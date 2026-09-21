@@ -1,4 +1,4 @@
-package domain.validation
+package domain.demo
 
 import domain.model.Package
 import domain.model.Route
