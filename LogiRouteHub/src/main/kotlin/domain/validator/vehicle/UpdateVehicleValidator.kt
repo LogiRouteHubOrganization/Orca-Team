@@ -1,6 +1,7 @@
 package domain.validator.vehicle
 
 import domain.model.updateinput.VehicleUpdateModel
+import domain.validator.FieldViolation
 import domain.validator.ValidationError
 import domain.validator.ValidationResult
 import domain.validator.rule.IdValidator
@@ -12,7 +13,6 @@ class UpdateVehicleValidator {
         updateModel: VehicleUpdateModel
     ): ValidationResult {
 
-
         val hasUpdate = listOf(
             updateModel.maxCapacityKg,
             updateModel.costPerKm,
@@ -22,14 +22,10 @@ class UpdateVehicleValidator {
         if (!hasUpdate) {
             return ValidationResult.Failure(
                 listOf(
-                    ValidationError(
-                        field = "update",
-                        reason = "At least one field must be provided for update"
-                    )
+                    FieldViolation(field = "update", error = ValidationError.EmptyUpdate)
                 )
             )
         }
-
 
         val results = listOfNotNull(
             updateModel.maxCapacityKg?.let { maxCapacity ->
@@ -37,13 +33,11 @@ class UpdateVehicleValidator {
                     field = "maxCapacityKg"
                 ).validate(maxCapacity)
             },
-
             updateModel.costPerKm?.let { cost ->
                 PositiveNumberValidator(
                     field = "costPerKm"
                 ).validate(cost)
             },
-
             updateModel.currentWarehouseId?.let { warehouseId ->
                 IdValidator(
                     field = "currentWarehouseId",
@@ -51,10 +45,7 @@ class UpdateVehicleValidator {
                 ).validate(warehouseId)
             }
         )
-
-
-        val errors = results
-            .filterIsInstance<ValidationResult.Failure>()
+        val errors = results.filterIsInstance<ValidationResult.Failure>()
             .flatMap { it.errors }
 
         return if (errors.isEmpty()) {

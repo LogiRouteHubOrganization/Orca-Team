@@ -1,6 +1,7 @@
 package domain.validator.warehouse
 
 import domain.model.updateinput.WarehouseUpdateModel
+import domain.validator.FieldViolation
 import domain.validator.ValidationError
 import domain.validator.ValidationResult
 import domain.validator.rule.LatitudeValidator
@@ -23,10 +24,7 @@ class UpdateWarehouseValidator {
         if (!hasUpdate) {
             return ValidationResult.Failure(
                 listOf(
-                    ValidationError(
-                        field = "update",
-                        reason = "At least one field must be provided for update"
-                    )
+                    FieldViolation(field = "update", error = ValidationError.EmptyUpdate)
                 )
             )
         }
@@ -57,8 +55,7 @@ class UpdateWarehouseValidator {
             }
         )
 
-        val errors = results
-            .filterIsInstance<ValidationResult.Failure>()
+        val errors = results.filterIsInstance<ValidationResult.Failure>()
             .flatMap { it.errors }
 
         return if (errors.isEmpty()) {

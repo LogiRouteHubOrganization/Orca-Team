@@ -1,6 +1,7 @@
 package domain.validator.route
 
 import domain.model.updateinput.RouteUpdateModel
+import domain.validator.FieldViolation
 import domain.validator.ValidationError
 import domain.validator.ValidationResult
 import domain.validator.rule.IdValidator
@@ -24,15 +25,13 @@ class UpdateRouteValidator {
         if (!hasUpdate) {
             return ValidationResult.Failure(
                 listOf(
-                    ValidationError(
-                        field = "update",
-                        reason = "At least one field must be provided for update"
-                    )
+                    FieldViolation(field = "update", error = ValidationError.EmptyUpdate)
                 )
             )
         }
 
-        val results = listOfNotNull(IdValidator(
+        val results = listOfNotNull(
+            IdValidator(
                 field = "routeId",
                 allowedPrefixes = setOf("RT-")
             ).validate(routeId),
@@ -63,10 +62,9 @@ class UpdateRouteValidator {
                 ).validate(delay)
             }
         )
-
-        val errors = results.filterIsInstance<ValidationResult.Failure>()
+        val errors = results
+            .filterIsInstance<ValidationResult.Failure>()
             .flatMap { it.errors }
-
         return if (errors.isEmpty()) {
             ValidationResult.Success
         } else {

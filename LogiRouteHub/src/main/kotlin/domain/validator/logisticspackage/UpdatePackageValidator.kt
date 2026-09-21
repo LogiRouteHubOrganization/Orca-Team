@@ -1,6 +1,7 @@
 package domain.validator.logisticspackage
 
 import domain.model.updateinput.PackageUpdateModel
+import domain.validator.FieldViolation
 import domain.validator.ValidationError
 import domain.validator.ValidationResult
 import domain.validator.rule.IdValidator
@@ -13,7 +14,6 @@ class UpdatePackageValidator {
         updateModel: PackageUpdateModel
     ): ValidationResult {
 
-
         val hasUpdate = listOf(
             updateModel.weightByKg,
             updateModel.priority,
@@ -24,15 +24,10 @@ class UpdatePackageValidator {
         if (!hasUpdate) {
             return ValidationResult.Failure(
                 listOf(
-                    ValidationError(
-                        field = "update",
-                        reason = "At least one field must be provided for update"
-                    )
+                    FieldViolation(field = "update", error = ValidationError.EmptyUpdate)
                 )
             )
         }
-
-
         val results = listOfNotNull(
             updateModel.weightByKg?.let { weight ->
                 PositiveNumberValidator(
@@ -61,10 +56,7 @@ class UpdatePackageValidator {
             }
         )
 
-
-        val errors = results
-            .filterIsInstance<ValidationResult.Failure>()
-            .flatMap { it.errors }
+        val errors = results.filterIsInstance<ValidationResult.Failure>().flatMap { it.errors }
 
         return if (errors.isEmpty()) {
             ValidationResult.Success
