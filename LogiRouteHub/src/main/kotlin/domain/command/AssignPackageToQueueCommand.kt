@@ -1,6 +1,7 @@
 package domain.command
 
 import domain.command.telemetry.CommandTelemetry
+import domain.command.telemetry.QueueState
 import domain.model.Package
 import domain.model.Warehouse
 import domain.model.updateinput.WarehouseUpdateModel
@@ -26,90 +27,116 @@ class AssignPackageToQueueCommand(
 
     override val commandType = "AssignPackageToQueueCommand"
 
-    override suspend fun execute(): Boolean {
-        val currentWarehouse =
-            logisticsPackage.originWarehouse
+    override suspend fun execute(): Result<Unit> {
+        return runCatching {
+            val currentWarehouse =
+                logisticsPackage.originWarehouse
 
-        warehouse = currentWarehouse
+            warehouse = currentWarehouse
 
-        previousWarehouseQueue =
-            currentWarehouse.cargoQueue.toList()
+            previousWarehouseQueue =
+                currentWarehouse.cargoQueue.toList()
 
-        dependencies.assignPackageToCargoQueueUseCase(logisticsPackage)
+            dependencies.assignPackageToCargoQueueUseCase(
+                logisticsPackage
+            )
 
-        afterWarehouseQueue =
-            currentWarehouse.cargoQueue.toList()
+            afterWarehouseQueue =
+                currentWarehouse.cargoQueue.toList()
 
-        val isQueueChanged =
-            currentWarehouse.cargoQueue != previousWarehouseQueue
+            recordStateTransition()
 
-        if (isQueueChanged) {
+            Unit
+        }
+    }
+
+    override suspend fun undo(): Result<Unit> {
+        return runCatching {
+            val executedWarehouse =
+                warehouse ?: error("Command has not been executed")
+
+            val oldQueue =
+                previousWarehouseQueue
+                    ?: error("Previous state is unavailable")
+
+            val newQueue =
+                afterWarehouseQueue
+                    ?: error("After state is unavailable")
+
+            executedWarehouse.restoreCargoQueue(oldQueue)
+
+            dependencies.warehouseRepository.update(
+                executedWarehouse.id,
+                WarehouseUpdateModel(
+                    name = executedWarehouse.name,
+                    regionalZone = executedWarehouse.regionalZone,
+                    latitude = executedWarehouse.latitude,
+                    longitude = executedWarehouse.longitude
+                )
+            ).getOrThrow()
+
             dependencies.telemetry.recordStateTransition(
                 commandType = commandType,
-                beforeState = createQueueState(previousWarehouseQueue),
-                afterState = createQueueState(afterWarehouseQueue)
+                beforeState = QueueState(
+                    newQueue.map { it.id }
+                ),
+                afterState = QueueState(
+                    oldQueue.map { it.id }
+                )
             )
+
+            Unit
         }
-
-        return isQueueChanged
     }
 
-    override suspend fun undo() {
-        val executedWarehouse = warehouse ?: return
+    override suspend fun redo(): Result<Unit> {
+        return runCatching {
+            val executedWarehouse =
+                warehouse ?: error("Command has not been executed")
 
-        val oldQueue = previousWarehouseQueue ?: return
+            val oldQueue =
+                previousWarehouseQueue
+                    ?: error("Previous state is unavailable")
 
-        val newQueue = afterWarehouseQueue ?: return
+            val newQueue =
+                afterWarehouseQueue
+                    ?: error("After state is unavailable")
 
-        executedWarehouse.restoreCargoQueue(oldQueue)
+            executedWarehouse.restoreCargoQueue(newQueue)
 
-        dependencies.warehouseRepository.update(
-            executedWarehouse.id,
-            WarehouseUpdateModel(
-                name = executedWarehouse.name,
-                regionalZone = executedWarehouse.regionalZone,
-                latitude = executedWarehouse.latitude,
-                longitude = executedWarehouse.longitude
+            dependencies.warehouseRepository.update(
+                executedWarehouse.id,
+                WarehouseUpdateModel(
+                    name = executedWarehouse.name,
+                    regionalZone = executedWarehouse.regionalZone,
+                    latitude = executedWarehouse.latitude,
+                    longitude = executedWarehouse.longitude
+                )
+            ).getOrThrow()
+
+            dependencies.telemetry.recordStateTransition(
+                commandType = commandType,
+                beforeState = QueueState(
+                    oldQueue.map { it.id }
+                ),
+                afterState = QueueState(
+                    newQueue.map { it.id }
+                )
             )
-        )
 
+            Unit
+        }
+    }
+
+    private fun recordStateTransition() {
         dependencies.telemetry.recordStateTransition(
             commandType = commandType,
-            beforeState = createQueueState(newQueue),
-            afterState = createQueueState(oldQueue)
-        )
-    }
-
-    override suspend fun redo() {
-        val executedWarehouse = warehouse ?: return
-
-        val oldQueue = previousWarehouseQueue ?: return
-
-        val newQueue = afterWarehouseQueue ?: return
-
-        executedWarehouse.restoreCargoQueue(newQueue)
-
-        dependencies.warehouseRepository.update(
-            executedWarehouse.id,
-            WarehouseUpdateModel(
-                name = executedWarehouse.name,
-                regionalZone = executedWarehouse.regionalZone,
-                latitude = executedWarehouse.latitude,
-                longitude = executedWarehouse.longitude
+            beforeState = QueueState(
+                previousWarehouseQueue.orEmpty().map { it.id }
+            ),
+            afterState = QueueState(
+                afterWarehouseQueue.orEmpty().map { it.id }
             )
         )
-
-        dependencies.telemetry.recordStateTransition(
-            commandType = commandType,
-            beforeState = createQueueState(oldQueue),
-            afterState = createQueueState(newQueue)
-        )
-    }
-
-    private fun createQueueState(
-        queue: List<Package>?
-    ): String {
-        return "Queue count: ${queue?.size}\n" +
-                "First packages: ${queue?.take(5)?.map { it.id }}"
     }
 }
