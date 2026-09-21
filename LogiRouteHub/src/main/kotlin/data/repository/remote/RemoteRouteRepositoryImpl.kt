@@ -1,4 +1,3 @@
-
 package data.repository.remote
 
 import data.remote.datasource.RouteRemoteDataSource
@@ -28,16 +27,14 @@ class RemoteRouteRepositoryImpl(
             val originWarehouse = warehouseRepository
                 .findById(routeDto.originWarehouseId)
                 .getOrThrow()
-                ?: throw ResourceNotFoundException(
-                    "Warehouse",
+                ?: throw ResourceNotFoundException.WarehouseNotFound(
                     routeDto.originWarehouseId
                 )
 
             val destinationWarehouse = warehouseRepository
                 .findById(routeDto.destinationWarehouseId)
                 .getOrThrow()
-                ?: throw ResourceNotFoundException(
-                    "Warehouse",
+                ?: throw ResourceNotFoundException.WarehouseNotFound(
                     routeDto.destinationWarehouseId
                 )
 
@@ -68,15 +65,13 @@ class RemoteRouteRepositoryImpl(
 
                 val originWarehouse = warehousesById[
                     routeDto.originWarehouseId
-                ] ?: throw ResourceNotFoundException(
-                    "Warehouse",
+                ] ?: throw ResourceNotFoundException.WarehouseNotFound(
                     routeDto.originWarehouseId
                 )
 
                 val destinationWarehouse = warehousesById[
                     routeDto.destinationWarehouseId
-                ] ?: throw ResourceNotFoundException(
-                    "Warehouse",
+                ] ?: throw ResourceNotFoundException.WarehouseNotFound(
                     routeDto.destinationWarehouseId
                 )
 
@@ -104,16 +99,14 @@ class RemoteRouteRepositoryImpl(
             val originWarehouse = warehouseRepository
                 .findById(createdDto.originWarehouseId)
                 .getOrThrow()
-                ?: throw ResourceNotFoundException(
-                    "Warehouse",
+                ?: throw ResourceNotFoundException.WarehouseNotFound(
                     createdDto.originWarehouseId
                 )
 
             val destinationWarehouse = warehouseRepository
                 .findById(createdDto.destinationWarehouseId)
                 .getOrThrow()
-                ?: throw ResourceNotFoundException(
-                    "Warehouse",
+                ?: throw ResourceNotFoundException.WarehouseNotFound(
                     createdDto.destinationWarehouseId
                 )
 
@@ -143,16 +136,14 @@ class RemoteRouteRepositoryImpl(
             val originWarehouse = warehouseRepository
                 .findById(updatedDto.originWarehouseId)
                 .getOrThrow()
-                ?: throw ResourceNotFoundException(
-                    "Warehouse",
+                ?: throw ResourceNotFoundException.WarehouseNotFound(
                     updatedDto.originWarehouseId
                 )
 
             val destinationWarehouse = warehouseRepository
                 .findById(updatedDto.destinationWarehouseId)
                 .getOrThrow()
-                ?: throw ResourceNotFoundException(
-                    "Warehouse",
+                ?: throw ResourceNotFoundException.WarehouseNotFound(
                     updatedDto.destinationWarehouseId
                 )
 

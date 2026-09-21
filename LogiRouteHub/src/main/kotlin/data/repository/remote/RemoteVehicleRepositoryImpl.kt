@@ -1,4 +1,3 @@
-
 package data.repository.remote
 
 import data.remote.datasource.VehicleRemoteDataSource
@@ -28,8 +27,7 @@ class RemoteVehicleRepositoryImpl(
             val currentWarehouse = warehouseRepository
                 .findById(vehicleDto.currentWarehouseId)
                 .getOrThrow()
-                ?: throw ResourceNotFoundException(
-                    "Warehouse",
+                ?: throw ResourceNotFoundException.WarehouseNotFound(
                     vehicleDto.currentWarehouseId
                 )
 
@@ -59,8 +57,7 @@ class RemoteVehicleRepositoryImpl(
 
                 val currentWarehouse = warehousesById[
                     vehicleDto.currentWarehouseId
-                ] ?: throw ResourceNotFoundException(
-                    "Warehouse",
+                ] ?: throw ResourceNotFoundException.WarehouseNotFound(
                     vehicleDto.currentWarehouseId
                 )
 
@@ -87,8 +84,7 @@ class RemoteVehicleRepositoryImpl(
             val currentWarehouse = warehouseRepository
                 .findById(createdDto.currentWarehouseId)
                 .getOrThrow()
-                ?: throw ResourceNotFoundException(
-                    "Warehouse",
+                ?: throw ResourceNotFoundException.WarehouseNotFound(
                     createdDto.currentWarehouseId
                 )
 
@@ -117,8 +113,7 @@ class RemoteVehicleRepositoryImpl(
             val currentWarehouse = warehouseRepository
                 .findById(updatedDto.currentWarehouseId)
                 .getOrThrow()
-                ?: throw ResourceNotFoundException(
-                    "Warehouse",
+                ?: throw ResourceNotFoundException.WarehouseNotFound(
                     updatedDto.currentWarehouseId
                 )
 
@@ -147,4 +142,3 @@ class RemoteVehicleRepositoryImpl(
         }
     }
 }
-

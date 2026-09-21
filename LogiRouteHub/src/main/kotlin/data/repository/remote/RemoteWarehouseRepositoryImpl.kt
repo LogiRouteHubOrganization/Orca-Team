@@ -1,4 +1,3 @@
-
 package data.repository.remote
 
 import data.remote.datasource.WarehouseRemoteDataSource
