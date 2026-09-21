@@ -11,6 +11,7 @@ class UpdateRouteUseCase(
     private val routeRepository: RouteRepository,
     private val routeValidator: UpdateRouteValidator
 ) {
+
     suspend operator fun invoke(
         routeId: String,
         updateModel: RouteUpdateModel
@@ -22,14 +23,12 @@ class UpdateRouteUseCase(
                 updateModel = updateModel
             )
         ) {
-            ValidationResult.Success ->
-                routeRepository.update(
+            ValidationResult.Success -> routeRepository.update(
                     routeId = routeId,
                     updateModel = updateModel
                 )
 
-            is ValidationResult.Failure ->
-                Result.failure(
+            is ValidationResult.Failure -> Result.failure(
                     EntityValidationException(validationResult.errors)
                 )
         }
