@@ -82,13 +82,11 @@ private suspend fun runApplication() {
 
     /*
      * -------------------------------------------------------------
-     * PART 1: Existing local CSV validation flow
+     * PART 1: Existing local CSV flow
      * -------------------------------------------------------------
      */
 
-
     val localDataSourceValidator = LocalDataSourceValidator()
-
 
     val warehouseDataSource = CsvWarehouseDataSource(
         warehouseFile = File(WAREHOUSES_FILE_PATH),
@@ -142,9 +140,7 @@ private suspend fun runApplication() {
         warehouseRepository = warehouseRepository
     )
 
-    val warehouses = warehouseRepository
-        .findAll()
-        .getOrThrow()
+    val warehouses = warehouseRepository.findAll().getOrThrow()
 
     packageRepository.findAll().getOrThrow()
     vehicleRepository.findAll().getOrThrow()
@@ -159,34 +155,29 @@ private suspend fun runApplication() {
         warehouseRepository = warehouseRepository
     )
 
-    HubTreeDemo(warehouseIndex).validateHubTree()
+    HubTreeDemo(warehouseIndex).runDemo()
 
     val trackingIdGenerator = SequentialTrackingIdGenerator()
     val unbalancedBST = UnbalancedBST()
     val balancedBST = BalancedBST()
 
-    val analyzeTreePerformanceUseCase =
-        AnalyzeTreePerformanceUseCase(
+    val analyzeTreePerformanceUseCase = AnalyzeTreePerformanceUseCase(
             generator = trackingIdGenerator,
             unbalancedBST = unbalancedBST,
             balancedBST = balancedBST
         )
 
-    val analyzeTreePerformanceRequest =
-        AnalyzeTreePerformanceRequest(
+    val analyzeTreePerformanceRequest = AnalyzeTreePerformanceRequest(
             numberOfTrackingIds = 1000,
             nanoTimeProvider = System::nanoTime
         )
 
-    val simulationResult =
-        analyzeTreePerformanceUseCase(
+    val simulationResult = analyzeTreePerformanceUseCase(
             analyzeTreePerformanceRequest
         )
 
     displayTreePerformanceResult(simulationResult)
 
-    validateCommandPattern(warehouseIndex)
-    validateCommandHistory(warehouseIndex)
 
     /*
      * -------------------------------------------------------------
@@ -194,10 +185,7 @@ private suspend fun runApplication() {
      * -------------------------------------------------------------
      */
 
-    val createWarehouseUseCase = CreateWarehouseUseCase(
-        warehouseRepository = warehouseRepository,
-        warehouseValidator = domain.validator.warehouse.CreateWarehouseValidator()
-    )
+    val createWarehouseUseCase = CreateWarehouseUseCase(warehouseRepository = warehouseRepository)
 
     val warehouse = Warehouse(
         id = "WH-000001",
@@ -558,12 +546,9 @@ private fun validatePricingAndDecorators(
 
     val packageDecoratorComposer = PackageDecoratorComposer()
 
-    val calculatePricingUseCase =
-        CalculatePricingUseCase(
-            packageDecoratorComposer
-        )
+    val calculatePricingUseCase = CalculatePricingUseCase(packageDecoratorComposer)
 
-    validateDecoratorIntegration(
+    demonstrateDecoratorIntegration(
         warehouseIndex = warehouseIndex,
         calculatePricingUseCase = calculatePricingUseCase,
         dispatchStrategy = ecoStrategy
@@ -576,28 +561,24 @@ private suspend fun validateRoutingAlgorithms(
 ) {
     val leastHopRouter = LeastHopRouter()
 
-    val findFewestHopsRouteUseCase =
-        FindFewestHopsRouteUseCase(
+    val findFewestHopsRouteUseCase = FindFewestHopsRouteUseCase(
             warehouseRepository = warehouseRepository,
             pathFinder = leastHopRouter
         )
 
-    val routingValidation =
-        LeastHopRoutingValidation(
+    val leastHopRoutingDemo = LeastHopRoutingDemo(
             warehouseIndex = warehouseIndex,
             findFewestHopsRouteUseCase =
                 findFewestHopsRouteUseCase
         )
 
-    routingValidation.validateRouting()
+    leastHopRoutingDemo.runDemo()
 
-    val shortestPathRouter =
-        ShortestPathRouter(
+    val shortestPathRouter = ShortestPathRouter(
             warehouseIndex.values.toList()
         )
 
-    val findOptimalPathUseCase =
-        FindOptimalPathUseCase(
+    val findOptimalPathUseCase = FindOptimalPathUseCase(
             warehouseRepository = warehouseRepository,
             shortestPathFinder = shortestPathRouter
         )
@@ -605,25 +586,22 @@ private suspend fun validateRoutingAlgorithms(
     val dijkstraRoutingDemo =
         DijkstraRoutingDemo(
             warehouseIndex = warehouseIndex,
-            router = shortestPathRouter,
             findOptimalPathUseCase =
                 findOptimalPathUseCase
         )
 
-    dijkstraRoutingDemo.validateRouting()
+    dijkstraRoutingDemo.runDemo()
 
-    val bidirectionalRouter =
-        BidirectionalRouter(
+    val bidirectionalRouter = BidirectionalRouter(
             warehouseIndex.values.toList()
         )
 
-    val bidirectionalRoutingDemo =
-        BidirectionalRoutingDemo(
+    val bidirectionalRoutingDemo = BidirectionalRoutingDemo(
             warehouseIndex = warehouseIndex,
             router = bidirectionalRouter
         )
 
-    bidirectionalRoutingDemo.validateRouting()
+    bidirectionalRoutingDemo.runDemo()
 }
 
 private fun validateQuickSort(
