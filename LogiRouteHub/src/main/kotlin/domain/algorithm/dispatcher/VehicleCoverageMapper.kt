@@ -1,4 +1,4 @@
-package domain.dispatcher
+package domain.algorithm.dispatcher
 import domain.model.Route
 import domain.model.Vehicle
 
