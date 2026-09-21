@@ -28,12 +28,10 @@ class CsvRouteDataSource(
 
         val dataRows = lines.drop(headerLineCount)
 
-        return dataRows.mapIndexed { index, row ->
+        return dataRows.mapIndexedNotNull { index, row ->
             routeParser.parseRouteRow(
                 row = row,
                 rowNumber = index + headerLineCount
-            ) ?: throw LocalDataException(
-                "Invalid route row at line ${index + headerLineCount + 1}"
             )
         }
     }

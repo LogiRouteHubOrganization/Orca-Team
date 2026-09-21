@@ -28,11 +28,8 @@ class CsvVehicleDataSource(
 
         val dataRows = lines.drop(headerLineCount)
 
-        return dataRows.mapIndexed { index, row ->
+        return dataRows.mapNotNull { row ->
             fleetParser.parseFleetRow(row)
-                ?: throw LocalDataException(
-                    "Invalid vehicle row at line ${index + headerLineCount + 1}"
-                )
         }
     }
 }

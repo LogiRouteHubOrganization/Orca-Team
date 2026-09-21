@@ -12,6 +12,9 @@ object SupabaseClientProvider {
     private val localProperties = Properties().apply {
         val file = File("local.properties")
 
+        println("local.properties path: ${file.absolutePath}")
+        println("local.properties exists: ${file.exists()}")
+
         if (file.exists()) {
             file.inputStream().use {
                 load(it)
