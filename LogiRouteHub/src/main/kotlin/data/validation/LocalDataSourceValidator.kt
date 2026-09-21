@@ -3,7 +3,7 @@ package data.validation
 import data.exception.local.LocalDataException
 import java.io.File
 
-class FileDataSourceValidator(
+class LocalDataSourceValidator(
     private val requiredExtension: String? = null
 ) : LocalDataValidator<File> {
 

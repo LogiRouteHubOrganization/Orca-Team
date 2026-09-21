@@ -1,7 +1,7 @@
 package domain.usecase
 
-import domain.dispatcher.VehicleCoverage
-import domain.dispatcher.VehicleCoverageMapper
+import domain.algorithm.dispatcher.VehicleCoverage
+import domain.algorithm.dispatcher.VehicleCoverageMapper
 import domain.repository.RouteRepository
 import domain.repository.VehicleRepository
 

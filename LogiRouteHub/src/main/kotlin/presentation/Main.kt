@@ -13,8 +13,6 @@ import data.parser.FleetParser
 import data.parser.PackageParser
 import data.parser.RouteParser
 import data.parser.WarehouseParser
-import data.remote.datasource.WarehouseRemoteDataSource
-import data.remote.datasource.RouteRemoteDataSource
 import data.remote.datasource.VehicleRemoteDataSource
 import data.remote.dto.request.VehicleCreateRequestDto
 import data.remote.dto.request.VehicleUpdateRequestDto
@@ -29,9 +27,10 @@ import data.repository.local.LocalWarehouseRepositoryImpl
 import data.repository.remote.RemoteRouteRepositoryImpl
 import data.repository.remote.RemoteVehicleRepositoryImpl
 import data.repository.remote.RemoteWarehouseRepositoryImpl
-import domain.dispatcher.GreedyFleetDispatcher
-import domain.dispatcher.VehicleCoverageMapper
-import domain.exception.DatabaseConflictException
+import data.validation.LocalDataSourceValidator
+import domain.algorithm.dispatcher.GreedyFleetDispatcher
+import domain.algorithm.dispatcher.VehicleCoverageMapper
+import domain.exception.EntityConflictException
 import domain.exception.DomainException
 import domain.exception.EntityValidationException
 import domain.exception.NetworkUnavailableException
@@ -40,6 +39,7 @@ import domain.exception.ServerErrorException
 import domain.exception.UnauthorizedException
 import domain.exception.UnknownDomainException
 import domain.model.Warehouse
+import domain.validation.*
 import domain.repository.WarehouseRepository
 import domain.model.request.AnalyzeTreePerformanceRequest
 import domain.pricing.EcoStrategy
@@ -54,8 +54,6 @@ import domain.tree.simulation.*
 import domain.usecase.*
 import domain.usecase.crud.vehicle.GetVehicleByIdUseCase
 import domain.usecase.crud.warehouse.CreateWarehouseUseCase
-import domain.validator.vehicle.CreateVehicleValidator
-import domain.validator.rule.IdValidator
 import java.io.File
 import java.util.*
 
@@ -88,24 +86,32 @@ private suspend fun runApplication() {
      * -------------------------------------------------------------
      */
 
+
+    val localDataSourceValidator = LocalDataSourceValidator()
+
+
     val warehouseDataSource = CsvWarehouseDataSource(
         warehouseFile = File(WAREHOUSES_FILE_PATH),
-        warehouseParser = WarehouseParser()
+        warehouseParser = WarehouseParser(),
+        localDataSourceValidator = localDataSourceValidator
     )
 
     val packageDataSource = CsvPackageDataSource(
         packageFile = File(PACKAGES_FILE_PATH),
-        packageParser = PackageParser()
+        packageParser = PackageParser(),
+        localDataSourceValidator = localDataSourceValidator
     )
 
     val vehicleDataSource = CsvVehicleDataSource(
         vehicleFile = File(FLEET_FILE_PATH),
-        fleetParser = FleetParser()
+        fleetParser = FleetParser(),
+        localDataSourceValidator = localDataSourceValidator
     )
 
     val routeDataSource = CsvRouteDataSource(
         routeFile = File(ROUTES_FILE_PATH),
-        routeParser = RouteParser()
+        routeParser = RouteParser(),
+        localDataSourceValidator = localDataSourceValidator
     )
 
     val warehouseMapper = WarehouseMapper()
@@ -428,7 +434,7 @@ private fun formatApplicationError(
         is NetworkUnavailableException ->
             "Network/API error: ${exception.message}"
 
-        is DatabaseConflictException ->
+        is EntityConflictException ->
             "Database conflict: ${exception.message}"
 
         is UnauthorizedException ->
@@ -494,7 +500,7 @@ private class FailingVehicleRemoteDataSource :
     VehicleRemoteDataSource {
 
     override suspend fun getAllVehicles(): List<VehicleDto> {
-        throw NetworkException.NoInternet(
+        throw NetworkException.NoInternetException(
             "Simulated network failure for ST4 verification"
         )
     }
@@ -502,7 +508,7 @@ private class FailingVehicleRemoteDataSource :
     override suspend fun getVehicleById(
         id: String
     ): VehicleDto? {
-        throw NetworkException.NoInternet(
+        throw NetworkException.NoInternetException(
             "Simulated network failure for ST4 verification"
         )
     }
@@ -510,7 +516,7 @@ private class FailingVehicleRemoteDataSource :
     override suspend fun createVehicle(
         vehicleRequest: VehicleCreateRequestDto
     ): VehicleDto {
-        throw NetworkException.NoInternet(
+        throw NetworkException.NoInternetException(
             "Simulated network failure for ST4 verification"
         )
     }
@@ -519,7 +525,7 @@ private class FailingVehicleRemoteDataSource :
         id: String,
         vehicleRequest: VehicleUpdateRequestDto
     ): VehicleDto {
-        throw NetworkException.NoInternet(
+        throw NetworkException.NoInternetException(
             "Simulated network failure for ST4 verification"
         )
     }
@@ -527,7 +533,7 @@ private class FailingVehicleRemoteDataSource :
     override suspend fun deleteVehicle(
         id: String
     ) {
-        throw NetworkException.NoInternet(
+        throw NetworkException.NoInternetException(
             "Simulated network failure for ST4 verification"
         )
     }
