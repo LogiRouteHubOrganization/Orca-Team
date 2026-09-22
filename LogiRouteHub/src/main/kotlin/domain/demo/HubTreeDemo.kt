@@ -7,7 +7,7 @@ import domain.tree.hierarchy.HubLineageTracer
 import domain.tree.hierarchy.HubTree
 import domain.tree.hierarchy.HubTreeBuilder
 import domain.tree.hierarchy.HubTreeWarehouseNode
-import domain.usecasePackage.TraceHubLineageUseCase
+import domain.usecase.TraceHubLineageUseCase
 
 class HubTreeDemo(
     private val warehouseIndex: Map<String, Warehouse>
@@ -76,4 +76,5 @@ class HubTreeDemo(
         println("\nHub tree demo completed.")
     }
 }
+
 

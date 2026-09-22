@@ -1,4 +1,4 @@
-package domain.usecase.crud.warehouse
+package domain.usecase.crud.Warehouse
 
 import domain.model.Warehouse
 import domain.repository.WarehouseRepository
@@ -13,3 +13,4 @@ class CreateWarehouseUseCase(
         return warehouseRepository.add(warehouse)
     }
 }
+

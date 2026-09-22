@@ -19,3 +19,4 @@ interface PackageRepository {
 
     suspend fun delete(packageId: String): Result<Unit>
 }
+
