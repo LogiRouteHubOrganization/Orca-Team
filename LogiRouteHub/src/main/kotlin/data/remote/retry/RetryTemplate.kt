@@ -1,4 +1,5 @@
 package data.remote.retry
+
 import kotlinx.coroutines.delay
 import kotlin.math.pow
 
@@ -8,14 +9,20 @@ abstract class RetryTemplate(
     private val factor: Double = 2.0,
     private val logger: RetryLogger = RetryLogger()
 ) {
+
     suspend fun <T> execute(
+        operationName: String,
         block: suspend () -> T
     ): Result<T> {
+
         repeat(maxAttempts) { attemptIndex ->
+
             val firstAttemptNumber = 1
-            val currentAttempt = attemptIndex +firstAttemptNumber
+            val currentAttempt =
+                attemptIndex + firstAttemptNumber
 
             logger.logAttempt(
+                operationName,
                 currentAttempt,
                 maxAttempts
             )
@@ -25,6 +32,7 @@ abstract class RetryTemplate(
                 val result = block()
 
                 logger.logFinalSuccess(
+                    operationName,
                     currentAttempt,
                     maxAttempts
                 )
@@ -33,11 +41,13 @@ abstract class RetryTemplate(
 
             } catch (exception: Exception) {
 
-                val isLastAttempt = currentAttempt == maxAttempts
+                val isLastAttempt =
+                    currentAttempt == maxAttempts
 
                 if (isLastAttempt) {
 
                     logger.logFinalFailure(
+                        operationName,
                         currentAttempt,
                         maxAttempts,
                         exception
@@ -49,6 +59,7 @@ abstract class RetryTemplate(
                 if (!shouldRetry(exception)) {
 
                     logger.logNonRetryableFailure(
+                        operationName,
                         currentAttempt,
                         maxAttempts,
                         exception
@@ -59,10 +70,13 @@ abstract class RetryTemplate(
 
                 val delayMs = (
                         initialDelayMs *
-                                factor.pow(attemptIndex.toDouble())
+                                factor.pow(
+                                    attemptIndex.toDouble()
+                                )
                         ).toLong()
 
                 logger.logRetryableFailure(
+                    operationName,
                     currentAttempt,
                     maxAttempts,
                     exception,
