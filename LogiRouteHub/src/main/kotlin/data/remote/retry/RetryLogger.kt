@@ -2,47 +2,67 @@ package data.remote.retry
 
 class RetryLogger {
 
-fun logAttempt(
+    fun logAttempt(
+        operationName: String,
         currentAttempt: Int,
         totalAttempts: Int
     ) {
-    println("[RETRY] Attempt $currentAttempt/$totalAttempts")
+        println(
+            "[RETRY] $operationName - Attempt " +
+                    "$currentAttempt/$totalAttempts"
+        )
     }
 
     fun logRetryableFailure(
+        operationName: String,
         currentAttempt: Int,
         totalAttempts: Int,
         exception: Throwable,
         delayMs: Long
     ) {
-        println("[RETRY] Retryable failure on attempt " +"$currentAttempt/$totalAttempts: ${exception.message}")
-        println("[RETRY] Backoff delay: ${delayMs}ms")
+        println(
+            "[RETRY] $operationName - Retryable failure on attempt " +
+                    "$currentAttempt/$totalAttempts: ${exception.message}"
+        )
+
+        println(
+            "[RETRY] $operationName - Backoff delay: ${delayMs}ms"
+        )
     }
 
-fun logNonRetryableFailure(
+    fun logNonRetryableFailure(
+        operationName: String,
         currentAttempt: Int,
         totalAttempts: Int,
         exception: Throwable
     ) {
-        println("[RETRY] Non-retryable failure on attempt " + "$currentAttempt/$totalAttempts: ${exception.message}")
+        println(
+            "[RETRY] $operationName - Non-retryable failure on attempt " +
+                    "$currentAttempt/$totalAttempts: ${exception.message}"
+        )
     }
 
-fun logFinalSuccess(
+    fun logFinalSuccess(
+        operationName: String,
         currentAttempt: Int,
         totalAttempts: Int
     ) {
         println(
-            "[RETRY] Final success on attempt " +
+            "[RETRY] $operationName - Final success on attempt " +
                     "$currentAttempt/$totalAttempts"
         )
     }
 
-fun logFinalFailure(
+    fun logFinalFailure(
+        operationName: String,
         currentAttempt: Int,
         totalAttempts: Int,
         exception: Throwable
     ) {
-        println("[RETRY] Final failure after " + "$currentAttempt/$totalAttempts attempts: " +
-        "${exception.message}")
+        println(
+            "[RETRY] $operationName - Final failure after " +
+                    "$currentAttempt/$totalAttempts attempts: " +
+                    "${exception.message}"
+        )
     }
 }

@@ -17,21 +17,25 @@ class RouteRemoteDataSourceImpl(
     private val tableName = "routes"
 
     override suspend fun getAllRoutes(): List<RouteDto> {
-        val result = retryTemplate.execute {
+        val result = retryTemplate.execute(
+            operationName = "GetAllRoutes"
+        ) {
             safeApiCall {
                 client.from(tableName)
                     .select()
                     .decodeList<RouteDto>()
             }
         }
+
         return result.getOrThrow()
     }
 
     override suspend fun getRouteById(id: String): RouteDto? {
-        val result = retryTemplate.execute {
+        val result = retryTemplate.execute(
+            operationName = "GetRouteById"
+        ) {
             safeApiCall {
-                client.from(tableName)
-                    .select {
+                client.from(tableName).select {
                         filter {
                             eq("id", id)
                         }
@@ -39,16 +43,18 @@ class RouteRemoteDataSourceImpl(
                     .decodeSingleOrNull<RouteDto>()
             }
         }
+
         return result.getOrThrow()
     }
 
     override suspend fun createRoute(
         routeRequest: RouteCreateRequestDto
     ): RouteDto {
-        val result = retryTemplate.execute {
+        val result = retryTemplate.execute(
+            operationName = "CreateRoute"
+        ) {
             safeApiCall {
-                client.from(tableName)
-                    .insert(routeRequest) {
+                client.from(tableName).insert(routeRequest) {
                         select()
                     }
                     .decodeSingle<RouteDto>()
@@ -61,7 +67,9 @@ class RouteRemoteDataSourceImpl(
         id: String,
         routeRequest: RouteUpdateRequestDto
     ): RouteDto {
-        val result = retryTemplate.execute {
+        val result = retryTemplate.execute(
+            operationName = "UpdateRoute"
+        ) {
             safeApiCall {
                 client.from(tableName)
                     .update(routeRequest) {
@@ -73,20 +81,22 @@ class RouteRemoteDataSourceImpl(
                     .decodeSingle<RouteDto>()
             }
         }
+
         return result.getOrThrow()
     }
 
     override suspend fun deleteRoute(id: String) {
-        val result = retryTemplate.execute {
+        val result = retryTemplate.execute(
+            operationName = "DeleteRoute"
+        ) {
             safeApiCall {
-                client.from(tableName)
-                    .delete {
-                        filter {
+                client.from(tableName).delete { filter {
                             eq("id", id)
                         }
                     }
             }
         }
+
         result.getOrThrow()
     }
 }
