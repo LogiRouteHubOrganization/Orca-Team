@@ -14,61 +14,39 @@ class UpdateRouteValidator {
         routeId: String,
         updateModel: RouteUpdateModel
     ): ValidationResult {
+        if (!hasAnyUpdate(updateModel)) {
+            return ValidationResult.Failure(
+                listOf(FieldViolation(field = "update", error = ValidationError.EmptyUpdate))
+            )
+        }
 
-        val hasUpdate = listOf(
+        val whPrefix = setOf("WH-")
+        val results = listOfNotNull(
+            IdValidator(field = "routeId", allowedPrefixes = setOf("RT-")).validate(routeId),
+            updateModel.originWarehouseId?.let {
+                IdValidator(field = "originWarehouseId", allowedPrefixes = whPrefix).validate(it)
+            },
+            updateModel.destinationWarehouseId?.let {
+                IdValidator(field = "destinationWarehouseId", allowedPrefixes = whPrefix).validate(it)
+            },
+            updateModel.distanceKm?.let {
+                PositiveNumberValidator(field = "distanceKm").validate(it)
+            },
+            updateModel.typicalDelayMin?.let {
+                NonNegativeNumberValidator(field = "typicalDelayMin").validate(it)
+            }
+        )
+
+        val errors = results.filterIsInstance<ValidationResult.Failure>().flatMap { it.errors }
+        return if (errors.isEmpty()) ValidationResult.Success else ValidationResult.Failure(errors)
+    }
+
+    private fun hasAnyUpdate(updateModel: RouteUpdateModel): Boolean {
+        return listOf(
             updateModel.originWarehouseId,
             updateModel.destinationWarehouseId,
             updateModel.distanceKm,
             updateModel.typicalDelayMin
         ).any { it != null }
-
-        if (!hasUpdate) {
-            return ValidationResult.Failure(
-                listOf(
-                    FieldViolation(field = "update", error = ValidationError.EmptyUpdate)
-                )
-            )
-        }
-
-        val results = listOfNotNull(
-            IdValidator(
-                field = "routeId",
-                allowedPrefixes = setOf("RT-")
-            ).validate(routeId),
-
-            updateModel.originWarehouseId?.let { originId ->
-                IdValidator(
-                    field = "originWarehouseId",
-                    allowedPrefixes = setOf("WH-")
-                ).validate(originId)
-            },
-
-            updateModel.destinationWarehouseId?.let { destinationId ->
-                IdValidator(
-                    field = "destinationWarehouseId",
-                    allowedPrefixes = setOf("WH-")
-                ).validate(destinationId)
-            },
-
-            updateModel.distanceKm?.let { distance ->
-                PositiveNumberValidator(
-                    field = "distanceKm"
-                ).validate(distance)
-            },
-
-            updateModel.typicalDelayMin?.let { delay ->
-                NonNegativeNumberValidator(
-                    field = "typicalDelayMin"
-                ).validate(delay)
-            }
-        )
-        val errors = results
-            .filterIsInstance<ValidationResult.Failure>()
-            .flatMap { it.errors }
-        return if (errors.isEmpty()) {
-            ValidationResult.Success
-        } else {
-            ValidationResult.Failure(errors)
-        }
     }
 }

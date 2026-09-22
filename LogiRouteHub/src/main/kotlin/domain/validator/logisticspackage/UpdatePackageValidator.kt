@@ -10,58 +10,39 @@ import domain.validator.rule.PriorityValidator
 
 class UpdatePackageValidator {
 
-    operator fun invoke(
-        updateModel: PackageUpdateModel
-    ): ValidationResult {
+    operator fun invoke(updateModel: PackageUpdateModel): ValidationResult {
+        if (!hasAnyUpdate(updateModel)) {
+            return ValidationResult.Failure(
+                listOf(FieldViolation(field = "update", error = ValidationError.EmptyUpdate))
+            )
+        }
 
-        val hasUpdate = listOf(
+        val whPrefix = setOf("WH-")
+        val results = listOfNotNull(
+            updateModel.weightByKg?.let {
+                PositiveNumberValidator(field = "weightByKg").validate(it)
+            },
+            updateModel.priority?.let {
+                PriorityValidator(field = "priority").validate(it)
+            },
+            updateModel.originWarehouseId?.let {
+                IdValidator(field = "originWarehouseId", allowedPrefixes = whPrefix).validate(it)
+            },
+            updateModel.destinationWarehouseId?.let {
+                IdValidator(field = "destinationWarehouseId", allowedPrefixes = whPrefix).validate(it)
+            }
+        )
+
+        val errors = results.filterIsInstance<ValidationResult.Failure>().flatMap { it.errors }
+        return if (errors.isEmpty()) ValidationResult.Success else ValidationResult.Failure(errors)
+    }
+
+    private fun hasAnyUpdate(updateModel: PackageUpdateModel): Boolean {
+        return listOf(
             updateModel.weightByKg,
             updateModel.priority,
             updateModel.originWarehouseId,
             updateModel.destinationWarehouseId
         ).any { it != null }
-
-        if (!hasUpdate) {
-            return ValidationResult.Failure(
-                listOf(
-                    FieldViolation(field = "update", error = ValidationError.EmptyUpdate)
-                )
-            )
-        }
-        val results = listOfNotNull(
-            updateModel.weightByKg?.let { weight ->
-                PositiveNumberValidator(
-                    field = "weightByKg"
-                ).validate(weight)
-            },
-
-            updateModel.priority?.let { priority ->
-                PriorityValidator(
-                    field = "priority"
-                ).validate(priority)
-            },
-
-            updateModel.originWarehouseId?.let { warehouseId ->
-                IdValidator(
-                    field = "originWarehouseId",
-                    allowedPrefixes = setOf("WH-")
-                ).validate(warehouseId)
-            },
-
-            updateModel.destinationWarehouseId?.let { warehouseId ->
-                IdValidator(
-                    field = "destinationWarehouseId",
-                    allowedPrefixes = setOf("WH-")
-                ).validate(warehouseId)
-            }
-        )
-
-        val errors = results.filterIsInstance<ValidationResult.Failure>().flatMap { it.errors }
-
-        return if (errors.isEmpty()) {
-            ValidationResult.Success
-        } else {
-            ValidationResult.Failure(errors)
-        }
     }
 }
