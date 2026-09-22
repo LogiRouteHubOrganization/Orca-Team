@@ -2,6 +2,7 @@ package domain.demo
 
 import domain.model.Warehouse
 import domain.routing.BidirectionalRouter
+import java.util.Locale
 
 class BidirectionalRoutingDemo(
     private val warehouseIndex: Map<String, Warehouse>,
@@ -309,6 +310,7 @@ class BidirectionalRoutingDemo(
 
         println(
             String.format(
+                Locale.US,
                 "%-18s : %s -> %s",
                 "Route",
                 benchmarkData.startWarehouse.id,
@@ -318,6 +320,7 @@ class BidirectionalRoutingDemo(
 
         println(
             String.format(
+                Locale.US,
                 "%-18s : %d",
                 "Target Path Hops",
                 benchmarkData.bidirectionalHops
@@ -331,6 +334,7 @@ class BidirectionalRoutingDemo(
 
         println(
             String.format(
+                Locale.US,
                 "  %-16s : %s",
                 "Path",
                 standardPathString
@@ -339,6 +343,7 @@ class BidirectionalRoutingDemo(
 
         println(
             String.format(
+                Locale.US,
                 "  %-16s : %d hops",
                 "Path Length",
                 benchmarkData.standardHops
@@ -347,6 +352,7 @@ class BidirectionalRoutingDemo(
 
         println(
             String.format(
+                Locale.US,
                 "  %-16s : %d warehouses",
                 "Evaluated",
                 benchmarkData.standardPath.evaluatedWarehouses
@@ -355,6 +361,7 @@ class BidirectionalRoutingDemo(
 
         println(
             String.format(
+                Locale.US,
                 "  %-16s : %.3f ms",
                 "Execution Time",
                 benchmarkData.standardDurationMs
@@ -365,6 +372,7 @@ class BidirectionalRoutingDemo(
 
         println(
             String.format(
+                Locale.US,
                 "  %-16s : %s",
                 "Path",
                 bidirectionalPathString
@@ -373,6 +381,7 @@ class BidirectionalRoutingDemo(
 
         println(
             String.format(
+                Locale.US,
                 "  %-16s : %d hops",
                 "Path Length",
                 benchmarkData.bidirectionalHops
@@ -381,6 +390,7 @@ class BidirectionalRoutingDemo(
 
         println(
             String.format(
+                Locale.US,
                 "  %-16s : %d warehouses",
                 "Evaluated",
                 router.evaluatedWarehouseCount
@@ -389,6 +399,7 @@ class BidirectionalRoutingDemo(
 
         println(
             String.format(
+                Locale.US,
                 "  %-16s : %.3f ms",
                 "Execution Time",
                 benchmarkData.bidirectionalDurationMs
@@ -415,6 +426,7 @@ class BidirectionalRoutingDemo(
 
         println(
             String.format(
+                Locale.US,
                 "  %-20s : %.1f%% fewer warehouses evaluated",
                 "Efficiency Gain",
                 improvementPercentage
@@ -423,6 +435,7 @@ class BidirectionalRoutingDemo(
 
         println(
             String.format(
+                Locale.US,
                 "  %-20s : %d warehouses",
                 "Evaluations Saved",
                 evaluatedDifference
@@ -431,6 +444,7 @@ class BidirectionalRoutingDemo(
 
         println(
             String.format(
+                Locale.US,
                 "  %-20s : PASSED",
                 "Demo Check"
             )
@@ -579,13 +593,17 @@ class BidirectionalRoutingDemo(
             }
 
             for (
-            destinationWarehouse in warehouseIndex.values) {
-                val isDifferentWarehouse = startWarehouse.id != destinationWarehouse.id
+            destinationWarehouse in warehouseIndex.values
+            ) {
+                val isDifferentWarehouse =
+                    startWarehouse.id != destinationWarehouse.id
 
-                val isUnreachable = destinationWarehouse.id !in visited
+                val isUnreachable =
+                    destinationWarehouse.id !in visited
 
                 if (
-                    isDifferentWarehouse && isUnreachable
+                    isDifferentWarehouse &&
+                    isUnreachable
                 ) {
                     return WarehousePair(
                         startWarehouse = startWarehouse,
