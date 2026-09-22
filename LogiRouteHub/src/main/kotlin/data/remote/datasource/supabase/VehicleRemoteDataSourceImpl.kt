@@ -6,19 +6,18 @@ import data.remote.dto.response.VehicleDto
 import data.remote.dto.request.VehicleCreateRequestDto
 import data.remote.dto.request.VehicleUpdateRequestDto
 import data.remote.utils.safeApiCall
-import data.remote.retry.retryWithBackoff
-import data.remote.retry.shouldRetry
+import data.remote.retry.NetworkRetryTemplate
 import io.github.jan.supabase.postgrest.from
 
-class VehicleRemoteDataSourceImpl : VehicleRemoteDataSource {
+class VehicleRemoteDataSourceImpl(
+    private val retryTemplate: NetworkRetryTemplate = NetworkRetryTemplate()
+) : VehicleRemoteDataSource {
 
     private val client = SupabaseClientProvider.client
     private val tableName = "vehicles"
 
     override suspend fun getAllVehicles(): List<VehicleDto> {
-        val result = retryWithBackoff(
-            shouldRetry = { shouldRetry(it) }
-        ) {
+        val result = retryTemplate.execute {
             safeApiCall {
                 client.from(tableName)
                     .select()
@@ -29,9 +28,7 @@ class VehicleRemoteDataSourceImpl : VehicleRemoteDataSource {
     }
 
     override suspend fun getVehicleById(id: String): VehicleDto? {
-        val result = retryWithBackoff(
-            shouldRetry = { shouldRetry(it) }
-        ) {
+        val result = retryTemplate.execute {
             safeApiCall {
                 client.from(tableName)
                     .select {
@@ -48,9 +45,7 @@ class VehicleRemoteDataSourceImpl : VehicleRemoteDataSource {
     override suspend fun createVehicle(
         vehicleRequest: VehicleCreateRequestDto
     ): VehicleDto {
-        val result = retryWithBackoff(
-            shouldRetry = { shouldRetry(it) }
-        ) {
+        val result = retryTemplate.execute {
             safeApiCall {
                 client.from(tableName)
                     .insert(vehicleRequest) {
@@ -66,9 +61,7 @@ class VehicleRemoteDataSourceImpl : VehicleRemoteDataSource {
         id: String,
         vehicleRequest: VehicleUpdateRequestDto
     ): VehicleDto {
-        val result = retryWithBackoff(
-            shouldRetry = { shouldRetry(it) }
-        ) {
+        val result = retryTemplate.execute {
             safeApiCall {
                 client.from(tableName)
                     .update(vehicleRequest) {
@@ -84,9 +77,7 @@ class VehicleRemoteDataSourceImpl : VehicleRemoteDataSource {
     }
 
     override suspend fun deleteVehicle(id: String) {
-        val result = retryWithBackoff(
-            shouldRetry = { shouldRetry(it) }
-        ) {
+        val result = retryTemplate.execute {
             safeApiCall {
                 client.from(tableName)
                     .delete {

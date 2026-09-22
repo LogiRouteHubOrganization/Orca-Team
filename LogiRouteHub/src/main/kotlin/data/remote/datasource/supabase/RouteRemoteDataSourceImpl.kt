@@ -6,19 +6,18 @@ import data.remote.dto.response.RouteDto
 import data.remote.dto.request.RouteCreateRequestDto
 import data.remote.dto.request.RouteUpdateRequestDto
 import data.remote.utils.safeApiCall
-import data.remote.retry.retryWithBackoff
-import data.remote.retry.shouldRetry
+import data.remote.retry.NetworkRetryTemplate
 import io.github.jan.supabase.postgrest.from
 
-class RouteRemoteDataSourceImpl : RouteRemoteDataSource {
+class RouteRemoteDataSourceImpl(
+    private val retryTemplate: NetworkRetryTemplate = NetworkRetryTemplate()
+) : RouteRemoteDataSource {
 
     private val client = SupabaseClientProvider.client
     private val tableName = "routes"
 
     override suspend fun getAllRoutes(): List<RouteDto> {
-        val result = retryWithBackoff(
-            shouldRetry = { shouldRetry(it) }
-        ) {
+        val result = retryTemplate.execute {
             safeApiCall {
                 client.from(tableName)
                     .select()
@@ -29,9 +28,7 @@ class RouteRemoteDataSourceImpl : RouteRemoteDataSource {
     }
 
     override suspend fun getRouteById(id: String): RouteDto? {
-        val result = retryWithBackoff(
-            shouldRetry = { shouldRetry(it) }
-        ) {
+        val result = retryTemplate.execute {
             safeApiCall {
                 client.from(tableName)
                     .select {
@@ -48,9 +45,7 @@ class RouteRemoteDataSourceImpl : RouteRemoteDataSource {
     override suspend fun createRoute(
         routeRequest: RouteCreateRequestDto
     ): RouteDto {
-        val result = retryWithBackoff(
-            shouldRetry = { shouldRetry(it) }
-        ) {
+        val result = retryTemplate.execute {
             safeApiCall {
                 client.from(tableName)
                     .insert(routeRequest) {
@@ -66,9 +61,7 @@ class RouteRemoteDataSourceImpl : RouteRemoteDataSource {
         id: String,
         routeRequest: RouteUpdateRequestDto
     ): RouteDto {
-        val result = retryWithBackoff(
-            shouldRetry = { shouldRetry(it) }
-        ) {
+        val result = retryTemplate.execute {
             safeApiCall {
                 client.from(tableName)
                     .update(routeRequest) {
@@ -84,9 +77,7 @@ class RouteRemoteDataSourceImpl : RouteRemoteDataSource {
     }
 
     override suspend fun deleteRoute(id: String) {
-        val result = retryWithBackoff(
-            shouldRetry = { shouldRetry(it) }
-        ) {
+        val result = retryTemplate.execute {
             safeApiCall {
                 client.from(tableName)
                     .delete {

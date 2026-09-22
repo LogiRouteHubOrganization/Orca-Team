@@ -6,19 +6,18 @@ import data.remote.dto.response.PackageDto
 import data.remote.dto.request.PackageCreateRequestDto
 import data.remote.dto.request.PackageUpdateRequestDto
 import data.remote.utils.safeApiCall
-import data.remote.retry.retryWithBackoff
-import data.remote.retry.shouldRetry
+import data.remote.retry.NetworkRetryTemplate
 import io.github.jan.supabase.postgrest.from
 
-class PackageRemoteDataSourceImpl : PackageRemoteDataSource {
+class PackageRemoteDataSourceImpl(
+    private val retryTemplate: NetworkRetryTemplate = NetworkRetryTemplate()
+) : PackageRemoteDataSource {
 
     private val client = SupabaseClientProvider.client
     private val tableName = "packages"
 
     override suspend fun getAllPackages(): List<PackageDto> {
-        val result = retryWithBackoff(
-            shouldRetry = { shouldRetry(it) }
-        ) {
+        val result = retryTemplate.execute {
             safeApiCall {
                 client.from(tableName).select()
                     .decodeList<PackageDto>()
@@ -28,9 +27,7 @@ class PackageRemoteDataSourceImpl : PackageRemoteDataSource {
     }
 
     override suspend fun getPackageById(id: String): PackageDto? {
-        val result = retryWithBackoff(
-            shouldRetry = { shouldRetry(it) }
-        ) {
+        val result = retryTemplate.execute {
             safeApiCall {
                 client.from(tableName)
                     .select {
@@ -46,9 +43,7 @@ class PackageRemoteDataSourceImpl : PackageRemoteDataSource {
     override suspend fun createPackage(
         packageRequest: PackageCreateRequestDto
     ): PackageDto {
-        val result = retryWithBackoff(
-            shouldRetry = { shouldRetry(it) }
-        ) {
+        val result = retryTemplate.execute {
             safeApiCall {
                 client.from(tableName)
                     .insert(packageRequest) {
@@ -64,9 +59,7 @@ class PackageRemoteDataSourceImpl : PackageRemoteDataSource {
         id: String,
         packageRequest: PackageUpdateRequestDto
     ): PackageDto {
-        val result = retryWithBackoff(
-            shouldRetry = { shouldRetry(it) }
-        ) {
+        val result = retryTemplate.execute {
             safeApiCall {
                 client.from(tableName)
                     .update(packageRequest) {
@@ -82,9 +75,7 @@ class PackageRemoteDataSourceImpl : PackageRemoteDataSource {
     }
 
     override suspend fun deletePackage(id: String) {
-        val result = retryWithBackoff(
-            shouldRetry = { shouldRetry(it) }
-        ) {
+        val result = retryTemplate.execute {
             safeApiCall {
                 client.from(tableName)
                     .delete {

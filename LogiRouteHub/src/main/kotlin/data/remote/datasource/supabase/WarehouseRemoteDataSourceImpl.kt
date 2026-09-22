@@ -6,19 +6,18 @@ import data.remote.dto.response.WarehouseDto
 import data.remote.dto.request.WarehouseCreateRequestDto
 import data.remote.dto.request.WarehouseUpdateRequestDto
 import data.remote.utils.safeApiCall
-import data.remote.retry.retryWithBackoff
-import data.remote.retry.shouldRetry
+import data.remote.retry.NetworkRetryTemplate
 import io.github.jan.supabase.postgrest.from
 
-class WarehouseRemoteDataSourceImpl : WarehouseRemoteDataSource {
+class WarehouseRemoteDataSourceImpl(
+    private val retryTemplate: NetworkRetryTemplate = NetworkRetryTemplate()
+) : WarehouseRemoteDataSource {
 
     private val client = SupabaseClientProvider.client
     private val tableName = "warehouses"
 
     override suspend fun getAllWarehouses(): List<WarehouseDto> {
-        val result = retryWithBackoff(
-            shouldRetry = { shouldRetry(it) }
-        ) {
+        val result = retryTemplate.execute {
             safeApiCall {
                 client.from(tableName)
                     .select()
@@ -31,9 +30,7 @@ class WarehouseRemoteDataSourceImpl : WarehouseRemoteDataSource {
     override suspend fun getWarehouseById(
         id: String
     ): WarehouseDto? {
-        val result = retryWithBackoff(
-            shouldRetry = { shouldRetry(it) }
-        ) {
+        val result = retryTemplate.execute {
             safeApiCall {
                 client.from(tableName)
                     .select {
@@ -50,9 +47,7 @@ class WarehouseRemoteDataSourceImpl : WarehouseRemoteDataSource {
     override suspend fun createWarehouse(
         warehouseRequest: WarehouseCreateRequestDto
     ): WarehouseDto {
-        val result = retryWithBackoff(
-            shouldRetry = { shouldRetry(it) }
-        ) {
+        val result = retryTemplate.execute {
             safeApiCall {
                 client.from(tableName)
                     .insert(warehouseRequest) {
@@ -68,9 +63,7 @@ class WarehouseRemoteDataSourceImpl : WarehouseRemoteDataSource {
         id: String,
         warehouseRequest: WarehouseUpdateRequestDto
     ): WarehouseDto {
-        val result = retryWithBackoff(
-            shouldRetry = { shouldRetry(it) }
-        ) {
+        val result = retryTemplate.execute {
             safeApiCall {
                 client.from(tableName)
                     .update(warehouseRequest) {
@@ -86,9 +79,7 @@ class WarehouseRemoteDataSourceImpl : WarehouseRemoteDataSource {
     }
 
     override suspend fun deleteWarehouse(id: String) {
-        val result = retryWithBackoff(
-            shouldRetry = { shouldRetry(it) }
-        ) {
+        val result = retryTemplate.execute {
             safeApiCall {
                 client.from(tableName)
                     .delete {
