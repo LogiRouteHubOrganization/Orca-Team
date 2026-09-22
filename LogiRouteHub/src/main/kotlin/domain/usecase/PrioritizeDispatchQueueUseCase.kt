@@ -10,29 +10,29 @@ class PrioritizeDispatchQueueUseCase(
     private val priorityLevels: PackagePriorityLevels
 ) {
 
-    operator fun invoke(warehouseId: String): Warehouse? {
+    suspend operator fun invoke(
+        warehouseId: String
+    ): Result<Warehouse?> = runCatching {
 
-        val warehouse = warehouseRepository.findById(warehouseId)
-            ?: return null
+        val warehouse = warehouseRepository.findById(warehouseId).getOrThrow()
+            ?: return@runCatching null
 
         val prioritizedPackages = warehouse.cargoQueue
-            .sortedWith(
-                compareByDescending<Package> {
+            .sortedWith(compareByDescending<Package> {
                     getPriorityLevel(it.priority)
                 }.thenByDescending {
                     it.weightByKg
                 }
             )
+
         prioritizedPackages.forEachIndexed { index, logisticsPackage ->
             warehouse.updatePackageAtIndex(
                 packageIndex = index,
                 logisticsPackage = logisticsPackage
             )
         }
-        warehouseRepository.update(warehouse)
-        return warehouse
+        warehouse
     }
-
     private fun getPriorityLevel(priority: String): Int {
         return when (priority.uppercase()) {
             "URGENT" -> priorityLevels.urgent

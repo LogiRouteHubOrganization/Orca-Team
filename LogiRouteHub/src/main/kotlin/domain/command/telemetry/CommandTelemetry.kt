@@ -1,5 +1,7 @@
 package domain.command.telemetry
 
+import domain.command.CommandState
+
 interface CommandTelemetry {
 
     fun recordCommandExecution(
@@ -22,7 +24,7 @@ interface CommandTelemetry {
 
     fun recordStateTransition(
         commandType: String,
-        beforeState: String,
-        afterState: String
+        beforeState: CommandState,
+        afterState: CommandState
     )
 }
