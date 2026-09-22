@@ -6,6 +6,8 @@ import data.remote.dto.response.RouteDto
 import data.remote.dto.request.RouteCreateRequestDto
 import data.remote.dto.request.RouteUpdateRequestDto
 import data.remote.utils.safeApiCall
+import data.remote.retry.retryWithBackoff
+import data.remote.retry.shouldRetry
 import io.github.jan.supabase.postgrest.from
 
 class RouteRemoteDataSourceImpl : RouteRemoteDataSource {
@@ -14,61 +16,86 @@ class RouteRemoteDataSourceImpl : RouteRemoteDataSource {
     private val tableName = "routes"
 
     override suspend fun getAllRoutes(): List<RouteDto> {
-        return safeApiCall {
-            client.from(tableName)
-                .select()
-                .decodeList<RouteDto>()
+        val result = retryWithBackoff(
+            shouldRetry = { shouldRetry(it) }
+        ) {
+            safeApiCall {
+                client.from(tableName)
+                    .select()
+                    .decodeList<RouteDto>()
+            }
         }
+        return result.getOrThrow()
     }
 
     override suspend fun getRouteById(id: String): RouteDto? {
-        return safeApiCall {
-            client.from(tableName)
-                .select {
-                    filter {
-                        eq("id", id)
+        val result = retryWithBackoff(
+            shouldRetry = { shouldRetry(it) }
+        ) {
+            safeApiCall {
+                client.from(tableName)
+                    .select {
+                        filter {
+                            eq("id", id)
+                        }
                     }
-                }
-                .decodeSingleOrNull<RouteDto>()
+                    .decodeSingleOrNull<RouteDto>()
+            }
         }
+        return result.getOrThrow()
     }
 
     override suspend fun createRoute(
         routeRequest: RouteCreateRequestDto
     ): RouteDto {
-        return safeApiCall {
-            client.from(tableName)
-                .insert(routeRequest) {
-                    select()
-                }
-                .decodeSingle<RouteDto>()
+        val result = retryWithBackoff(
+            shouldRetry = { shouldRetry(it) }
+        ) {
+            safeApiCall {
+                client.from(tableName)
+                    .insert(routeRequest) {
+                        select()
+                    }
+                    .decodeSingle<RouteDto>()
+            }
         }
+        return result.getOrThrow()
     }
 
     override suspend fun updateRoute(
         id: String,
         routeRequest: RouteUpdateRequestDto
     ): RouteDto {
-        return safeApiCall {
-            client.from(tableName)
-                .update(routeRequest) {
-                    filter {
-                        eq("id", id)
+        val result = retryWithBackoff(
+            shouldRetry = { shouldRetry(it) }
+        ) {
+            safeApiCall {
+                client.from(tableName)
+                    .update(routeRequest) {
+                        filter {
+                            eq("id", id)
+                        }
+                        select()
                     }
-                    select()
-                }
-                .decodeSingle<RouteDto>()
+                    .decodeSingle<RouteDto>()
+            }
         }
+        return result.getOrThrow()
     }
 
     override suspend fun deleteRoute(id: String) {
-        safeApiCall {
-            client.from(tableName)
-                .delete {
-                    filter {
-                        eq("id", id)
+        val result = retryWithBackoff(
+            shouldRetry = { shouldRetry(it) }
+        ) {
+            safeApiCall {
+                client.from(tableName)
+                    .delete {
+                        filter {
+                            eq("id", id)
+                        }
                     }
-                }
+            }
         }
+        result.getOrThrow()
     }
 }

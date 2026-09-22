@@ -6,6 +6,8 @@ import data.remote.dto.response.WarehouseDto
 import data.remote.dto.request.WarehouseCreateRequestDto
 import data.remote.dto.request.WarehouseUpdateRequestDto
 import data.remote.utils.safeApiCall
+import data.remote.retry.retryWithBackoff
+import data.remote.retry.shouldRetry
 import io.github.jan.supabase.postgrest.from
 
 class WarehouseRemoteDataSourceImpl : WarehouseRemoteDataSource {
@@ -14,63 +16,88 @@ class WarehouseRemoteDataSourceImpl : WarehouseRemoteDataSource {
     private val tableName = "warehouses"
 
     override suspend fun getAllWarehouses(): List<WarehouseDto> {
-        return safeApiCall {
-            client.from(tableName)
-                .select()
-                .decodeList<WarehouseDto>()
+        val result = retryWithBackoff(
+            shouldRetry = { shouldRetry(it) }
+        ) {
+            safeApiCall {
+                client.from(tableName)
+                    .select()
+                    .decodeList<WarehouseDto>()
+            }
         }
+        return result.getOrThrow()
     }
 
     override suspend fun getWarehouseById(
         id: String
     ): WarehouseDto? {
-        return safeApiCall {
-            client.from(tableName)
-                .select {
-                    filter {
-                        eq("id", id)
+        val result = retryWithBackoff(
+            shouldRetry = { shouldRetry(it) }
+        ) {
+            safeApiCall {
+                client.from(tableName)
+                    .select {
+                        filter {
+                            eq("id", id)
+                        }
                     }
-                }
-                .decodeSingleOrNull<WarehouseDto>()
+                    .decodeSingleOrNull<WarehouseDto>()
+            }
         }
+        return result.getOrThrow()
     }
 
     override suspend fun createWarehouse(
         warehouseRequest: WarehouseCreateRequestDto
     ): WarehouseDto {
-        return safeApiCall {
-            client.from(tableName)
-                .insert(warehouseRequest) {
-                    select()
-                }
-                .decodeSingle<WarehouseDto>()
+        val result = retryWithBackoff(
+            shouldRetry = { shouldRetry(it) }
+        ) {
+            safeApiCall {
+                client.from(tableName)
+                    .insert(warehouseRequest) {
+                        select()
+                    }
+                    .decodeSingle<WarehouseDto>()
+            }
         }
+        return result.getOrThrow()
     }
 
     override suspend fun updateWarehouse(
         id: String,
         warehouseRequest: WarehouseUpdateRequestDto
     ): WarehouseDto {
-        return safeApiCall {
-            client.from(tableName)
-                .update(warehouseRequest) {
-                    filter {
-                        eq("id", id)
+        val result = retryWithBackoff(
+            shouldRetry = { shouldRetry(it) }
+        ) {
+            safeApiCall {
+                client.from(tableName)
+                    .update(warehouseRequest) {
+                        filter {
+                            eq("id", id)
+                        }
+                        select()
                     }
-                    select()
-                }
-                .decodeSingle<WarehouseDto>()
+                    .decodeSingle<WarehouseDto>()
+            }
         }
+        return result.getOrThrow()
     }
 
     override suspend fun deleteWarehouse(id: String) {
-        safeApiCall {
-            client.from(tableName)
-                .delete {
-                    filter {
-                        eq("id", id)
+        val result = retryWithBackoff(
+            shouldRetry = { shouldRetry(it) }
+        ) {
+            safeApiCall {
+                client.from(tableName)
+                    .delete {
+                        filter {
+                            eq("id", id)
+                        }
                     }
-                }
+            }
         }
+        result.getOrThrow()
     }
 }
