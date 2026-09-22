@@ -6,69 +6,87 @@ import data.remote.dto.response.VehicleDto
 import data.remote.dto.request.VehicleCreateRequestDto
 import data.remote.dto.request.VehicleUpdateRequestDto
 import data.remote.utils.safeApiCall
+import data.remote.retry.NetworkRetryTemplate
 import io.github.jan.supabase.postgrest.from
 
-class VehicleRemoteDataSourceImpl : VehicleRemoteDataSource {
+class VehicleRemoteDataSourceImpl(
+    private val retryTemplate: NetworkRetryTemplate = NetworkRetryTemplate()
+) : VehicleRemoteDataSource {
 
     private val client = SupabaseClientProvider.client
     private val tableName = "vehicles"
 
     override suspend fun getAllVehicles(): List<VehicleDto> {
-        return safeApiCall {
-            client.from(tableName)
-                .select()
-                .decodeList<VehicleDto>()
+        val result = retryTemplate.execute {
+            safeApiCall {
+                client.from(tableName)
+                    .select()
+                    .decodeList<VehicleDto>()
+            }
         }
+        return result.getOrThrow()
     }
 
     override suspend fun getVehicleById(id: String): VehicleDto? {
-        return safeApiCall {
-            client.from(tableName)
-                .select {
-                    filter {
-                        eq("id", id)
+        val result = retryTemplate.execute {
+            safeApiCall {
+                client.from(tableName)
+                    .select {
+                        filter {
+                            eq("id", id)
+                        }
                     }
-                }
-                .decodeSingleOrNull<VehicleDto>()
+                    .decodeSingleOrNull<VehicleDto>()
+            }
         }
+        return result.getOrThrow()
     }
 
     override suspend fun createVehicle(
         vehicleRequest: VehicleCreateRequestDto
     ): VehicleDto {
-        return safeApiCall {
-            client.from(tableName)
-                .insert(vehicleRequest) {
-                    select()
-                }
-                .decodeSingle<VehicleDto>()
+        val result = retryTemplate.execute {
+            safeApiCall {
+                client.from(tableName)
+                    .insert(vehicleRequest) {
+                        select()
+                    }
+                    .decodeSingle<VehicleDto>()
+            }
         }
+        return result.getOrThrow()
     }
 
     override suspend fun updateVehicle(
         id: String,
         vehicleRequest: VehicleUpdateRequestDto
     ): VehicleDto {
-        return safeApiCall {
-            client.from(tableName)
-                .update(vehicleRequest) {
-                    filter {
-                        eq("id", id)
+        val result = retryTemplate.execute {
+            safeApiCall {
+                client.from(tableName)
+                    .update(vehicleRequest) {
+                        filter {
+                            eq("id", id)
+                        }
+                        select()
                     }
-                    select()
-                }
-                .decodeSingle<VehicleDto>()
+                    .decodeSingle<VehicleDto>()
+            }
         }
+        return result.getOrThrow()
     }
 
     override suspend fun deleteVehicle(id: String) {
-        safeApiCall {
-            client.from(tableName)
-                .delete {
-                    filter {
-                        eq("id", id)
+        val result = retryTemplate.execute {
+            safeApiCall {
+                client.from(tableName)
+                    .delete {
+                        filter {
+                            eq("id", id)
+                        }
                     }
-                }
+            }
         }
+        result.getOrThrow()
     }
 }
