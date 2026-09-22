@@ -14,9 +14,11 @@ class FindOptimalPathUseCase(
         destinationWarehouseId: String
     ): Result<List<Warehouse>> = runCatching {
 
-        val startWarehouse = warehouseRepository.findById(startWarehouseId).getOrThrow() ?: return@runCatching emptyList()
+        val startWarehouse = warehouseRepository.findById(startWarehouseId).getOrThrow()
+            ?: return@runCatching emptyList()
 
-        val destinationWarehouse = warehouseRepository.findById(destinationWarehouseId).getOrThrow() ?: return@runCatching emptyList()
+        val destinationWarehouse = warehouseRepository.findById(destinationWarehouseId).getOrThrow()
+            ?: return@runCatching emptyList()
 
         shortestPathFinder.findShortestPath(
             startWarehouse = startWarehouse,
