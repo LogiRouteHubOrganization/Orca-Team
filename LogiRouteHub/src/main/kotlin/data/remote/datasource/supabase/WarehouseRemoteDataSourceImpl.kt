@@ -6,11 +6,11 @@ import data.remote.dto.response.WarehouseDto
 import data.remote.dto.request.WarehouseCreateRequestDto
 import data.remote.dto.request.WarehouseUpdateRequestDto
 import data.remote.utils.safeApiCall
-import data.remote.retry.NetworkRetryTemplate
+import data.remote.retry.RetryableRemoteDatasource
 import io.github.jan.supabase.postgrest.from
 
 class WarehouseRemoteDataSourceImpl(
-    private val retryTemplate: NetworkRetryTemplate = NetworkRetryTemplate()
+    private val retryTemplate: RetryableRemoteDatasource = RetryableRemoteDatasource()
 ) : WarehouseRemoteDataSource {
 
     private val client = SupabaseClientProvider.client

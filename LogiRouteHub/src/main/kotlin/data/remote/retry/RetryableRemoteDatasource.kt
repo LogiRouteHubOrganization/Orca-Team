@@ -3,7 +3,7 @@ package data.remote.retry
 import data.exception.remote.NetworkException
 import domain.exception.EntityValidationException
 
-class NetworkRetryTemplate(
+class RetryableRemoteDatasource(
     maxAttempts: Int = 3,
     initialDelayMs: Long = 1000,
     factor: Double = 2.0
