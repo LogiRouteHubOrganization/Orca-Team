@@ -25,91 +25,42 @@ class DijkstraRoutingDemo(
     }
 
     private fun validatePathExists() {
-        val startWarehouse = createWarehouse("WH-000001")
-        val middleWarehouse = createWarehouse("WH-000002")
-        val destinationWarehouse = createWarehouse("WH-000003")
+        val start = createWarehouse("WH-000001")
+        val middle = createWarehouse("WH-000002")
+        val destination = createWarehouse("WH-000003")
 
-        startWarehouse.addRoute(
-            createRoute(
-                id = "RT-000001",
-                origin = startWarehouse,
-                destination = middleWarehouse,
-                distanceKm = 5.0
-            )
-        )
+        start.addRoute(createRoute("RT-000001", start, middle, 5.0))
+        middle.addRoute(createRoute("RT-000002", middle, destination, 4.0))
 
-        middleWarehouse.addRoute(
-            createRoute(
-                id = "RT-000002",
-                origin = middleWarehouse,
-                destination = destinationWarehouse,
-                distanceKm = 4.0
-            )
-        )
-
-        val router = ShortestPathRouter(
-            listOf(
-                startWarehouse,
-                middleWarehouse,
-                destinationWarehouse
-            )
-        )
-
-        val warehousePath = router.findShortestPath(
-            startWarehouse,
-            destinationWarehouse
-        )
+        val router = ShortestPathRouter(listOf(start, middle, destination))
+        val warehousePath = router.findShortestPath(start, destination)
 
         validateWarehousePath(
             testName = "Path exists",
             actualPath = warehousePath,
-            expectedPath = listOf(
-                "WH-000001",
-                "WH-000002",
-                "WH-000003"
-            )
+            expectedPath = listOf("WH-000001", "WH-000002", "WH-000003")
         )
     }
 
     private fun validateNoPath() {
-        val startWarehouse = createWarehouse("WH-000001")
-        val destinationWarehouse = createWarehouse("WH-000002")
+        val start = createWarehouse("WH-000001")
+        val destination = createWarehouse("WH-000002")
 
-        val router = ShortestPathRouter(
-            listOf(
-                startWarehouse,
-                destinationWarehouse
-            )
-        )
-
-        val warehousePath = router.findShortestPath(
-            startWarehouse,
-            destinationWarehouse
-        )
+        val router = ShortestPathRouter(listOf(start, destination))
+        val warehousePath = router.findShortestPath(start, destination)
 
         if (warehousePath.isEmpty()) {
             println("No path: PASSED")
         } else {
-            println("No path: FAILED")
-            println("Expected: empty path")
-            println(
-                "Actual: " +
-                        warehousePath.map { warehouse -> warehouse.id }
-            )
+            println("No path: FAILED\nExpected: empty path")
+            println("Actual: ${warehousePath.map { it.id }}")
         }
     }
 
     private fun validateSameWarehouse() {
         val warehouse = createWarehouse("WH-000001")
-
-        val router = ShortestPathRouter(
-            listOf(warehouse)
-        )
-
-        val warehousePath = router.findShortestPath(
-            warehouse,
-            warehouse
-        )
+        val router = ShortestPathRouter(listOf(warehouse))
+        val warehousePath = router.findShortestPath(warehouse, warehouse)
 
         validateWarehousePath(
             testName = "Same warehouse",
@@ -119,199 +70,79 @@ class DijkstraRoutingDemo(
     }
 
     private fun validateCycle() {
-        val startWarehouse = createWarehouse("WH-000001")
-        val middleWarehouse = createWarehouse("WH-000002")
-        val destinationWarehouse = createWarehouse("WH-000003")
+        val start = createWarehouse("WH-000001")
+        val middle = createWarehouse("WH-000002")
+        val destination = createWarehouse("WH-000003")
 
-        startWarehouse.addRoute(
-            createRoute(
-                id = "RT-000001",
-                origin = startWarehouse,
-                destination = middleWarehouse,
-                distanceKm = 3.0
-            )
-        )
+        start.addRoute(createRoute("RT-000001", start, middle, 3.0))
+        middle.addRoute(createRoute("RT-000002", middle, destination, 4.0))
+        destination.addRoute(createRoute("RT-000003", destination, start, 2.0))
 
-        middleWarehouse.addRoute(
-            createRoute(
-                id = "RT-000002",
-                origin = middleWarehouse,
-                destination = destinationWarehouse,
-                distanceKm = 4.0
-            )
-        )
-
-        destinationWarehouse.addRoute(
-            createRoute(
-                id = "RT-000003",
-                origin = destinationWarehouse,
-                destination = startWarehouse,
-                distanceKm = 2.0
-            )
-        )
-
-        val router = ShortestPathRouter(
-            listOf(
-                startWarehouse,
-                middleWarehouse,
-                destinationWarehouse
-            )
-        )
-
-        val warehousePath = router.findShortestPath(
-            startWarehouse,
-            destinationWarehouse
-        )
+        val router = ShortestPathRouter(listOf(start, middle, destination))
+        val warehousePath = router.findShortestPath(start, destination)
 
         validateWarehousePath(
             testName = "Cycle",
             actualPath = warehousePath,
-            expectedPath = listOf(
-                "WH-000001",
-                "WH-000002",
-                "WH-000003"
-            )
+            expectedPath = listOf("WH-000001", "WH-000002", "WH-000003")
         )
     }
 
     private fun validateShortestDistancePath() {
         val warehouses = createRoutingComparisonGraph()
-
         val router = ShortestPathRouter(warehouses)
-
-        val warehousePath = router.findShortestPath(
-            warehouses[0],
-            warehouses[3]
-        )
+        val warehousePath = router.findShortestPath(warehouses[0], warehouses[3])
 
         validateWarehousePath(
             testName = "Shortest-distance path",
             actualPath = warehousePath,
-            expectedPath = listOf(
-                "WH-000001",
-                "WH-000003",
-                "WH-000002",
-                "WH-000004"
-            )
+            expectedPath = listOf("WH-000001", "WH-000003", "WH-000002", "WH-000004")
         )
     }
 
     private fun createRoutingComparisonGraph(): List<Warehouse> {
-        val startWarehouse = createWarehouse("WH-000001")
-        val shortHopWarehouse = createWarehouse("WH-000002")
-        val lowerDistanceWarehouse = createWarehouse("WH-000003")
-        val destinationWarehouse = createWarehouse("WH-000004")
+        val start = createWarehouse("WH-000001")
+        val shortHop = createWarehouse("WH-000002")
+        val lowerDist = createWarehouse("WH-000003")
+        val dest = createWarehouse("WH-000004")
 
-        startWarehouse.addRoute(
-            createRoute(
-                id = "RT-000001",
-                origin = startWarehouse,
-                destination = shortHopWarehouse,
-                distanceKm = 10.0
-            )
-        )
+        start.addRoute(createRoute("RT-000001", start, shortHop, 10.0))
+        shortHop.addRoute(createRoute("RT-000002", shortHop, dest, 4.0))
+        start.addRoute(createRoute("RT-000003", start, lowerDist, 3.0))
+        lowerDist.addRoute(createRoute("RT-000004", lowerDist, shortHop, 2.0))
 
-        shortHopWarehouse.addRoute(
-            createRoute(
-                id = "RT-000002",
-                origin = shortHopWarehouse,
-                destination = destinationWarehouse,
-                distanceKm = 4.0
-            )
-        )
-
-        startWarehouse.addRoute(
-            createRoute(
-                id = "RT-000003",
-                origin = startWarehouse,
-                destination = lowerDistanceWarehouse,
-                distanceKm = 3.0
-            )
-        )
-
-        lowerDistanceWarehouse.addRoute(
-            createRoute(
-                id = "RT-000004",
-                origin = lowerDistanceWarehouse,
-                destination = shortHopWarehouse,
-                distanceKm = 2.0
-            )
-        )
-
-        return listOf(
-            startWarehouse,
-            shortHopWarehouse,
-            lowerDistanceWarehouse,
-            destinationWarehouse
-        )
+        return listOf(start, shortHop, lowerDist, dest)
     }
 
     private fun validateBfsComparison() {
         val warehouses = createRoutingComparisonGraph()
+        val start = warehouses.first()
+        val destination = warehouses.last()
 
-        val startWarehouse = warehouses.first()
-        val destinationWarehouse = warehouses.last()
+        val bfsPath = LeastHopRouter().findLeastHopPath(start, destination)
+        val dijkstraPath = ShortestPathRouter(warehouses).findShortestPath(start, destination)
 
-        val bfsPath = LeastHopRouter().findLeastHopPath(
-            startWarehouse,
-            destinationWarehouse
-        )
-
-        val dijkstraPath = ShortestPathRouter(warehouses)
-            .findShortestPath(
-                startWarehouse,
-                destinationWarehouse
-            )
-
-        printRoutingComparison(
-            bfsPath,
-            dijkstraPath
-        )
-
-        validateRoutingComparison(
-            bfsPath,
-            dijkstraPath
-        )
+        printRoutingComparison(bfsPath, dijkstraPath)
+        validateRoutingComparison(bfsPath, dijkstraPath)
     }
 
     private fun printRoutingComparison(
         bfsPath: List<Warehouse>,
         dijkstraPath: List<Warehouse>
     ) {
-        println()
-        println("=== BFS vs Dijkstra Comparison ===")
-
-        print("BFS Path: ")
-        for (warehouse in bfsPath) {
-            print("${warehouse.id} ")
-        }
-
-        println()
-
-        print("Dijkstra Path: ")
-        for (warehouse in dijkstraPath) {
-            print("${warehouse.id} ")
-        }
-
-        println()
+        println("\n=== BFS vs Dijkstra Comparison ===")
+        println("BFS Path: ${bfsPath.joinToString(" ") { it.id }}")
+        println("Dijkstra Path: ${dijkstraPath.joinToString(" ") { it.id }}")
     }
 
     private fun validateRoutingComparison(
         bfsPath: List<Warehouse>,
         dijkstraPath: List<Warehouse>
     ) {
-        val bfsWarehouseIds = bfsPath.map { warehouse ->
-            warehouse.id
-        }
+        val bfsIds = bfsPath.map { it.id }
+        val dijkstraIds = dijkstraPath.map { it.id }
 
-        val dijkstraWarehouseIds = dijkstraPath.map { warehouse ->
-            warehouse.id
-        }
-
-        if (
-            bfsWarehouseIds != dijkstraWarehouseIds &&
-            dijkstraPath.isNotEmpty()
-        ) {
+        if (bfsIds != dijkstraIds && dijkstraPath.isNotEmpty()) {
             println("BFS vs Dijkstra comparison: PASSED")
         } else {
             println("BFS vs Dijkstra comparison: FAILED")
@@ -319,49 +150,29 @@ class DijkstraRoutingDemo(
     }
 
     private suspend fun demonstrateIntegration() {
-        val startWarehouse = warehouseIndex["WH-000001"]
-        val destinationWarehouse = warehouseIndex["WH-000002"]
+        val start = warehouseIndex["WH-000001"]
+        val destination = warehouseIndex["WH-000002"]
 
-        if (startWarehouse == null || destinationWarehouse == null) {
-            println("Dijkstra integration: FAILED")
-            println("Required warehouses were not found.")
+        if (start == null || destination == null) {
+            println("Dijkstra integration: FAILED\nRequired warehouses were not found.")
             return
         }
 
-        findOptimalPathUseCase(
-            startWarehouseId = startWarehouse.id,
-            destinationWarehouseId = destinationWarehouse.id
-        ).onSuccess { warehousePath ->
-
-            if (warehousePath.isNotEmpty()) {
-                println("Dijkstra integration: PASSED")
-                print("Warehouse Path: ")
-
-                for (warehouse in warehousePath) {
-                    print("${warehouse.id} ")
+        findOptimalPathUseCase(start.id, destination.id)
+            .onSuccess { path ->
+                if (path.isNotEmpty()) {
+                    println("Dijkstra integration: PASSED")
+                    println("Warehouse Path: ${path.joinToString(" ") { it.id }}")
+                } else {
+                    println("Dijkstra integration: FAILED\nNo path found between ${start.id} and ${destination.id}")
                 }
-
-                println()
-            } else {
-                println("Dijkstra integration: FAILED")
-                println(
-                    "No path found between " +
-                            "${startWarehouse.id} and ${destinationWarehouse.id}"
-                )
             }
-
-        }.onFailure { exception ->
-
-            println("Dijkstra integration: FAILED")
-            println(
-                "Error: ${exception.message ?: "Unknown error"}"
-            )
-        }
+            .onFailure { exception ->
+                println("Dijkstra integration: FAILED\nError: ${exception.message ?: "Unknown error"}")
+            }
     }
 
-    private fun createWarehouse(
-        id: String
-    ): Warehouse {
+    private fun createWarehouse(id: String): Warehouse {
         return Warehouse(
             id = id,
             name = "Test Warehouse",
@@ -391,16 +202,13 @@ class DijkstraRoutingDemo(
         actualPath: List<Warehouse>,
         expectedPath: List<String>
     ) {
-        val actualWarehouseIds = actualPath.map { warehouse ->
-            warehouse.id
-        }
+        val actualWarehouseIds = actualPath.map { it.id }
 
         if (actualWarehouseIds == expectedPath) {
             println("$testName: PASSED")
         } else {
-            println("$testName: FAILED")
-            println("Expected: $expectedPath")
-            println("Actual:   $actualWarehouseIds")
+            println("$testName: FAILED\nExpected: $expectedPath\nActual:   $actualWarehouseIds")
         }
     }
 }
+
