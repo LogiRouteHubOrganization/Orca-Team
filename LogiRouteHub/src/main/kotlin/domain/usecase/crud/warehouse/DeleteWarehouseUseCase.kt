@@ -1,4 +1,4 @@
-package domain.usecase.crud.Warehouse
+package domain.usecase.crud.warehouse
 
 import domain.exception.EntityValidationException
 import domain.repository.WarehouseRepository
