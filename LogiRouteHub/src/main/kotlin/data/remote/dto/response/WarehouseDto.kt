@@ -13,3 +13,4 @@ data class WarehouseDto(
     val latitude: Double,
     val longitude: Double
 )
+

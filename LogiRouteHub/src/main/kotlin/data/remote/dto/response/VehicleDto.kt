@@ -14,3 +14,4 @@ data class VehicleDto(
     @SerialName("current_warehouse_id")
     val currentWarehouseId: String
 )
+
