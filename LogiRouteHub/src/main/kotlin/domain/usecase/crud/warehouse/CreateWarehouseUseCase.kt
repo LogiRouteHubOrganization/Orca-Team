@@ -1,4 +1,4 @@
-package domain.usecase.crud.Warehouse
+package domain.usecase.crud.warehouse
 
 import domain.model.Warehouse
 import domain.repository.WarehouseRepository
