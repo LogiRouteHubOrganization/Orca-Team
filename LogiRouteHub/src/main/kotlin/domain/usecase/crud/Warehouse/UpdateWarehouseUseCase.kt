@@ -1,4 +1,4 @@
-package domain.usecase.crud.warehouse
+package domain.usecase.crud.Warehouse
 
 import domain.exception.EntityValidationException
 import domain.model.Warehouse
@@ -42,3 +42,4 @@ class UpdateWarehouseUseCase(
         }
     }
 }
+

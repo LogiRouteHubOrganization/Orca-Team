@@ -13,3 +13,4 @@ class CreateVehicleUseCase(
         return vehicleRepository.add(vehicle)
     }
 }
+

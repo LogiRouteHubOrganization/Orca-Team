@@ -26,11 +26,7 @@ class LeastHopRoutingDemo(
         val destinationWarehouse = createWarehouse("WH-000002")
 
         startWarehouse.addRoute(
-            createRoute(
-                id = "RT-000001",
-                origin = startWarehouse,
-                destination = destinationWarehouse
-            )
+            createRoute("RT-000001", startWarehouse, destinationWarehouse)
         )
 
         val warehousePath = LeastHopRouter().findLeastHopPath(
@@ -41,10 +37,7 @@ class LeastHopRoutingDemo(
         validateWarehousePath(
             testName = "Direct path",
             actualPath = warehousePath,
-            expectedPath = listOf(
-                "WH-000001",
-                "WH-000002"
-            )
+            expectedPath = listOf("WH-000001", "WH-000002")
         )
     }
 
@@ -60,11 +53,8 @@ class LeastHopRoutingDemo(
         if (warehousePath.isEmpty()) {
             println("No path: PASSED")
         } else {
-            println("No path: FAILED")
-            println("Expected: empty path")
-            println(
-                "Actual: ${warehousePath.map { warehouse -> warehouse.id }}"
-            )
+            println("No path: FAILED\nExpected: empty path")
+            println("Actual: ${warehousePath.map { it.id }}")
         }
     }
 
@@ -88,29 +78,9 @@ class LeastHopRoutingDemo(
         val middleWarehouse = createWarehouse("WH-000002")
         val destinationWarehouse = createWarehouse("WH-000003")
 
-        startWarehouse.addRoute(
-            createRoute(
-                id = "RT-000001",
-                origin = startWarehouse,
-                destination = middleWarehouse
-            )
-        )
-
-        middleWarehouse.addRoute(
-            createRoute(
-                id = "RT-000002",
-                origin = middleWarehouse,
-                destination = destinationWarehouse
-            )
-        )
-
-        destinationWarehouse.addRoute(
-            createRoute(
-                id = "RT-000003",
-                origin = destinationWarehouse,
-                destination = startWarehouse
-            )
-        )
+        startWarehouse.addRoute(createRoute("RT-000001", startWarehouse, middleWarehouse))
+        middleWarehouse.addRoute(createRoute("RT-000002", middleWarehouse, destinationWarehouse))
+        destinationWarehouse.addRoute(createRoute("RT-000003", destinationWarehouse, startWarehouse))
 
         val warehousePath = LeastHopRouter().findLeastHopPath(
             startWarehouse,
@@ -120,60 +90,12 @@ class LeastHopRoutingDemo(
         validateWarehousePath(
             testName = "Cycle",
             actualPath = warehousePath,
-            expectedPath = listOf(
-                "WH-000001",
-                "WH-000002",
-                "WH-000003"
-            )
+            expectedPath = listOf("WH-000001", "WH-000002", "WH-000003")
         )
     }
 
     private fun validateLeastHopPath() {
-        val startWarehouse = createWarehouse("WH-000001")
-        val shortPathWarehouse = createWarehouse("WH-000002")
-        val alternativePathWarehouse = createWarehouse("WH-000003")
-        val destinationWarehouse = createWarehouse("WH-000004")
-        val extraPathWarehouse = createWarehouse("WH-000005")
-
-        startWarehouse.addRoute(
-            createRoute(
-                id = "RT-000001",
-                origin = startWarehouse,
-                destination = shortPathWarehouse
-            )
-        )
-
-        shortPathWarehouse.addRoute(
-            createRoute(
-                id = "RT-000002",
-                origin = shortPathWarehouse,
-                destination = destinationWarehouse
-            )
-        )
-
-        startWarehouse.addRoute(
-            createRoute(
-                id = "RT-000003",
-                origin = startWarehouse,
-                destination = alternativePathWarehouse
-            )
-        )
-
-        alternativePathWarehouse.addRoute(
-            createRoute(
-                id = "RT-000004",
-                origin = alternativePathWarehouse,
-                destination = extraPathWarehouse
-            )
-        )
-
-        extraPathWarehouse.addRoute(
-            createRoute(
-                id = "RT-000005",
-                origin = extraPathWarehouse,
-                destination = destinationWarehouse
-            )
-        )
+        val (startWarehouse, destinationWarehouse) = setupLeastHopGraph()
 
         val warehousePath = LeastHopRouter().findLeastHopPath(
             startWarehouse,
@@ -183,12 +105,25 @@ class LeastHopRoutingDemo(
         validateWarehousePath(
             testName = "Least-hop path",
             actualPath = warehousePath,
-            expectedPath = listOf(
-                "WH-000001",
-                "WH-000002",
-                "WH-000004"
-            )
+            expectedPath = listOf("WH-000001", "WH-000002", "WH-000004")
         )
+    }
+
+    private fun setupLeastHopGraph(): Pair<Warehouse, Warehouse> {
+        val startWarehouse = createWarehouse("WH-000001")
+        val shortPathWarehouse = createWarehouse("WH-000002")
+        val alternativePathWarehouse = createWarehouse("WH-000003")
+        val destinationWarehouse = createWarehouse("WH-000004")
+        val extraPathWarehouse = createWarehouse("WH-000005")
+
+        startWarehouse.addRoute(createRoute("RT-000001", startWarehouse, shortPathWarehouse))
+        shortPathWarehouse.addRoute(createRoute("RT-000002", shortPathWarehouse, destinationWarehouse))
+
+        startWarehouse.addRoute(createRoute("RT-000003", startWarehouse, alternativePathWarehouse))
+        alternativePathWarehouse.addRoute(createRoute("RT-000004", alternativePathWarehouse, extraPathWarehouse))
+        extraPathWarehouse.addRoute(createRoute("RT-000005", extraPathWarehouse, destinationWarehouse))
+
+        return Pair(startWarehouse, destinationWarehouse)
     }
 
     private suspend fun demonstrateIntegration() {
@@ -196,8 +131,7 @@ class LeastHopRoutingDemo(
         val destinationWarehouse = warehouseIndex["WH-000002"]
 
         if (startWarehouse == null || destinationWarehouse == null) {
-            println("Least-hop integration: FAILED")
-            println("Required warehouses were not found.")
+            println("Least-hop integration: FAILED\nRequired warehouses were not found.")
             return
         }
 
@@ -205,34 +139,20 @@ class LeastHopRoutingDemo(
             startWarehouseId = startWarehouse.id,
             destinationWarehouseId = destinationWarehouse.id
         ).onSuccess { warehousePath ->
-
             if (warehousePath.isNotEmpty()) {
                 println("Least-hop integration: PASSED")
-                println(
-                    "Warehouse Path: ${
-                        warehousePath.map { warehouse -> warehouse.id }
-                    }"
-                )
+                println("Warehouse Path: ${warehousePath.map { it.id }}")
             } else {
                 println("Least-hop integration: FAILED")
-                println(
-                    "No path found between " +
-                            "${startWarehouse.id} and ${destinationWarehouse.id}."
-                )
+                println("No path found between ${startWarehouse.id} and ${destinationWarehouse.id}.")
             }
-
         }.onFailure { exception ->
-
             println("Least-hop integration: FAILED")
-            println(
-                "Error: ${exception.message ?: "Unknown error"}"
-            )
+            println("Error: ${exception.message ?: "Unknown error"}")
         }
     }
 
-    private fun createWarehouse(
-        id: String
-    ): Warehouse {
+    private fun createWarehouse(id: String): Warehouse {
         return Warehouse(
             id = id,
             name = "Test Warehouse",
@@ -261,9 +181,7 @@ class LeastHopRoutingDemo(
         actualPath: List<Warehouse>,
         expectedPath: List<String>
     ) {
-        val actualWarehouseIds = actualPath.map { warehouse ->
-            warehouse.id
-        }
+        val actualWarehouseIds = actualPath.map { it.id }
 
         if (actualWarehouseIds == expectedPath) {
             println("$testName: PASSED")

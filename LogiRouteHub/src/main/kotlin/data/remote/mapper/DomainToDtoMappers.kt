@@ -93,3 +93,4 @@ fun RouteUpdateModel.toUpdateDto(): RouteUpdateRequestDto {
         typicalDelayMin = typicalDelayMin
     )
 }
+

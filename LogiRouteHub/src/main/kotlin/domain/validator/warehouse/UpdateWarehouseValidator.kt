@@ -10,58 +10,36 @@ import domain.validator.rule.NonBlankStringValidator
 
 class UpdateWarehouseValidator {
 
-    operator fun invoke(
-        updateModel: WarehouseUpdateModel
-    ): ValidationResult {
+    operator fun invoke(updateModel: WarehouseUpdateModel): ValidationResult {
+        if (!hasAnyUpdate(updateModel)) {
+            return ValidationResult.Failure(
+                listOf(FieldViolation(field = "update", error = ValidationError.EmptyUpdate))
+            )
+        }
 
-        val hasUpdate = listOf(
+        val results = listOfNotNull(
+            updateModel.name?.let {
+                NonBlankStringValidator("name").validate(it) },
+            updateModel.regionalZone?.let {
+                NonBlankStringValidator("regionalZone").validate(it) },
+            updateModel.latitude?.let {
+                LatitudeValidator("latitude").validate(it) },
+            updateModel.longitude?.let {
+                LongitudeValidator("longitude").validate(it) }
+        )
+
+        val errors = results.filterIsInstance<ValidationResult.Failure>().flatMap { it.errors }
+
+        return if (errors.isEmpty()) ValidationResult.Success else ValidationResult.Failure(errors)
+    }
+
+    private fun hasAnyUpdate(updateModel: WarehouseUpdateModel): Boolean {
+        return listOf(
             updateModel.name,
             updateModel.regionalZone,
             updateModel.latitude,
             updateModel.longitude
         ).any { it != null }
-
-        if (!hasUpdate) {
-            return ValidationResult.Failure(
-                listOf(
-                    FieldViolation(field = "update", error = ValidationError.EmptyUpdate)
-                )
-            )
-        }
-
-        val results = listOfNotNull(
-            updateModel.name?.let { name ->
-                NonBlankStringValidator(
-                    field = "name"
-                ).validate(name)
-            },
-
-            updateModel.regionalZone?.let { zone ->
-                NonBlankStringValidator(
-                    field = "regionalZone"
-                ).validate(zone)
-            },
-
-            updateModel.latitude?.let { lat ->
-                LatitudeValidator(
-                    field = "latitude"
-                ).validate(lat)
-            },
-
-            updateModel.longitude?.let { lng ->
-                LongitudeValidator(
-                    field = "longitude"
-                ).validate(lng)
-            }
-        )
-
-        val errors = results.filterIsInstance<ValidationResult.Failure>()
-            .flatMap { it.errors }
-
-        return if (errors.isEmpty()) {
-            ValidationResult.Success
-        } else {
-            ValidationResult.Failure(errors)
-        }
     }
 }
+

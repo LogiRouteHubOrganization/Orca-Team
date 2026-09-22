@@ -19,3 +19,4 @@ interface RouteRepository {
 
     suspend fun delete(routeId: String): Result<Unit>
 }
+

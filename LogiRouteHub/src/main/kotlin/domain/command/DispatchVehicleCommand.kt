@@ -37,193 +37,123 @@ class DispatchVehicleCommand(
 
     override suspend fun execute(): Result<Unit> {
         return runCatching {
-            val currentVehicle =
-                dependencies.vehicleRepository
-                    .findById(request.vehicleId)
-                    .getOrThrow()
-                    ?: error("Vehicle not found: ${request.vehicleId}")
+            val currentVehicle = dependencies.vehicleRepository
+                .findById(request.vehicleId)
+                .getOrThrow() ?: error("Vehicle not found: ${request.vehicleId}")
 
-            val currentWarehouse =
-                dependencies.warehouseRepository
-                    .findById(request.warehouseId)
-                    .getOrThrow()
-                    ?: error("Warehouse not found: ${request.warehouseId}")
+            val currentWarehouse = dependencies.warehouseRepository
+                .findById(request.warehouseId)
+                .getOrThrow() ?: error("Warehouse not found: ${request.warehouseId}")
 
             vehicle = currentVehicle
             warehouse = currentWarehouse
 
-            previousVehiclePackages =
-                currentVehicle.assignedPackages.toList()
+            previousVehiclePackages = currentVehicle.assignedPackages.toList()
+            previousWarehouseQueue = currentWarehouse.cargoQueue.toList()
 
-            previousWarehouseQueue =
-                currentWarehouse.cargoQueue.toList()
-            val dispatchedPackages =
-                dependencies.dispatchVehicleUseCase(request)
-                    .getOrThrow()
-
+            val dispatchedPackages = dependencies.dispatchVehicleUseCase(request).getOrThrow()
             if (dispatchedPackages.isEmpty()) {
                 error("No packages were dispatched")
             }
 
-            afterVehiclePackages =
-                currentVehicle.assignedPackages.toList()
-
-            afterWarehouseQueue =
-                currentWarehouse.cargoQueue.toList()
+            afterVehiclePackages = currentVehicle.assignedPackages.toList()
+            afterWarehouseQueue = currentWarehouse.cargoQueue.toList()
 
             recordStateTransition()
-
             Unit
         }
     }
 
     override suspend fun undo(): Result<Unit> {
         return runCatching {
-            val executedVehicle =
-                vehicle ?: error("Command has not been executed")
+            val (executedVehicle, executedWarehouse) = getExecutedEntities()
+            val oldVehiclePackages = previousVehiclePackages ?: error("Previous vehicle state is unavailable")
+            val oldWarehouseQueue = previousWarehouseQueue ?: error("Previous warehouse state is unavailable")
+            val currentVehiclePackages = afterVehiclePackages ?: error("After vehicle state is unavailable")
+            val currentWarehouseQueue = afterWarehouseQueue ?: error("After warehouse state is unavailable")
 
-            val executedWarehouse =
-                warehouse ?: error("Command has not been executed")
-
-            val oldVehiclePackages =
-                previousVehiclePackages
-                    ?: error("Previous vehicle state is unavailable")
-
-            val oldWarehouseQueue =
-                previousWarehouseQueue
-                    ?: error("Previous warehouse state is unavailable")
-
-            val currentVehiclePackages =
-                afterVehiclePackages
-                    ?: error("After vehicle state is unavailable")
-
-            val currentWarehouseQueue =
-                afterWarehouseQueue
-                    ?: error("After warehouse state is unavailable")
-
-            executedVehicle.restoreAssignedPackages(oldVehiclePackages)
-            executedWarehouse.restoreCargoQueue(oldWarehouseQueue)
-
-            dependencies.vehicleRepository.update(
-                executedVehicle.id,
-                VehicleUpdateModel(
-                    maxCapacityKg = executedVehicle.maxCapacityKg,
-                    costPerKm = executedVehicle.costPerKm,
-                    currentWarehouseId = executedVehicle.currentWarehouse?.id
-                )
-            ).getOrThrow()
-
-            dependencies.warehouseRepository.update(
-                executedWarehouse.id,
-                WarehouseUpdateModel(
-                    name = executedWarehouse.name,
-                    regionalZone = executedWarehouse.regionalZone,
-                    latitude = executedWarehouse.latitude,
-                    longitude = executedWarehouse.longitude
-                )
-            ).getOrThrow()
-
-            dependencies.telemetry.recordStateTransition(
-                commandType = commandType,
-                beforeState = DispatchState(
-                    vehiclePackageIds =
-                        currentVehiclePackages.map { it.id },
-                    warehouseQueuePackageIds =
-                        currentWarehouseQueue.map { it.id }
-                ),
-                afterState = DispatchState(
-                    vehiclePackageIds =
-                        oldVehiclePackages.map { it.id },
-                    warehouseQueuePackageIds =
-                        oldWarehouseQueue.map { it.id }
-                )
-            )
-
+            applyDispatchStateAndSave(executedVehicle, oldVehiclePackages, executedWarehouse, oldWarehouseQueue)
+            recordTelemetryState(currentVehiclePackages, currentWarehouseQueue, oldVehiclePackages, oldWarehouseQueue)
             Unit
         }
     }
 
     override suspend fun redo(): Result<Unit> {
         return runCatching {
-            val executedVehicle =
-                vehicle ?: error("Command has not been executed")
+            val (executedVehicle, executedWarehouse) = getExecutedEntities()
+            val oldVehiclePackages = previousVehiclePackages ?: error("Previous vehicle state is unavailable")
+            val oldWarehouseQueue = previousWarehouseQueue ?: error("Previous warehouse state is unavailable")
+            val newVehiclePackages = afterVehiclePackages ?: error("After vehicle state is unavailable")
+            val newWarehouseQueue = afterWarehouseQueue ?: error("After warehouse state is unavailable")
 
-            val executedWarehouse =
-                warehouse ?: error("Command has not been executed")
-
-            val oldVehiclePackages =
-                previousVehiclePackages
-                    ?: error("Previous vehicle state is unavailable")
-
-            val oldWarehouseQueue =
-                previousWarehouseQueue
-                    ?: error("Previous warehouse state is unavailable")
-
-            val newVehiclePackages =
-                afterVehiclePackages
-                    ?: error("After vehicle state is unavailable")
-
-            val newWarehouseQueue =
-                afterWarehouseQueue
-                    ?: error("After warehouse state is unavailable")
-
-            executedVehicle.restoreAssignedPackages(newVehiclePackages)
-            executedWarehouse.restoreCargoQueue(newWarehouseQueue)
-
-            dependencies.vehicleRepository.update(
-                executedVehicle.id,
-                VehicleUpdateModel(
-                    maxCapacityKg = executedVehicle.maxCapacityKg,
-                    costPerKm = executedVehicle.costPerKm,
-                    currentWarehouseId = executedVehicle.currentWarehouse?.id
-                )
-            ).getOrThrow()
-
-            dependencies.warehouseRepository.update(
-                executedWarehouse.id,
-                WarehouseUpdateModel(
-                    name = executedWarehouse.name,
-                    regionalZone = executedWarehouse.regionalZone,
-                    latitude = executedWarehouse.latitude,
-                    longitude = executedWarehouse.longitude
-                )
-            ).getOrThrow()
-
-            dependencies.telemetry.recordStateTransition(
-                commandType = commandType,
-                beforeState = DispatchState(
-                    vehiclePackageIds =
-                        oldVehiclePackages.map { it.id },
-                    warehouseQueuePackageIds =
-                        oldWarehouseQueue.map { it.id }
-                ),
-                afterState = DispatchState(
-                    vehiclePackageIds =
-                        newVehiclePackages.map { it.id },
-                    warehouseQueuePackageIds =
-                        newWarehouseQueue.map { it.id }
-                )
-            )
-
+            applyDispatchStateAndSave(executedVehicle, newVehiclePackages, executedWarehouse, newWarehouseQueue)
+            recordTelemetryState(oldVehiclePackages, oldWarehouseQueue, newVehiclePackages, newWarehouseQueue)
             Unit
         }
     }
 
-    private fun recordStateTransition() {
+    private fun getExecutedEntities(): Pair<Vehicle, Warehouse> {
+        val executedVehicle = vehicle ?: error("Command has not been executed")
+        val executedWarehouse = warehouse ?: error("Command has not been executed")
+        return Pair(executedVehicle, executedWarehouse)
+    }
+
+    private suspend fun applyDispatchStateAndSave(
+        vehicle: Vehicle,
+        vehiclePackages: List<Package>,
+        warehouse: Warehouse,
+        warehouseQueue: List<Package>
+    ) {
+        vehicle.restoreAssignedPackages(vehiclePackages)
+        warehouse.restoreCargoQueue(warehouseQueue)
+
+        dependencies.vehicleRepository.update(
+            vehicle.id,
+            VehicleUpdateModel(
+                maxCapacityKg = vehicle.maxCapacityKg,
+                costPerKm = vehicle.costPerKm,
+                currentWarehouseId = vehicle.currentWarehouse?.id
+            )
+        ).getOrThrow()
+
+        dependencies.warehouseRepository.update(
+            warehouse.id,
+            WarehouseUpdateModel(
+                name = warehouse.name,
+                regionalZone = warehouse.regionalZone,
+                latitude = warehouse.latitude,
+                longitude = warehouse.longitude
+            )
+        ).getOrThrow()
+    }
+
+    private fun recordTelemetryState(
+        beforeVehicle: List<Package>,
+        beforeWarehouse: List<Package>,
+        afterVehicle: List<Package>,
+        afterWarehouse: List<Package>
+    ) {
         dependencies.telemetry.recordStateTransition(
             commandType = commandType,
             beforeState = DispatchState(
-                vehiclePackageIds =
-                    previousVehiclePackages.orEmpty().map { it.id },
-                warehouseQueuePackageIds =
-                    previousWarehouseQueue.orEmpty().map { it.id }
+                vehiclePackageIds = beforeVehicle.map { it.id },
+                warehouseQueuePackageIds = beforeWarehouse.map { it.id }
             ),
             afterState = DispatchState(
-                vehiclePackageIds =
-                    afterVehiclePackages.orEmpty().map { it.id },
-                warehouseQueuePackageIds =
-                    afterWarehouseQueue.orEmpty().map { it.id }
+                vehiclePackageIds = afterVehicle.map { it.id },
+                warehouseQueuePackageIds = afterWarehouse.map { it.id }
             )
         )
     }
+
+    private fun recordStateTransition() {
+        recordTelemetryState(
+            beforeVehicle = previousVehiclePackages.orEmpty(),
+            beforeWarehouse = previousWarehouseQueue.orEmpty(),
+            afterVehicle = afterVehiclePackages.orEmpty(),
+            afterWarehouse = afterWarehouseQueue.orEmpty()
+        )
+    }
 }
+
+
