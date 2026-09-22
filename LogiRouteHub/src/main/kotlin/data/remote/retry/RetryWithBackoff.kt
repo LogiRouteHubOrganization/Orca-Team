@@ -7,6 +7,7 @@ suspend fun <T> retryWithBackoff(
     maxAttempts: Int = 3,
     initialDelayMs: Long = 1000,
     factor: Double = 2.0,
+    shouldRetry: (Throwable) -> Boolean,
     block: suspend () -> T
 ): Result<T> {
 
@@ -27,11 +28,14 @@ suspend fun <T> retryWithBackoff(
                 return Result.failure(exception)
             }
 
+            if (!shouldRetry(exception)) {
+                return Result.failure(exception)
+            }
+
             val delayMs = (initialDelayMs * factor.pow(attemptIndex.toDouble())).toLong()
 
             delay(delayMs)
         }
     }
-
     error("Unreachable")
 }

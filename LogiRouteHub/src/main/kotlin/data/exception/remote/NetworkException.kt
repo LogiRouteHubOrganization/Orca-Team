@@ -13,6 +13,10 @@ sealed class NetworkException(
         message: String = "The requested resource was not found (404)."
     ) : NetworkException(message)
 
+    class UnprocessableEntityException(
+        message: String = "Unprocessable entity (422)."
+    ) : NetworkException(message)
+
     class ServerErrorException(
         message: String = "Internal server error occurred (500). Please try again later."
     ) : NetworkException(message)
