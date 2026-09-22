@@ -3,6 +3,7 @@ package data.parser
 import data.dataholder.RouteRaw
 
 class RouteParser {
+
     private val csvSeparator = ","
     private val expectedColumnCount = 5
     private val routeIdColumnIndex = 0
@@ -10,6 +11,7 @@ class RouteParser {
     private val destinationHubIdColumnIndex = 2
     private val distanceColumnIndex = 3
     private val delayColumnIndex = 4
+    private val requiredIdDigits = 6
 
     fun parseRouteRow(
         row: String,
@@ -46,9 +48,13 @@ class RouteParser {
     ): Boolean {
 
         if (values.size != expectedColumnCount) {
-            println("Warning: Row ${rowNumber + 1} " + "has wrong number of columns")
+            println(
+                "Warning: Row ${rowNumber + 1} " +
+                        "has wrong number of columns"
+            )
             return false
         }
+
         return true
     }
 
@@ -56,8 +62,12 @@ class RouteParser {
         values: List<String>,
         rowNumber: Int
     ): Boolean {
+
         if (values.any { value -> value.isEmpty() }) {
-            println("Warning: Row ${rowNumber + 1} " + "contains an empty value")
+            println(
+                "Warning: Row ${rowNumber + 1} " +
+                        "contains an empty value"
+            )
             return false
         }
 
@@ -73,12 +83,14 @@ class RouteParser {
             values[distanceColumnIndex],
             rowNumber
         )
+
         if (distanceKm == null) return null
 
         val typicalDelayMin = parseTypicalDelayMin(
             values[delayColumnIndex],
             rowNumber
         )
+
         if (typicalDelayMin == null) return null
 
         return RouteRaw(
@@ -100,11 +112,19 @@ class RouteParser {
         distance: String,
         rowNumber: Int
     ): Double? {
-        val distanceKm = distance.toDoubleOrNull()
+
+        val distanceKm = distance
+            .trim()
+            .toDoubleOrNull()
+
         if (distanceKm == null || distanceKm <= 0) {
-            println("Warning: Row ${rowNumber + 1} " + "has invalid distance")
+            println(
+                "Warning: Row ${rowNumber + 1} " +
+                        "has invalid distance"
+            )
             return null
         }
+
         return distanceKm
     }
 
@@ -112,20 +132,48 @@ class RouteParser {
         delay: String,
         rowNumber: Int
     ): Int? {
-        val typicalDelayMin = delay.toIntOrNull()
+
+        val typicalDelayMin = delay
+            .trim()
+            .toIntOrNull()
 
         if (typicalDelayMin == null || typicalDelayMin < 0) {
-            println("Warning: Row ${rowNumber + 1} " + "has invalid delay")
+            println(
+                "Warning: Row ${rowNumber + 1} " +
+                        "has invalid delay"
+            )
             return null
         }
+
         return typicalDelayMin
     }
 
     private fun normalizeIdentifier(
         identifier: String
     ): String {
-        return identifier
+
+        val normalizedIdentifier = identifier
             .trim()
             .uppercase()
+
+        val identifierParts = normalizedIdentifier.split("-")
+
+        if (identifierParts.size != 2) {
+            return normalizedIdentifier
+        }
+
+        val prefix = identifierParts[0]
+        val numericPart = identifierParts[1]
+
+        if (numericPart.toIntOrNull() == null) {
+            return normalizedIdentifier
+        }
+
+        val normalizedNumericPart = numericPart.padStart(
+            length = requiredIdDigits,
+            padChar = '0'
+        )
+
+        return "$prefix-$normalizedNumericPart"
     }
 }

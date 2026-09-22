@@ -31,20 +31,27 @@ class LocalPackageRepositoryImpl(
 
         for (rawPackage in rawPackages) {
 
-            val originWarehouse =
-                warehouseRepository
-                    .findById(rawPackage.originHubId)
-                    .getOrThrow()
-                    ?: throw ResourceNotFoundException.WarehouseNotFound(rawPackage.originHubId)
+            val originWarehouse = warehouseRepository.findById(rawPackage.originHubId).getOrThrow()
 
-            val destinationWarehouse =
-                warehouseRepository
-                    .findById(rawPackage.destinationHubId)
-                    .getOrThrow()
-                    ?: throw ResourceNotFoundException.WarehouseNotFound(rawPackage.destinationHubId)
+            if (originWarehouse == null) {
+                println(
+                    "Warning: Skipping package '${rawPackage.packageId}' " +
+                            "because origin warehouse '${rawPackage.originHubId}' was not found"
+                )
+                continue
+            }
 
-            val logisticsPackage =
-                packageMapper.mapToDomainModel(
+            val destinationWarehouse = warehouseRepository.findById(rawPackage.destinationHubId).getOrThrow()
+
+            if (destinationWarehouse == null) {
+                println(
+                    "Warning: Skipping package '${rawPackage.packageId}' " +
+                            "because destination warehouse '${rawPackage.destinationHubId}' was not found"
+                )
+                continue
+            }
+
+            val logisticsPackage = packageMapper.mapToDomainModel(
                     rawPackage = rawPackage,
                     originWarehouse = originWarehouse,
                     destinationWarehouse = destinationWarehouse

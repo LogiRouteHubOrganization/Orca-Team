@@ -26,11 +26,17 @@ class LocalVehicleRepositoryImpl(
 
         rawVehicles.forEach { rawVehicle ->
 
-            val currentWarehouse =
-                warehouseRepository
+            val currentWarehouse = warehouseRepository
                     .findById(rawVehicle.currentHubId)
                     .getOrThrow()
-                    ?: throw ResourceNotFoundException.WarehouseNotFound(rawVehicle.currentHubId)
+
+            if (currentWarehouse == null) {
+                println(
+                    "Warning: Skipping vehicle '${rawVehicle.vehicleId}' " +
+                            "because warehouse '${rawVehicle.currentHubId}' was not found"
+                )
+                return@forEach
+            }
 
             val vehicle = vehicleMapper.mapToDomainModel(
                 rawVehicle = rawVehicle,

@@ -6,11 +6,11 @@ import data.remote.dto.response.VehicleDto
 import data.remote.dto.request.VehicleCreateRequestDto
 import data.remote.dto.request.VehicleUpdateRequestDto
 import data.remote.utils.safeApiCall
-import data.remote.retry.NetworkRetryTemplate
+import data.remote.retry.RetryableRemoteDatasource
 import io.github.jan.supabase.postgrest.from
 
 class VehicleRemoteDataSourceImpl(
-    private val retryTemplate: NetworkRetryTemplate = NetworkRetryTemplate()
+    private val retryTemplate: RetryableRemoteDatasource = RetryableRemoteDatasource()
 ) : VehicleRemoteDataSource {
 
     private val client = SupabaseClientProvider.client

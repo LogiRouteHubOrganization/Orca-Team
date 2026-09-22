@@ -79,7 +79,7 @@ suspend fun main() {
 }
 
 private suspend fun runApplication() {
-/*
+
     /*
      * -------------------------------------------------------------
      * PART 1: Existing local CSV flow
@@ -178,7 +178,7 @@ private suspend fun runApplication() {
 
     displayTreePerformanceResult(simulationResult)
 
-*/
+
     /*
      * -------------------------------------------------------------
      * PART 2: Existing successful CRUD demonstration

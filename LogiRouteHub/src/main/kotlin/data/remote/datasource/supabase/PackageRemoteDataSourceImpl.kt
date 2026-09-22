@@ -6,11 +6,11 @@ import data.remote.dto.response.PackageDto
 import data.remote.dto.request.PackageCreateRequestDto
 import data.remote.dto.request.PackageUpdateRequestDto
 import data.remote.utils.safeApiCall
-import data.remote.retry.NetworkRetryTemplate
+import data.remote.retry.RetryableRemoteDatasource
 import io.github.jan.supabase.postgrest.from
 
 class PackageRemoteDataSourceImpl(
-    private val retryTemplate: NetworkRetryTemplate = NetworkRetryTemplate()
+    private val retryTemplate: RetryableRemoteDatasource = RetryableRemoteDatasource()
 ) : PackageRemoteDataSource {
 
     private val client = SupabaseClientProvider.client

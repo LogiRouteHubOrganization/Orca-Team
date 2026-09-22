@@ -26,17 +26,27 @@ class LocalRouteRepositoryImpl(
 
         rawRoutes.forEach { rawRoute ->
 
-            val originWarehouse =
-                warehouseRepository
-                    .findById(rawRoute.originHubId)
+            val originWarehouse = warehouseRepository.findById(rawRoute.originHubId)
                     .getOrThrow()
-                    ?: throw ResourceNotFoundException.WarehouseNotFound(rawRoute.originHubId)
 
-            val destinationWarehouse =
-                warehouseRepository
-                    .findById(rawRoute.destinationHubId)
-                    .getOrThrow()
-                    ?: throw ResourceNotFoundException.WarehouseNotFound(rawRoute.destinationHubId)
+            if (originWarehouse == null) {
+                println(
+                    "Warning: Skipping route '${rawRoute.routeId}' " +
+                            "because origin warehouse '${rawRoute.originHubId}' was not found"
+                )
+                return@forEach
+            }
+
+            val destinationWarehouse = warehouseRepository.findById(rawRoute.destinationHubId)
+                .getOrThrow()
+
+            if (destinationWarehouse == null) {
+                println(
+                    "Warning: Skipping route '${rawRoute.routeId}' " +
+                            "because destination warehouse '${rawRoute.destinationHubId}' was not found"
+                )
+                return@forEach
+            }
 
             val route = routeMapper.mapToDomainModel(
                 rawRoute = rawRoute,
