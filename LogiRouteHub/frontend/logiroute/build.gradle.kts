@@ -32,6 +32,7 @@ kotlin {
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.8.0")
+            implementation(libs.compose.uiTooling)
         }
 
         commonMain.dependencies {
@@ -44,6 +45,7 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
