@@ -1,14 +1,21 @@
+
 package domain.repository
 
 import domain.model.Vehicle
+import domain.model.updateinput.VehicleUpdateModel
 
 interface VehicleRepository {
 
-    fun findById(vehicleId: String): Vehicle?
+    suspend fun findById(vehicleId: String): Result<Vehicle?>
 
-    fun findAll(): List<Vehicle>
+    suspend fun findAll(): Result<List<Vehicle>>
 
-    fun add(vehicle: Vehicle)
+    suspend fun add(vehicle: Vehicle): Result<Vehicle>
 
-    fun update(vehicle: Vehicle)
+    suspend fun update(
+        vehicleId: String,
+        updateModel: VehicleUpdateModel
+    ): Result<Vehicle>
+
+    suspend fun delete(vehicleId: String): Result<Unit>
 }

@@ -7,18 +7,26 @@ class CheckWarehouseConnectivityUseCase(
     private val warehouseRepository: WarehouseRepository,
     private val leastHopRouter: LeastHopRouter
 ) {
-    operator fun invoke(
+
+    suspend operator fun invoke(
         startWarehouseId: String,
         destinationWarehouseId: String
-    ): Boolean {
-        val startWarehouse = warehouseRepository.findById(startWarehouseId) ?: return false
-        val destinationWarehouse = warehouseRepository.findById(destinationWarehouseId) ?: return false
+    ): Result<Boolean> = runCatching {
+
+        val startWarehouse = warehouseRepository
+            .findById(startWarehouseId)
+            .getOrThrow()
+            ?: return@runCatching false
+
+        val destinationWarehouse = warehouseRepository
+            .findById(destinationWarehouseId)
+            .getOrThrow()
+            ?: return@runCatching false
 
         val warehousePath = leastHopRouter.findLeastHopPath(
             startWarehouse = startWarehouse,
             destinationWarehouse = destinationWarehouse
         )
-
-        return warehousePath.isNotEmpty()
+        warehousePath.isNotEmpty()
     }
 }

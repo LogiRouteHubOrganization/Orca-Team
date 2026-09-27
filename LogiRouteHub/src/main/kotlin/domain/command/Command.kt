@@ -2,7 +2,10 @@ package domain.command
 
 interface Command {
     val commandType: String
-    fun execute(): Boolean
-    fun undo()
-    fun redo()
+
+    suspend fun execute(): Result<Unit>
+
+    suspend fun undo(): Result<Unit>
+
+    suspend fun redo(): Result<Unit>
 }

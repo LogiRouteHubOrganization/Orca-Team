@@ -1,14 +1,22 @@
+
 package domain.repository
 
 import domain.model.Package
+import domain.model.updateinput.PackageUpdateModel
 
 interface PackageRepository {
 
-    fun findById(packageId: String): Package?
+    suspend fun findById(packageId: String): Result<Package?>
 
-    fun findAll(): List<Package>
+    suspend fun findAll(): Result<List<Package>>
 
-    fun add(logisticsPackage: Package)
+    suspend fun add(logisticsPackage: Package): Result<Package>
 
-    fun update(logisticsPackage: Package)
+    suspend fun update(
+        packageId: String,
+        updateModel: PackageUpdateModel
+    ): Result<Package>
+
+    suspend fun delete(packageId: String): Result<Unit>
 }
+

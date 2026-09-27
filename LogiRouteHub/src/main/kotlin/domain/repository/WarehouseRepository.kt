@@ -1,14 +1,23 @@
+
 package domain.repository
 
 import domain.model.Warehouse
+import domain.model.updateinput.WarehouseUpdateModel
 
 interface WarehouseRepository {
 
-    fun findById(warehouseId: String): Warehouse?
+    suspend fun findById(warehouseId: String): Result<Warehouse?>
 
-    fun findAll(): List<Warehouse>
+    suspend fun findAll(): Result<List<Warehouse>>
 
-    fun add(warehouse: Warehouse)
+    suspend fun add(warehouse: Warehouse): Result<Warehouse>
 
-    fun update(warehouse: Warehouse)
+    suspend fun update(
+        warehouseId: String,
+        updateModel: WarehouseUpdateModel
+    ): Result<Warehouse>
+
+    suspend fun delete(warehouseId: String): Result<Unit>
 }
+
+

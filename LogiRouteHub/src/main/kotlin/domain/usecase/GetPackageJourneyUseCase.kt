@@ -20,25 +20,25 @@ class GetPackageJourneyUseCase(
     private val shortestPathRouter: ShortestPathRouter
 ) {
 
-    operator fun invoke(packageId: String): PackageJourney? {
+    suspend operator fun invoke(
+        packageId: String
+    ): Result<PackageJourney?> = runCatching {
 
-        val logisticsPackage = packageRepository.findById(packageId)
-            ?: return null
+        val logisticsPackage = packageRepository.findById(packageId).getOrThrow()
+            ?: return@runCatching null
 
         val warehousePath = shortestPathRouter.findShortestPath(
             startWarehouse = logisticsPackage.originWarehouse,
             destinationWarehouse = logisticsPackage.destinationWarehouse
         )
 
-        val routePath = warehousePath
-            .zipWithNext()
-            .mapNotNull { (origin, destination) ->
+        val routePath = warehousePath.zipWithNext().mapNotNull { (origin, destination) ->
                 origin.outgoingRoutes.firstOrNull { route ->
                     route.destinationWarehouse.id == destination.id
                 }
             }
 
-        return PackageJourney(
+        PackageJourney(
             packageId = logisticsPackage.id,
             originWarehouse = logisticsPackage.originWarehouse,
             destinationWarehouse = logisticsPackage.destinationWarehouse,

@@ -1,147 +1,583 @@
-# 🚚 LogiRoute Hub
+#  LogiRoute Hub
 
-**LogiRoute Hub** is a Kotlin-based logistics management system designed to model and manage a distributed delivery network consisting of warehouses, packages, vehicles, and transportation routes.
+**LogiRoute Hub** is a Kotlin-based logistics management system that models and manages a distributed delivery network consisting of warehouses, packages, vehicles, routes, and delivery operations.
 
-The project was developed incrementally, starting from a clean domain model and gradually evolving into a modular system that applies **Object-Oriented Design, SOLID principles, Design Patterns, abstraction, manual algorithms, and clean architecture practices**.
+The project began as a domain-modeling exercise and gradually evolved into a modular software system combining:
 
-Rather than relying on built-in shortcuts, several core operations are implemented manually to strengthen algorithmic understanding and maintain full control over the system's behavior.
+* Object-Oriented Design
+* SOLID Principles
+* Clean Architecture
+* Repository Abstraction
+* Domain Validation
+* Functional Error Handling
+* Design Patterns
+* Graph Algorithms
+* Tree Data Structures
+* Greedy Optimization
+* Functional Collection Pipelines
+* Local and Remote Data Sources
 
----
+The project was developed incrementally, with each stage introducing new architectural or algorithmic requirements and refactoring the existing system accordingly.
 
-## Project Journey
-
-The project started with a simple question:
-
-> **How can we model a real logistics network in a way that remains flexible, maintainable, and easy to extend?**
-
-From that starting point, LogiRoute Hub evolved through several stages.
-
-### 1.  Domain Modeling
-
-The first step was defining the core entities of the logistics system.
-
-The domain model consists of:
-
-* **Warehouse** — represents a logistics hub and manages packages, routes, and stationed vehicles.
-* **LogisticsPackage** — represents a package with weight, priority, origin, and destination.
-* **Route** — represents a connection between two warehouses with a defined distance and expected delay.
-* **Vehicle** — represents a delivery vehicle with capacity, operating cost, and current location.
-
-The goal of this stage was to create a clear and independent domain model that represents the real-world logistics network.
+> **Model the network. Optimize the routes. Handle failures explicitly. Deliver smarter. 🚚**
 
 ---
 
-### 2.  Data Layer & Parsing
+#  Project Journey
 
-After establishing the domain model, the project introduced a data layer responsible for handling raw input data.
-
-CSV-based repositories and parsers were introduced to separate:
-
-**Raw Data → Parsing → Repository → Domain**
-
-This separation prevents the domain layer from depending directly on CSV files or raw input structures.
-
-The architecture was later improved by introducing repository interfaces, allowing the domain-building logic to depend on **abstractions rather than concrete data sources**.
-
-This makes it possible to replace the underlying data source in the future without rewriting the domain logic.
+The project evolved through several stages, starting from a simple logistics domain and gradually becoming a more structured application with separated domain, data, validation, algorithmic, and infrastructure responsibilities.
 
 ---
 
-### 3. 🗺️ Domain Graph Construction
+## 1.  Domain Modeling
 
-The next stage was transforming the imported logistics data into a connected domain graph.
+The foundation of LogiRoute Hub is a domain model representing the core elements of a logistics network.
 
-Warehouses become nodes, while routes represent connections between them.
+The main domain entities are:
 
-The `DomainGraphBuilder` is responsible for constructing this graph from repository-provided data while keeping the domain layer independent from the original CSV representation.
+###  Warehouse
 
-The resulting structure allows the system to reason about:
+Represents a logistics hub responsible for managing:
 
-* Warehouse connectivity
-* Package origins and destinations
-* Available transportation routes
-* Vehicle locations
-* Package movement through the network
+* Packages
+* Cargo queues
+* Routes
+* Stationed vehicles
+* Warehouse relationships
 
+###  Package
 
-### 5.  Polymorphic Pricing System
+Represents a logistics package with properties such as:
 
-As the project grew, different delivery strategies required different pricing rules.
+* Weight
+* Priority
+* Origin warehouse
+* Destination warehouse
+* Tracking information
 
-Instead of implementing pricing logic through large conditional statements, the project introduced the **Strategy Pattern**.
+###  Vehicle
 
-A common `DispatchStrategy` interface defines the pricing behavior, while different strategies implement their own rules:
+Represents a delivery vehicle with:
 
-*  **Express Strategy**
-*  **Eco Strategy**
-*  **Fragile Strategy**
+* Maximum capacity
+* Operating information
+* Current warehouse
+* Loaded packages
 
-A `RoutePricingEngine` manages these strategies and delegates pricing calculations to the appropriate implementation.
+###  Route
 
-This approach makes the pricing subsystem easier to extend without modifying existing logic.
+Represents a connection between warehouses with properties such as:
+
+* Distance
+* Expected delay
+* Source warehouse
+* Destination warehouse
+
+The domain model is kept independent from the concrete data source so that business logic does not depend directly on CSV files, Supabase, or other infrastructure details.
 
 ---
 
-### 6. Dynamic Package Services — Decorator Pattern
+# 2.  Data Layer Evolution
 
-The project was further extended to support additional services that can dynamically affect package transportation.
+The data layer evolved from simple CSV-based input into a more structured data-access architecture.
 
-The **Decorator Pattern** was introduced to allow packages to be wrapped with additional behavior at runtime.
+The current project separates data access into several responsibilities:
 
-Examples include:
+```text
+Data Source
+     ↓
+Parser / Remote Data Source
+     ↓
+Mapper
+     ↓
+Repository Implementation
+     ↓
+Repository Interface
+     ↓
+Domain / Use Cases
+```
 
-* 🛡️ `FragileHandlingDecorator`
-* ❄️ `ColdChainDecorator`
-* 🚀 `ExpressInsuranceDecorator`
+The project currently supports both:
 
-Multiple decorators can be combined dynamically:
+### Local Data
+
+CSV-based data sources are used for local repository implementations:
+
+```text
+CSV
+ ↓
+Parser
+ ↓
+Data Source
+ ↓
+Mapper
+ ↓
+Local Repository
+```
+
+### Remote Data
+
+The system also integrates with remote data sources using **Supabase/PostgREST**:
+
+```text
+Use Case
+   ↓
+Repository Interface
+   ↓
+Remote Repository
+   ↓
+Remote Data Source
+   ↓
+Supabase / PostgREST
+```
+
+This separation allows the domain layer to remain independent from the concrete storage mechanism.
+
+---
+
+# 3.  Repository Abstraction
+
+Repository interfaces are defined inside the domain layer:
+
+```kotlin
+WarehouseRepository
+PackageRepository
+RouteRepository
+VehicleRepository
+```
+
+Concrete implementations exist separately in the data layer.
+
+This follows the **Dependency Inversion Principle**:
+
+```text
+                 Domain
+                   │
+                   ▼
+          Repository Interface
+                   ▲
+                   │
+        ┌──────────┴──────────┐
+        │                     │
+        ▼                     ▼
+ Local Repository       Remote 
+Repository
+        │                     │
+        ▼                     ▼
+       CSV                 Supabase
+```
+
+The same domain/application logic can therefore work with different data sources without changing the repository contract.
+
+---
+
+# 4.  Clean Use Case Architecture
+
+As the application grew, business operations were extracted into independent Use Cases.
+
+Each use case focuses on a specific responsibility and commonly exposes:
+
+```kotlin
+operator fun invoke(...)
+```
+
+This supports the **Single Responsibility Principle** and keeps business operations isolated and testable.
+
+The current project contains use cases covering areas such as:
+
+### Routing
+
+* `FindOptimalPathUseCase`
+* `FindFewestHopsRouteUseCase`
+* `ReroutePackageUseCase`
+* `CheckWarehouseConnectivityUseCase`
+
+### Package & Cargo Operations
+
+* `AssignPackageToCargoQueueUseCase`
+* `SortingCargoQueueUseCase`
+* `PrioritizeDispatchQueueUseCase`
+* `GetPackageJourneyUseCase`
+* `AnalyzePackageDestinationDemandUseCase`
+
+### Vehicle & Fleet Operations
+
+* `AddVehicleToHubUseCase`
+* `DispatchVehicleUseCase`
+* `FindStationedVehiclesByCapacityUseCase`
+* `RecommendVehicleByCapacityAndCostUseCase`
+* `ValidateVehicleCapacityUseCase`
+* `TriggerFleetRebalancingUseCase`
+
+### Analysis
+
+* `GetWarehouseLoadFactorUseCase`
+* `DetectPotentialDeliveryBottleneckUseCase`
+* `EstimateDeliveryTimeUseCase`
+* `EstimateRouteRiskUseCase`
+* `AnalyzeTreePerformanceUseCase`
+
+### Pricing
+
+* `CalculatePricingUseCase`
+
+### CRUD
+
+Dedicated CRUD use cases are provided for:
+
+* Warehouses
+* Packages
+* Routes
+* Vehicles
+
+including:
+
+```text
+Create
+Read
+Update
+Delete
+```
+
+This allows application operations to remain separate from the underlying repository implementations.
+
+---
+
+# 5.  Functional Collection Pipelines
+
+The project applies Kotlin's functional collection operations in several business operations.
+
+Instead of relying exclusively on imperative loops, collection processing makes use of operations such as:
+
+```text
+map
+filter
+fold
+reduce
+flatMap
+associateBy
+maxByOrNull
+firstOrNull
+```
+
+For example, package dispatch capacity can be calculated using a functional pipeline:
+
+```text
+Cargo Queue
+     ↓
+fold(...)
+     ↓
+Selected Packages + Remaining Capacity
+```
+
+The project also uses collection pipelines when preparing routing, dispatching, warehouse indexing, and analysis data.
+
+This supports a more declarative style of data processing.
+
+---
+
+# 6.  Domain Validation Architecture
+
+A dedicated validation layer was introduced to separate domain validation from business operations.
+
+The validation architecture contains:
+
+```text
+Validator
+    │
+    ├── Validation Rules
+    │
+    └── ValidationResult
+            │
+       ┌────┴────┐
+       ▼         ▼
+    Success   Failure
+```
+
+The project contains reusable validation rules such as:
+
+* `IdValidator`
+* `NonBlankStringValidator`
+* `LatitudeValidator`
+* `LongitudeValidator`
+* `PositiveNumberValidator`
+* `NonNegativeNumberValidator`
+* `PriorityValidator`
+* `DifferentLocationsValidator`
+
+Entity-specific validators are also provided for create/update operations of:
+
+* Warehouses
+* Packages
+* Routes
+* Vehicles
+
+This keeps validation rules centralized and reusable.
+
+---
+
+# 7.  Functional Error Handling — Strategy A
+
+One of the most important architectural requirements introduced during the project's evolution was the adoption of:
+
+# **Strategy A — Functional Error Handling**
+
+The project uses **Kotlin's ****`Result<T>`** as the primary mechanism for representing success and failure across the repository and CRUD application flow.
+
+Instead of exposing infrastructure exceptions directly to higher layers, repository operations return:
+
+```kotlin
+Result<T>
+```
+
+For example:
+
+```kotlin
+interface WarehouseRepository {
+
+    suspend fun findById(
+        warehouseId: String
+    ): Result<Warehouse?>
+
+    suspend fun findAll(): Result<List<Warehouse>>
+
+    suspend fun add(
+        warehouse: Warehouse
+    ): Result<Warehouse>
+
+    suspend fun update(
+        warehouseId: String,
+        updateModel: WarehouseUpdateModel
+    ): Result<Warehouse>
+
+    suspend fun delete(
+        warehouseId: String
+    ): Result<Unit>
+}
+```
+
+This makes success and failure explicit in the API contract.
+
+---
+
+##  Result-Based Error Flow
+
+The current architecture follows this general flow:
+
+```text
+Remote / Local Data Source
+          │
+          ▼
+Repository Implementation
+          │
+       runCatching
+          │
+          ▼
+       Result<T>
+       /       \
+   Success    Failure
+                 │
+                 ▼
+          Domain Exception
+```
+
+A successful operation produces:
+
+```kotlin
+Result.success(value)
+```
+
+while failures are represented through:
+
+```kotlin
+Result.failure(exception)
+```
+
+---
+
+# 8.  Infrastructure Error Mapping
+
+The project separates infrastructure errors from domain-level errors.
+
+Remote errors are first captured by the data layer and then mapped into typed domain exceptions.
+
+The project contains a dedicated:
+
+```text
+DataExceptionMapper
+```
+
+which translates infrastructure failures such as:
+
+* Network failures
+* HTTP errors
+* Timeouts
+* Supabase/PostgREST errors
+* Not-found responses
+* Database conflicts
+
+into domain-level exceptions.
+
+The flow is:
+
+```text
+Supabase / Network Error
+          ↓
+Infrastructure Exception
+          ↓
+DataExceptionMapper
+          ↓
+Domain Exception
+          ↓
+Result.failure(...)
+```
+
+This prevents infrastructure-specific exception types from leaking into the domain layer.
+
+---
+
+# 9.  Typed Domain Exception Hierarchy
+
+The domain layer defines typed exceptions such as:
+
+```text
+DomainException
+├── NetworkUnavailableException
+├── EntityValidationException
+├── ResourceNotFoundException
+└── EntityConflictException
+```
+
+This allows failures to retain meaningful business-level information.
+
+For example:
+
+### NetworkUnavailableException
+
+Represents network connectivity or timeout failures.
+
+### ResourceNotFoundException
+
+Represents attempts to access a resource that does not exist.
+
+### DatabaseConflictException
+
+Represents conflicts such as duplicate or conflicting records.
+
+### EntityValidationException
+
+Represents invalid domain input detected by the validation layer.
+
+---
+
+# 10. 🔗 Result + Validation Integration
+
+The Functional Error Strategy is also integrated with CRUD use cases.
+
+For example, the create warehouse flow is:
+
+```text
+CreateWarehouseUseCase
+        │
+        ▼
+CreateWarehouseValidator
+        │
+   ┌────┴─────┐
+   ▼          ▼
+Success     Failure
+   │          │
+   ▼          ▼
+Repository  Result.failure(
+   │        EntityValidationException
+   ▼          )
+Result<Warehouse>
+```
+
+Therefore, validation failures and repository failures can both be represented through the same `Result<T>` contract.
+
+This provides a consistent failure-propagation mechanism at the application boundary.
+
+---
+
+# 11.  Strategy Pattern — Dynamic Pricing
+
+The pricing subsystem uses the **Strategy Pattern**.
+
+A common abstraction is defined by:
+
+```kotlin
+interface DispatchStrategy
+```
+
+Concrete strategies include:
+
+* `ExpressStrategy`
+* `EcoStrategy`
+* `FragileStrategy`
+
+The `RoutePricingEngine` delegates pricing behavior to the selected strategy.
+
+```text
+                 DispatchStrategy
+                        │
+          ┌─────────────┼─────────────┐
+          ▼             ▼             ▼
+      Express          Eco         Fragile
+      Strategy       Strategy      Strategy
+```
+
+This makes the pricing system extensible without modifying existing pricing logic.
+
+---
+
+# 12.  Decorator Pattern — Package Services
+
+The project uses the **Decorator Pattern** to dynamically add additional services to packages.
+
+Implemented decorators include:
+
+* `FragileHandlingDecorator`
+* `ColdChainDecorator`
+* `ExpressInsuranceDecorator`
+
+The decorators can be composed through:
+
+```text
+PackageDecoratorComposer
+```
+
+For example:
 
 ```text
 Package
-   │
-   ▼
+   ↓
 Fragile Handling
-   │
-   ▼
+   ↓
 Cold Chain
-   │
-   ▼
+   ↓
 Express Insurance
 ```
 
-This allows a package to acquire multiple services without modifying the original package class.
+This allows additional package behavior to be composed without modifying the original package model.
 
 ---
 
-### 7. 📊 Manual Package Sorting
+# 13.  Graph Routing Algorithms
 
-To strengthen algorithmic understanding, the project avoids relying on built-in sorting utilities for specific requirements.
-
-A manual **in-place QuickSort** algorithm was implemented for warehouse cargo queues.
-
-Packages are sorted according to their weight in descending order:
+The logistics network is represented as a graph:
 
 ```text
-Heavy Package
-      ↓
-Medium Package
-      ↓
-Light Package
+Warehouse = Node
+Route     = Edge
 ```
 
-The implementation focuses on understanding partitioning, recursion, and in-place sorting rather than simply calling a library function.
+The project implements multiple routing algorithms.
 
----
+## Dijkstra's Algorithm
 
-### 8. 🧭 Optimal Route Finding — Dijkstra's Algorithm
+`ShortestPathRouter` and `FindOptimalPathUseCase` use weighted shortest-path logic.
 
-The project also introduced graph-based route optimization.
-
-A manual implementation of **Dijkstra's Algorithm** was developed to find the shortest path between warehouses based on route distance.
-
-This was particularly important because the logistics network contains routes with different weights.
-
-For example:
+Dijkstra's algorithm is appropriate when route distance matters.
 
 ```text
 A ── 10 km ── B ── 20 km ── D
@@ -149,122 +585,444 @@ A ── 10 km ── B ── 20 km ── D
 └──── 50 km ─────────────── D
 ```
 
-Although both paths connect the same locations, their costs are different.
-
-This demonstrates why a simple BFS approach is insufficient for weighted graphs and why Dijkstra's algorithm is more appropriate for shortest-path calculations in this system.
+The algorithm determines the path with the minimum accumulated distance.
 
 ---
 
-## 🏗️ Architecture
+## Breadth-First Search
 
-The project gradually evolved toward a layered and modular architecture:
+`LeastHopRouter` is used to find paths based on the minimum number of warehouse-to-warehouse hops.
+
+This is different from shortest-distance routing because the objective is:
 
 ```text
-                    ┌─────────────────┐
-                    │      Main       │
-                    └────────┬────────┘
-                             │
-                             ▼
-                    ┌─────────────────┐
-                    │ Domain Builder  │
-                    └────────┬────────┘
-                             │
-                             │
-                    ┌────────▼────────┐
-                    │  CSV Repository │
-                    └────────┬────────┘
-                             │
-                    ┌────────▼────────┐
-                    │   CSV / Raw     │
-                    │      Data       │
-                    └─────────────────┘
+Minimum number of edges
 ```
 
-The domain layer remains independent from the concrete data source by relying on repository abstractions.
-
-This provides better:
-
-* **Separation of Concerns**
-* **Maintainability**
-* **Testability**
-* **Extensibility**
-* **Dependency Management**
+rather than minimum distance.
 
 ---
 
-## 🧩 Design Patterns Used
+## Bidirectional Search
 
-The project applies several design patterns to solve different architectural problems:
------------------------------------------------------------------------------
-| Pattern                | Purpose                                          |
+The project also implements:
+
+```text
+BidirectionalRouter
+```
+
+which searches from both the source and destination to reduce the explored search space in suitable unweighted routing scenarios.
+
+Dedicated validation classes are used to verify routing behavior.
+
+---
+
+# 14.  Manual Sorting Algorithms
+
+The project deliberately implements sorting algorithms manually for selected requirements.
+
+The system includes package sorting functionality such as:
+
+```text
+SortingCargoQueueUseCase
+AssignPackageToCargoQueueUseCase
+PackageSelectionSorter
+```
+
+The cargo queue can be organized according to package characteristics such as weight or priority.
+
+This keeps algorithmic behavior explicit instead of hiding it entirely behind library sorting functions.
+
+---
+
+# 15.  Hierarchical Warehouse Trees
+
+Warehouses are also represented through a hierarchical tree structure.
+
+The hierarchy uses warehouse levels such as:
+
+```text
+GLOBAL
+   │
+   ├── REGIONAL
+   │      ├── LOCAL
+   │      └── LOCAL
+   │
+   └── REGIONAL
+          ├── LOCAL
+          └── LOCAL
+```
+
+The project contains:
+
+* `WarehouseLevel`
+* `HubTreeWarehouseNode`
+* `HubTree`
+* `HubTreeBuilder`
+* `HubLineageTracer`
+
+This allows the system to construct warehouse hierarchies and trace a local warehouse back through its parent chain.
+
+---
+
+# 16. 📈 Balanced vs. Unbalanced BST Simulation
+
+The project includes a dedicated tree-performance simulation.
+
+A sequence of tracking IDs can be generated using:
+
+```text
+SequentialTrackingIdGenerator
+```
+
+The system then compares:
+
+```text
+UnbalancedBST
+vs.
+BalancedBST
+```
+
+using generated package tracking IDs.
+
+The analysis records metrics such as:
+
+* Search steps
+* Execution time
+* Tree type
+
+This provides a practical demonstration of how tree balance affects search behavior and performance.
+
+---
+
+# 17.  Greedy Fleet Dispatch
+
+The project also implements a **Greedy Set-Covering approach** for fleet dispatch.
+
+The goal is to select vehicles that collectively cover a set of target zones.
+
+At each iteration, the algorithm selects the available vehicle that covers the largest number of currently uncovered zones.
+
+```text
+Target Zones
+      │
+      ▼
+Available Vehicle Coverage
+      │
+      ▼
+Select Best Current Coverage
+      │
+      ▼
+Remove Covered Zones
+      │
+      ▼
+Repeat
+```
+
+The project separates the preparation of greedy input from the dispatch algorithm through:
+
+* `GetGreedyDispatchDataUseCase`
+* `VehicleCoverageMapper`
+* `GreedyFleetDispatcher`
+
+This keeps data preparation and optimization logic independently testable.
+
+---
+
+# 18.  Command Pattern
+
+The project also introduces the **Command Pattern** for dispatch-related operations.
+
+Commands include:
+
+* `AssignPackageToQueueCommand`
+* `DispatchVehicleCommand`
+* `ReroutePackageCommand`
+
+A central:
+
+```text
+CommandInvoker
+```
+
+manages command execution.
+
+The command system also supports:
+
+* Undo
+* Redo
+* Command history
+* Telemetry
+
+The flow is:
+
+```text
+Command
+   ↓
+CommandInvoker
+   ↓
+Execute
+   ↓
+Undo Stack
+   ↓
+Redo Stack
+```
+
+Telemetry is provided through abstractions such as:
+
+```text
+CommandTelemetry
+ConsoleTelemetry
+```
+
+This keeps command execution history separate from the commands themselves.
+
+---
+
+# 19.  Validation & Algorithm Verification
+
+The project includes dedicated validation suites for major components, including:
+
+* Dijkstra routing
+* Least-hop routing
+* Bidirectional routing
+* Pricing strategies
+* Decorator integration
+* Hub tree construction
+* Command pattern
+* Command history
+
+These validation classes provide scenario-based checks for the implemented algorithms and design patterns.
+
+---
+
+#  Current Architecture
+
+The current system can be viewed as a layered architecture:
+
+```text
+                    ┌──────────────────────┐
+                    │     Presentation     │
+                    │        Main          │
+                    └──────────┬───────────┘
+                               │
+                               ▼
+                    ┌──────────────────────┐
+                    │      Use Cases       │
+                    │                      │
+                    │ Business Operations  │
+                    └──────────┬───────────┘
+                               │
+              ┌────────────────┼────────────────┐
+              │                                 │
+              ▼                                 ▼
+       ┌────────────┐                   ┌──────────────┐
+       │   Domain   │                   │  Algorithms  │
+       │   Model    │                   │ & Structures │
+       └─────┬──────┘                   └──────────────┘
+             │
+             ▼
+       ┌────────────────────┐
+       │ Repository         │
+       │ Interfaces         │
+       └─────────┬──────────┘
+                 │
+          ┌──────┴──────┐
+          ▼             ▼
+ ┌────────────────┐ ┌────────────────┐
+ │ Local Repos    │ │ Remote Repos   │
+ │                │ │                │
+ │ CSV Data       │ │ Supabase       │
+ └───────┬────────┘ └───────┬────────┘
+         │                  │
+         ▼                  ▼
+    Local Data        Remote Data
+```
+
+---
+
+#  Functional Error Flow
+
+The most important cross-layer error flow is:
+
+```text
+                Data Source
+                    │
+                    ▼
+             Repository Layer
+                    │
+               runCatching
+                    │
+                    ▼
+                Result<T>
+                 /     \
+                /       \
+          Success       Failure
+             │             │
+             │             ▼
+             │      Error Mapping
+             │             │
+             │             ▼
+             │      Domain Exception
+             │             │
+             └─────────────┴──────► Result<T>
+```
+
+This is the project's implementation of:
+
+> **Strategy A — Functional Error Handling**
+
+The key architectural idea is that failures are represented explicitly as values through `Result<T>` while infrastructure-specific errors are translated into meaningful domain exceptions at the data boundary.
+
+---
+
+#  Design Patterns Used
+
+| Pattern                | Where / Purpose                                  |
 | ---------------------- | ------------------------------------------------ |
-| **Strategy Pattern**   | Support multiple dispatch and pricing strategies |
-| **Decorator Pattern**  | Dynamically add package services                 |
-| **Repository Pattern** | Abstract data access from the domain             |
-| **Builder Pattern**    | Construct the domain graph from repository data  |
+| **Strategy Pattern**   | Dynamic pricing strategies                       |
+| **Decorator Pattern**  | Composable package services                      |
+| **Repository Pattern** | Abstract local and remote data access            |
+| **Builder Pattern**    | Construction of domain/tree structures           |
+| **Command Pattern**    | Dispatch actions, undo/redo, and command history |
 
-These patterns were not introduced only for the sake of using patterns; each one addresses a specific design problem encountered during the project's evolution.
-
----
-
-## 🧠 Algorithms Implemented
-
-The project also focuses on implementing important algorithms manually:
-
-* 🔹 **QuickSort** — sorting warehouse cargo queues by package weight.
-* 🔹 **Dijkstra's Algorithm** — finding shortest paths in the weighted logistics graph.
-* 🔹 **Tree Traversal** — tracing warehouse parent lineage.
-* 🔹 **Graph Traversal** — navigating the logistics network.
-
-The implementation of these algorithms without relying on high-level built-in utilities provides a deeper understanding of their internal behavior and complexity.
-
-## 🛠️ Technologies
-
-* **Kotlin**
-* **Gradle**
-* **JVM**
-* **CSV Data Processing**
-* **Object-Oriented Programming**
-* **SOLID Principles**
-* **Design Patterns**
-* **Graph Algorithms**
-* **Git & GitHub**
+These patterns were introduced to address specific architectural requirements rather than being used simply for demonstration.
 
 ---
 
-## 📁 Project Structure
+#  Algorithms & Data Structures
+
+The current project includes:
+
+### Graph Algorithms
+
+* Dijkstra's Algorithm
+* Breadth-First Search
+* Bidirectional BFS
+* Graph traversal
+
+### Sorting
+
+* Manual package sorting
+* Selection-based sorting
+
+### Tree Structures
+
+* Hierarchical warehouse trees
+* Binary Search Tree
+* Balanced BST
+* Tree lineage tracing
+
+### Optimization
+
+* Greedy Set-Covering Fleet Dispatch
+
+### Performance Analysis
+
+* Search-step measurement
+* Execution-time measurement
+* Balanced vs. unbalanced tree comparison
+
+---
+
+# 🗂️ Project Structure
+
+The current backend/domain structure is organized around clear responsibilities:
 
 ```text
 src/
 └── main/
     └── kotlin/
-        ├── dataHolder/
-        ├── parser/
-        ├── repository/
+        ├── data/
+        │   ├── dataholder/
+        │   ├── datasource/
+        │   ├── exception/
+        │   ├── mapper/
+        │   ├── parser/
+        │   ├── remote/
+        │   └── repository/
+        │
         ├── domain/
-        │   └── model/
-        ├── builder/
-        ├── pricing/
-        ├── decorator/
-        ├── algorithm/
-        └── Main.kt
+        │   ├── algorithm/
+        │   ├── command/
+        │   ├── dispatcher/
+        │   ├── exception/
+        │   ├── model/
+        │   ├── pricing/
+        │   ├── repository/
+        │   ├── routing/
+        │   ├── tree/
+        │   ├── usecase/
+        │   ├── validation/
+        │   └── validator/
+        │
+        └── presentation/
+            └── Main.kt
 ```
 
-The project structure is organized around clear responsibilities, keeping data handling, domain logic, business strategies, decorators, and algorithms separated.
-
-
-## 🚀 Final Vision
-
-The ultimate goal of **LogiRoute Hub** is to provide a flexible foundation for a logistics network where packages, warehouses, vehicles, routes, pricing strategies, and delivery services can evolve independently.
-
-What began as a domain-modeling exercise gradually became a practical exploration of:
-
-> **Clean Architecture + Object-Oriented Design + Design Patterns + Algorithms**
-
-The project continues to evolve as new requirements introduce new architectural and algorithmic challenges.
+The repository also contains a frontend module built around Kotlin Multiplatform/Android Compose infrastructure.
 
 ---
 
-### 👩‍💻 Built With Kotlin
+#  Technologies
 
-**LogiRoute Hub** — *Model the network. Optimize the routes. Deliver smarter.* 🚚
+* **Kotlin 2.1.10**
+* **JVM 17**
+* **Gradle**
+* **Supabase / PostgREST**
+* **Ktor**
+* **CSV Data Processing**
+* **Kotlin Serialization**
+* **Object-Oriented Programming**
+* **SOLID Principles**
+* **Clean Architecture**
+* **Functional Programming**
+* **Kotlin ****`Result<T>`**
+* **Design Patterns**
+* **Graph Algorithms**
+* **Tree Data Structures**
+* **Git & GitHub**
+* **Detekt**
+* **Android / Compose Multiplatform**
+
+---
+
+#  Engineering Principles
+
+The project applies several software engineering principles throughout its evolution.
+
+### Single Responsibility
+
+Business operations are separated into independent Use Cases.
+
+### Dependency Inversion
+
+Domain logic depends on repository interfaces rather than concrete data sources.
+
+### Separation of Concerns
+
+Data access, domain logic, validation, algorithms, and infrastructure concerns are separated into dedicated packages.
+
+### Open/Closed Principle
+
+Strategy and Decorator patterns allow new behaviors to be introduced without modifying existing implementations.
+
+### Explicit Error Handling
+
+Repository and CRUD operations use `Result<T>` to make success and failure explicit.
+
+### Infrastructure Isolation
+
+Remote infrastructure errors are mapped into domain exceptions before reaching higher layers.
+
+### Algorithmic Transparency
+
+Important algorithms are implemented explicitly to demonstrate their behavior, complexity, and trade-offs.
+
+---
+
+# Built With Kotlin
+
+**LogiRoute Hub**
+
+> **Model the network. Optimize the routes. Handle failures explicitly. Deliver smarter. **

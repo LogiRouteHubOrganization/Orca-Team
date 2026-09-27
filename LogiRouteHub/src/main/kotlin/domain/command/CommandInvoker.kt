@@ -8,48 +8,51 @@ class CommandInvoker(
     private val undoStack = mutableListOf<Command>()
     private val redoStack = mutableListOf<Command>()
 
-    fun execute(command: Command) {
-        val isExecuted = command.execute()
+    suspend fun execute(command: Command): Result<Unit> {
+        return command.execute()
+            .onSuccess {
+                undoStack.add(command)
+                redoStack.clear()
 
-        if (isExecuted) {
-            undoStack.add(command)
-            redoStack.clear()
-
-            telemetry.recordCommandExecution(
-                commandType = command.commandType,
-                undoStackSize = undoStack.size,
-                redoStackSize = redoStack.size
-            )
-        }
+                telemetry.recordCommandExecution(
+                    commandType = command.commandType,
+                    undoStackSize = undoStack.size,
+                    redoStackSize = redoStack.size
+                )
+            }
     }
 
-    fun undo() {
-        if (undoStack.isEmpty()) return
+    suspend fun undo(): Result<Unit> {
+        val command = undoStack.lastOrNull()
+            ?: return Result.success(Unit)
 
-        val lastCommand = undoStack.last()
-        lastCommand.undo()
-        undoStack.removeLast()
-        redoStack.add(lastCommand)
+        return command.undo()
+            .onSuccess {
+                undoStack.removeLast()
+                redoStack.add(command)
 
-        telemetry.recordUndo(
-            commandType = lastCommand.commandType,
-            undoStackSize = undoStack.size,
-            redoStackSize = redoStack.size
-        )
+                telemetry.recordUndo(
+                    commandType = command.commandType,
+                    undoStackSize = undoStack.size,
+                    redoStackSize = redoStack.size
+                )
+            }
     }
 
-    fun redo() {
-        if (redoStack.isEmpty()) return
+    suspend fun redo(): Result<Unit> {
+        val command = redoStack.lastOrNull()
+            ?: return Result.success(Unit)
 
-        val lastCommand = redoStack.last()
-        lastCommand.redo()
-        redoStack.removeLast()
-        undoStack.add(lastCommand)
+        return command.redo()
+            .onSuccess {
+                redoStack.removeLast()
+                undoStack.add(command)
 
-        telemetry.recordRedo(
-            commandType = lastCommand.commandType,
-            undoStackSize = undoStack.size,
-            redoStackSize = redoStack.size
-        )
+                telemetry.recordRedo(
+                    commandType = command.commandType,
+                    undoStackSize = undoStack.size,
+                    redoStackSize = redoStack.size
+                )
+            }
     }
 }

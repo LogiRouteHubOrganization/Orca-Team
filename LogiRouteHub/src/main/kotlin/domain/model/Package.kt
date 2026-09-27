@@ -2,6 +2,9 @@ package domain.model
 
 import domain.pricing.DispatchStrategy
 import domain.pricing.decorator.PackageComponent
+import domain.validator.logisticspackage.CreatePackageValidator
+import domain.exception.EntityValidationException
+import domain.validator.ValidationResult
 
 data class Package(
     val id: String,
@@ -10,6 +13,20 @@ data class Package(
     val originWarehouse: Warehouse,
     val destinationWarehouse: Warehouse
 ) : PackageComponent {
+
+    init {
+        val validationResult = CreatePackageValidator().invoke(
+            id = id,
+            weightByKg = weightByKg,
+            priority = priority,
+            originWarehouse = originWarehouse,
+            destinationWarehouse = destinationWarehouse
+        )
+
+        if (validationResult is ValidationResult.Failure) {
+            throw EntityValidationException(validationResult.errors)
+        }
+    }
 
     override fun calculateTransitRate(
         selectedRoute: Route,

@@ -15,6 +15,7 @@ class PackageParser {
     private val urgentPriority = "URGENT"
     private val standardPriority = "STANDARD"
     private val lowPriority = "LOW"
+    private val requiredIdDigits = 6
 
     fun parsePackageRow(
         packageCsvRow: String
@@ -27,22 +28,38 @@ class PackageParser {
             return null
         }
 
-        val packageId = normalizeIdentifier(packageColumns[packageIdColumnIndex])
-        val originHubId = normalizeIdentifier(packageColumns[originHubIdColumnIndex])
-        val destinationHubId = normalizeIdentifier(packageColumns[destinationHubIdColumnIndex])
+        val packageId = normalizeIdentifier(
+            packageColumns[packageIdColumnIndex]
+        )
 
-        if (hasEmptyRequiredField(packageId, originHubId, destinationHubId)) {
+        val originHubId = normalizeIdentifier(
+            packageColumns[originHubIdColumnIndex]
+        )
+
+        val destinationHubId = normalizeIdentifier(
+            packageColumns[destinationHubIdColumnIndex]
+        )
+
+        if (hasEmptyRequiredField(
+                packageId,
+                originHubId,
+                destinationHubId
+            )
+        ) {
             printEmptyPackageFieldWarning(packageCsvRow)
             return null
         }
+
         val packageWeightByKg = parsePackageWeightByKg(
             packageColumns[packageWeightColumnIndex],
             packageCsvRow
         ) ?: return null
+
         val packagePriority = parsePackagePriority(
             packageColumns[priorityColumnIndex],
             packageCsvRow
         ) ?: return null
+
         return LogisticsPackageRaw(
             packageId = packageId,
             packageWeightByKg = packageWeightByKg,
@@ -52,7 +69,9 @@ class PackageParser {
         )
     }
 
-    private fun hasInvalidColumnCount(columns: List<String>): Boolean {
+    private fun hasInvalidColumnCount(
+        columns: List<String>
+    ): Boolean {
         return columns.size != expectedColumnCount
     }
 
@@ -61,17 +80,25 @@ class PackageParser {
         originHubId: String,
         destinationHubId: String
     ): Boolean {
-        return packageId.isEmpty() || originHubId.isEmpty() || destinationHubId.isEmpty()
+
+        return packageId.isEmpty() ||
+                originHubId.isEmpty() ||
+                destinationHubId.isEmpty()
     }
 
     private fun parsePackageWeightByKg(
         packageWeight: String,
         packageCsvRow: String
     ): Double? {
-        val packageWeightByKg = packageWeight.trim().toDoubleOrNull()
+
+        val packageWeightByKg = packageWeight
+            .trim()
+            .toDoubleOrNull()
 
         if (packageWeightByKg == null || packageWeightByKg <= 0) {
-            println("Warning: Invalid package weight -> $packageCsvRow")
+            println(
+                "Warning: Invalid package weight -> $packageCsvRow"
+            )
             return null
         }
 
@@ -82,26 +109,67 @@ class PackageParser {
         priority: String,
         packageCsvRow: String
     ): String? {
-        return when (priority.trim().uppercase()) {
+
+        val normalizedPriority = priority
+            .trim()
+            .uppercase()
+
+        return when (normalizedPriority) {
             urgentPriority -> urgentPriority
             standardPriority -> standardPriority
             lowPriority -> lowPriority
+
             else -> {
-                println("Warning: Invalid package priority -> $packageCsvRow")
+                println(
+                    "Warning: Invalid package priority -> $packageCsvRow"
+                )
                 null
             }
         }
     }
 
-    private fun normalizeIdentifier(identifier: String): String {
-        return identifier.trim().uppercase()
+    private fun normalizeIdentifier(
+        identifier: String
+    ): String {
+
+        val normalizedIdentifier = identifier
+            .trim()
+            .uppercase()
+
+        val identifierParts = normalizedIdentifier.split("-")
+
+        if (identifierParts.size != 2) {
+            return normalizedIdentifier
+        }
+
+        val prefix = identifierParts[0]
+        val numericPart = identifierParts[1]
+
+        if (numericPart.toIntOrNull() == null) {
+            return normalizedIdentifier
+        }
+
+        val normalizedNumericPart = numericPart.padStart(
+            length = requiredIdDigits,
+            padChar = '0'
+        )
+
+        return "$prefix-$normalizedNumericPart"
     }
 
-    private fun printInvalidPackageRowWarning(packageCsvRow: String) {
-        println("Warning: Invalid package row -> $packageCsvRow")
+    private fun printInvalidPackageRowWarning(
+        packageCsvRow: String
+    ) {
+        println(
+            "Warning: Invalid package row -> $packageCsvRow"
+        )
     }
 
-    private fun printEmptyPackageFieldWarning(packageCsvRow: String) {
-        println("Warning: Empty required package field -> $packageCsvRow")
+    private fun printEmptyPackageFieldWarning(
+        packageCsvRow: String
+    ) {
+        println(
+            "Warning: Empty required package field -> $packageCsvRow"
+        )
     }
 }

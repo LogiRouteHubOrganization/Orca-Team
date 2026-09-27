@@ -1,4 +1,4 @@
-package domain.usecasePackage
+package domain.usecase
 
 import domain.tree.hierarchy.HubLineageTracer
 import domain.tree.hierarchy.HubTreeWarehouseNode
@@ -12,3 +12,4 @@ class TraceHubLineageUseCase(
         return hubLineageTracer.traceLineage(localDepotNode)
     }
 }
+

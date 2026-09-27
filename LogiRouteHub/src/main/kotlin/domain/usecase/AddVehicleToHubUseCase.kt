@@ -1,31 +1,43 @@
 package domain.usecase
 
+import domain.exception.EntityValidationException
 import domain.model.Warehouse
-import domain.repository.WarehouseRepository
+import domain.model.updateinput.VehicleUpdateModel
 import domain.repository.VehicleRepository
+import domain.repository.WarehouseRepository
+import domain.validator.ValidationResult
+import domain.validator.vehicle.UpdateVehicleValidator
 
 class AddVehicleToHubUseCase(
     private val warehouseRepository: WarehouseRepository,
-    private val vehicleRepository: VehicleRepository
+    private val vehicleRepository: VehicleRepository,
+    private val updateVehicleValidator: UpdateVehicleValidator
 ) {
 
-    operator fun invoke(
+    suspend operator fun invoke(
         warehouseId: String,
         vehicleId: String
-    ): Warehouse? {
+    ): Result<Warehouse?> = runCatching {
 
-        val warehouse = warehouseRepository.findById(warehouseId)
-            ?: return null
+        val warehouse = warehouseRepository.findById(warehouseId).getOrThrow() ?: return@runCatching null
 
-        val vehicle = vehicleRepository.findById(vehicleId)
-            ?: return null
+        val vehicle = vehicleRepository.findById(vehicleId).getOrThrow() ?: return@runCatching null
 
-        warehouse.addVehicle(vehicle)
-        vehicle.currentWarehouse = warehouse
+        val vehicleUpdateModel = VehicleUpdateModel(
+            currentWarehouseId = warehouse.id
+        )
 
-        warehouseRepository.update(warehouse)
-        vehicleRepository.update(vehicle)
+        val validationResult = updateVehicleValidator(vehicleUpdateModel)
 
-        return warehouse
+        if (validationResult is ValidationResult.Failure) {
+            throw EntityValidationException(
+                validationResult.errors
+            )
+        }
+        val updatedVehicle = vehicleRepository.update(vehicle.id, vehicleUpdateModel)
+            .getOrThrow()
+
+        warehouse.addVehicle(updatedVehicle)
+        warehouse
     }
 }
