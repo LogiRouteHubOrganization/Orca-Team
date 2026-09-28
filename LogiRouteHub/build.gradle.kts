@@ -23,6 +23,9 @@ dependencies {
     implementation(platform("io.github.jan-tennert.supabase:bom:3.5.0"))
     implementation("io.github.jan-tennert.supabase:postgrest-kt")
 
+    testImplementation("com.lemonappdev:konsist:0.17.3")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
+
     implementation("io.ktor:ktor-client-cio:3.0.3")
 }
 
