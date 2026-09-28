@@ -22,7 +22,7 @@ class UpdatePackageUseCase(
             allowedPrefixes = setOf("PKG-")
         ).validate(id)
 
-        if (idValidationResult is ValidationResult.Failure) {
+        if (idValidationResult is ValidationResult.Invalid) {
             return Result.failure(
                 EntityValidationException(idValidationResult.errors)
             )
@@ -30,9 +30,9 @@ class UpdatePackageUseCase(
         return when (
             val validationResult = packageValidator(updateRequest)
         ) {
-            ValidationResult.Success -> packageRepository.update(id, updateRequest)
+            ValidationResult.Valid -> packageRepository.update(id, updateRequest)
 
-            is ValidationResult.Failure ->
+            is ValidationResult.Invalid ->
                 Result.failure(
                     EntityValidationException(validationResult.errors)
                 )

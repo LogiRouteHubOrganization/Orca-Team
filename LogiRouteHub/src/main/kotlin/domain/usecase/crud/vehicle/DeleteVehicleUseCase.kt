@@ -19,10 +19,10 @@ class DeleteVehicleUseCase(
                 allowedPrefixes = setOf("TRK-")
             ).validate(id)
         ) {
-            ValidationResult.Success ->
+            ValidationResult.Valid ->
                 vehicleRepository.delete(id)
 
-            is ValidationResult.Failure ->
+            is ValidationResult.Invalid ->
                 Result.failure(
                     EntityValidationException(validationResult.errors)
                 )

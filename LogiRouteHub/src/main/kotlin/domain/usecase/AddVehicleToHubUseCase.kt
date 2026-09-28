@@ -29,7 +29,7 @@ class AddVehicleToHubUseCase(
 
         val validationResult = updateVehicleValidator(vehicleUpdateModel)
 
-        if (validationResult is ValidationResult.Failure) {
+        if (validationResult is ValidationResult.Invalid) {
             throw EntityValidationException(
                 validationResult.errors
             )

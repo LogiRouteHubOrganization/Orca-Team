@@ -11,9 +11,9 @@ class DifferentLocationsValidator<T> : Validator<Pair<T, T>> {
         value: Pair<T, T>
     ): ValidationResult {
         return if (value.first != value.second) {
-            ValidationResult.Success
+            ValidationResult.Valid
         } else {
-            ValidationResult.Failure(
+            ValidationResult.Invalid(
                 listOf(
                     FieldViolation(field = "values", error = ValidationError.DifferentLocations)
                 )

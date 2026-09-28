@@ -12,7 +12,7 @@ class IdValidator(
 
     override fun validate(value: String?): ValidationResult {
         if (value.isNullOrBlank()) {
-            return ValidationResult.Failure(
+            return ValidationResult.Invalid(
                 listOf(
                     FieldViolation(
                         field = field,
@@ -25,7 +25,7 @@ class IdValidator(
             value.startsWith(prefix)
         }
         if (matchedPrefix == null) {
-            return ValidationResult.Failure(
+            return ValidationResult.Invalid(
                 listOf(
                     FieldViolation(
                         field = field,
@@ -39,7 +39,7 @@ class IdValidator(
         val numericPart = value.removePrefix(matchedPrefix)
 
         if (!numericPart.matches(Regex("\\d{6}"))) {
-            return ValidationResult.Failure(
+            return ValidationResult.Invalid(
                 listOf(
                     FieldViolation(
                         field = field,
@@ -48,6 +48,6 @@ class IdValidator(
                 )
             )
         }
-        return ValidationResult.Success
+        return ValidationResult.Valid
     }
 }

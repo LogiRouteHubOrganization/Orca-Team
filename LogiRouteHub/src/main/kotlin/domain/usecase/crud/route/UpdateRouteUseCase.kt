@@ -23,12 +23,12 @@ class UpdateRouteUseCase(
                 updateModel = updateModel
             )
         ) {
-            ValidationResult.Success -> routeRepository.update(
+            ValidationResult.Valid -> routeRepository.update(
                     routeId = routeId,
                     updateModel = updateModel
                 )
 
-            is ValidationResult.Failure -> Result.failure(
+            is ValidationResult.Invalid -> Result.failure(
                     EntityValidationException(validationResult.errors)
                 )
         }

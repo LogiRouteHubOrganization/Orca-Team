@@ -39,7 +39,7 @@ class ReroutePackageUseCase(
         val validationResult =
             updatePackageValidator(packageUpdateModel)
 
-        if (validationResult is ValidationResult.Failure) {
+        if (validationResult is ValidationResult.Invalid) {
             throw EntityValidationException(validationResult.errors)
         }
 

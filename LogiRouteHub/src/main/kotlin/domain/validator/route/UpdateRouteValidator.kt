@@ -15,7 +15,7 @@ class UpdateRouteValidator {
         updateModel: RouteUpdateModel
     ): ValidationResult {
         if (!hasAnyUpdate(updateModel)) {
-            return ValidationResult.Failure(
+            return ValidationResult.Invalid(
                 listOf(FieldViolation(field = "update", error = ValidationError.EmptyUpdate))
             )
         }
@@ -37,8 +37,8 @@ class UpdateRouteValidator {
             }
         )
 
-        val errors = results.filterIsInstance<ValidationResult.Failure>().flatMap { it.errors }
-        return if (errors.isEmpty()) ValidationResult.Success else ValidationResult.Failure(errors)
+        val errors = results.filterIsInstance<ValidationResult.Invalid>().flatMap { it.errors }
+        return if (errors.isEmpty()) ValidationResult.Valid else ValidationResult.Invalid(errors)
     }
 
     private fun hasAnyUpdate(updateModel: RouteUpdateModel): Boolean {

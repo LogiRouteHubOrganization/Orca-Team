@@ -87,11 +87,14 @@ private suspend fun runApplication() {
 
     val localDataSourceValidator = LocalDataSourceValidator()
 
+
+
     val warehouseDataSource = CsvWarehouseDataSource(
         warehouseFile = File(WAREHOUSES_FILE_PATH),
         warehouseParser = WarehouseParser(),
         localDataSourceValidator = localDataSourceValidator
     )
+
 
     val packageDataSource = CsvPackageDataSource(
         packageFile = File(PACKAGES_FILE_PATH),

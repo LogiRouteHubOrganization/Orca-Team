@@ -12,9 +12,9 @@ class LatitudeValidator(
     override fun validate(value: Number?): ValidationResult {
 
         return if (value != null && value.toDouble() in -90.0..90.0) {
-            ValidationResult.Success
+            ValidationResult.Valid
         } else {
-            ValidationResult.Failure(
+            ValidationResult.Invalid(
                 listOf(
                     FieldViolation(field = field, error = ValidationError.InvalidLatitude)
                 )

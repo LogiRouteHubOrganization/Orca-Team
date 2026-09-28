@@ -23,7 +23,7 @@ class UpdateWarehouseUseCase(
             allowedPrefixes = setOf("WH-")
         ).validate(id)
 
-        if (idValidationResult is ValidationResult.Failure) {
+        if (idValidationResult is ValidationResult.Invalid) {
             return Result.failure(
                 EntityValidationException(idValidationResult.errors)
             )
@@ -32,11 +32,11 @@ class UpdateWarehouseUseCase(
         return when (
             val validationResult = warehouseValidator(updateRequest)
         ) {
-            ValidationResult.Success -> warehouseRepository.update(
+            ValidationResult.Valid -> warehouseRepository.update(
                     id,
                     updateRequest
                 )
-            is ValidationResult.Failure -> Result.failure(
+            is ValidationResult.Invalid -> Result.failure(
                     EntityValidationException(validationResult.errors)
                 )
         }

@@ -16,10 +16,10 @@ class DeleteRouteUseCase(
                 allowedPrefixes = setOf("RT-")
             ).validate(routeId)
         ) {
-            ValidationResult.Success ->
+            ValidationResult.Valid ->
                 routeRepository.delete(routeId)
 
-            is ValidationResult.Failure ->
+            is ValidationResult.Invalid ->
                 Result.failure(
                     EntityValidationException(validationResult.errors)
                 )

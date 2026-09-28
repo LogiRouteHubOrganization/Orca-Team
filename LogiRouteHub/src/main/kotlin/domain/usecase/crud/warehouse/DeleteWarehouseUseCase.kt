@@ -19,10 +19,10 @@ class DeleteWarehouseUseCase(
                 allowedPrefixes = setOf("WH-")
             ).validate(id)
         ) {
-            ValidationResult.Success ->
+            ValidationResult.Valid ->
                 warehouseRepository.delete(id)
 
-            is ValidationResult.Failure ->
+            is ValidationResult.Invalid ->
                 Result.failure(
                     EntityValidationException(validationResult.errors)
                 )
