@@ -3,6 +3,7 @@ package domain.usecase
 import domain.model.Vehicle
 import domain.model.Warehouse
 import domain.model.request.FleetRebalancingConfig
+import domain.model.request.FleetRebalancingPlan
 import domain.repository.WarehouseRepository
 
 class TriggerFleetRebalancingUseCase(
@@ -68,8 +69,3 @@ class TriggerFleetRebalancingUseCase(
         }
     }
 }
-data class FleetRebalancingPlan(
-    val sourceWarehouse: Warehouse,
-    val overloadedWarehouse: Warehouse,
-    val vehiclesToMove: List<Vehicle>
-)

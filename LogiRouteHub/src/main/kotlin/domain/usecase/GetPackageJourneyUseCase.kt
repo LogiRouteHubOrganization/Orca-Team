@@ -2,18 +2,10 @@ package domain.usecase
 
 import domain.model.Route
 import domain.model.Warehouse
+import domain.model.request.PackageJourney
 import domain.repository.PackageRepository
 import domain.routing.ShortestPathRouter
 
-data class PackageJourney(
-    val packageId: String,
-    val originWarehouse: Warehouse,
-    val destinationWarehouse: Warehouse,
-    val warehouses: List<Warehouse>,
-    val routes: List<Route>,
-    val totalDistanceKm: Double,
-    val totalTypicalDelayMin: Int
-)
 
 class GetPackageJourneyUseCase(
     private val packageRepository: PackageRepository,
