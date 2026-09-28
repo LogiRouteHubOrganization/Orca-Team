@@ -22,8 +22,10 @@ repositories {
 dependencies {
     implementation(platform("io.github.jan-tennert.supabase:bom:3.5.0"))
     implementation("io.github.jan-tennert.supabase:postgrest-kt")
-
     implementation("io.ktor:ktor-client-cio:3.0.3")
+    testImplementation("com.google.truth:truth:1.4.5")
+    testImplementation("io.mockk:mockk-jvm:1.14.11")
+    implementation("io.insert-koin:koin-core:4.1.1")
 }
 
 tasks.test {
