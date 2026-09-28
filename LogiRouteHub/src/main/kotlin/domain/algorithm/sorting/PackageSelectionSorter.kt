@@ -135,6 +135,7 @@ private fun getPriorityLevel(
     }
 }
 
+
 private fun placePackageAtSortingIndex(
     logisticsPackages: MutableList<LogisticsPackageRaw>,
     packageCurrentIndex: Int,
