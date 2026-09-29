@@ -3,7 +3,7 @@ package domain.usecase.crud.route
 import domain.exception.EntityValidationException
 import domain.model.Route
 import domain.repository.RouteRepository
-import domain.validator.ResultVaildator
+import domain.validator.ResultValidator
 import domain.validator.rule.IdValidator
 
 class GetRouteByIdUseCase(
@@ -17,12 +17,17 @@ class GetRouteByIdUseCase(
                 allowedPrefixes = setOf("RT-")
             ).validate(routeId)
         ) {
-            ResultVaildator.Valid ->
+            ResultValidator.Valid ->
                 routeRepository.findById(routeId)
 
-            is ResultVaildator.Invalid ->
+            is ResultValidator.Invalid ->
                 Result.failure(
                     EntityValidationException(validationResult.errors)
+                )
+
+            else ->
+                Result.failure(
+                    IllegalArgumentException("Unhandled validation result state")
                 )
         }
     }

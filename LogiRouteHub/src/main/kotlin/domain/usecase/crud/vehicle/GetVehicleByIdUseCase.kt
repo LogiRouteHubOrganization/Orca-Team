@@ -3,7 +3,7 @@ package domain.usecase.crud.vehicle
 import domain.exception.EntityValidationException
 import domain.model.Vehicle
 import domain.repository.VehicleRepository
-import domain.validator.ResultVaildator
+import domain.validator.ResultValidator
 import domain.validator.rule.IdValidator
 
 class GetVehicleByIdUseCase(
@@ -20,12 +20,17 @@ class GetVehicleByIdUseCase(
                 allowedPrefixes = setOf("TRK-")
             ).validate(id)
         ) {
-            ResultVaildator.Valid ->
+            ResultValidator.Valid ->
                 vehicleRepository.findById(id)
 
-            is ResultVaildator.Invalid ->
+            is ResultValidator.Invalid ->
                 Result.failure(
                     EntityValidationException(validationResult.errors)
+                )
+
+            else ->
+                Result.failure(
+                    IllegalArgumentException("Unhandled validation result state")
                 )
         }
     }

@@ -1,7 +1,7 @@
 package domain.validator.route
 
 import domain.model.Warehouse
-import domain.validator.ResultVaildator
+import domain.validator.ResultValidator
 import domain.validator.rule.DifferentLocationsValidator
 import domain.validator.rule.IdValidator
 import domain.validator.rule.NonNegativeNumberValidator
@@ -15,9 +15,9 @@ class CreateRouteValidator {
         destinationWarehouse: Warehouse,
         distanceKm: Double,
         typicalDelayMin: Int
-    ): ResultVaildator {
+    ): ResultValidator {
 
-        val results = listOf(
+        val results: List<ResultValidator> = listOf(
 
             IdValidator(
                 field = "id",
@@ -53,13 +53,13 @@ class CreateRouteValidator {
         )
 
         val errors = results
-            .filterIsInstance<ResultVaildator.Invalid>()
+            .filterIsInstance<ResultValidator.Invalid>()
             .flatMap { it.errors }
 
         return if (errors.isEmpty()) {
-            ResultVaildator.Valid
+            ResultValidator.Valid
         } else {
-            ResultVaildator.Invalid(errors)
+            ResultValidator.Invalid(errors)
         }
     }
 }

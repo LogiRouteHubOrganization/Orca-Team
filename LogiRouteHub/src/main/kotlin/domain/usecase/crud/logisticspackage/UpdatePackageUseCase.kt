@@ -4,7 +4,7 @@ import domain.exception.EntityValidationException
 import domain.model.Package
 import domain.model.updateinput.PackageUpdateModel
 import domain.repository.PackageRepository
-import domain.validator.ResultVaildator
+import domain.validator.ResultValidator
 import domain.validator.logisticspackage.UpdatePackageValidator
 import domain.validator.rule.IdValidator
 
@@ -22,21 +22,27 @@ class UpdatePackageUseCase(
             allowedPrefixes = setOf("PKG-")
         ).validate(id)
 
-        if (idValidationResult is ResultVaildator.Invalid) {
+        if (idValidationResult is ResultValidator.Invalid) {
             return Result.failure(
                 EntityValidationException(idValidationResult.errors)
             )
         }
+
         return when (
             val validationResult = packageValidator(updateRequest)
         ) {
-            ResultVaildator.Valid -> packageRepository.update(id, updateRequest)
+            ResultValidator.Valid ->
+                packageRepository.update(id, updateRequest)
 
-            is ResultVaildator.Invalid ->
+            is ResultValidator.Invalid ->
                 Result.failure(
                     EntityValidationException(validationResult.errors)
+                )
+
+            else ->
+                Result.failure(
+                    IllegalArgumentException("Unhandled validation result state")
                 )
         }
     }
 }
-

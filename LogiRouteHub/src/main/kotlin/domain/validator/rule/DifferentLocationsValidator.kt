@@ -1,21 +1,21 @@
 package domain.validator.rule
 
-import domain.validator.FieldViolator
+import domain.validator.FieldValidator
 import domain.validator.ErrorValidator
-import domain.validator.ResultVaildator
+import domain.validator.ResultValidator
 import domain.validator.Validator
 
 class DifferentLocationsValidator<T> : Validator<Pair<T, T>> {
 
     override fun validate(
         value: Pair<T, T>
-    ): ResultVaildator {
+    ): ResultValidator {
         return if (value.first != value.second) {
-            ResultVaildator.Valid
+            ResultValidator.Valid
         } else {
-            ResultVaildator.Invalid(
+            ResultValidator.Invalid(
                 listOf(
-                    FieldViolator(field = "values", error = ErrorValidator.DifferentLocations)
+                    FieldValidator(field = "values", error = ErrorValidator.DifferentLocations)
                 )
             )
         }

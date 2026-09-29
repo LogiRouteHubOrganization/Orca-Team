@@ -1,18 +1,18 @@
 package domain.validator.vehicle
 
 import domain.model.updateinput.VehicleUpdateModel
-import domain.validator.FieldViolator
+import domain.validator.FieldValidator
 import domain.validator.ErrorValidator
-import domain.validator.ResultVaildator
+import domain.validator.ResultValidator
 import domain.validator.rule.IdValidator
 import domain.validator.rule.PositiveNumberValidator
 
 class UpdateVehicleValidator {
 
-    operator fun invoke(updateModel: VehicleUpdateModel): ResultVaildator {
+    operator fun invoke(updateModel: VehicleUpdateModel): ResultValidator {
         if (!hasAnyUpdate(updateModel)) {
-            return ResultVaildator.Invalid(
-                listOf(FieldViolator(field = "update", error = ErrorValidator.EmptyUpdate))
+            return ResultValidator.Invalid(
+                listOf(FieldValidator(field = "update", error = ErrorValidator.EmptyUpdate))
             )
         }
 
@@ -28,8 +28,8 @@ class UpdateVehicleValidator {
             }
         )
 
-        val errors = results.filterIsInstance<ResultVaildator.Invalid>().flatMap { it.errors }
-        return if (errors.isEmpty()) ResultVaildator.Valid else ResultVaildator.Invalid(errors)
+        val errors = results.filterIsInstance<ResultValidator.Invalid>().flatMap { it.errors }
+        return if (errors.isEmpty()) ResultValidator.Valid else ResultValidator.Invalid(errors)
     }
 
     private fun hasAnyUpdate(updateModel: VehicleUpdateModel): Boolean {

@@ -2,7 +2,7 @@ package domain.usecase.crud.warehouse
 
 import domain.exception.EntityValidationException
 import domain.repository.WarehouseRepository
-import domain.validator.ResultVaildator
+import domain.validator.ResultValidator
 import domain.validator.rule.IdValidator
 
 class DeleteWarehouseUseCase(
@@ -19,12 +19,17 @@ class DeleteWarehouseUseCase(
                 allowedPrefixes = setOf("WH-")
             ).validate(id)
         ) {
-            ResultVaildator.Valid ->
+            ResultValidator.Valid ->
                 warehouseRepository.delete(id)
 
-            is ResultVaildator.Invalid ->
+            is ResultValidator.Invalid ->
                 Result.failure(
                     EntityValidationException(validationResult.errors)
+                )
+
+            else ->
+                Result.failure(
+                    IllegalArgumentException("Unhandled validation result state")
                 )
         }
     }
