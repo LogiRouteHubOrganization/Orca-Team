@@ -4,7 +4,7 @@ import domain.exception.EntityValidationException
 import domain.model.Vehicle
 import domain.model.updateinput.VehicleUpdateModel
 import domain.repository.VehicleRepository
-import domain.validator.ValidationResult
+import domain.validator.ResultValidator
 import domain.validator.rule.IdValidator
 import domain.validator.vehicle.UpdateVehicleValidator
 
@@ -23,24 +23,30 @@ class UpdateVehicleUseCase(
             allowedPrefixes = setOf("TRK-")
         ).validate(id)
 
-        if (idValidationResult is ValidationResult.Failure) {
+        if (idValidationResult is ResultValidator.Invalid) {
             return Result.failure(
                 EntityValidationException(idValidationResult.errors)
             )
         }
+
         return when (
             val validationResult = vehicleValidator(updateRequest)
         ) {
-            ValidationResult.Success ->
+            ResultValidator.Valid ->
                 vehicleRepository.update(
                     id,
                     updateRequest
                 )
-            is ValidationResult.Failure ->
+
+            is ResultValidator.Invalid ->
                 Result.failure(
                     EntityValidationException(validationResult.errors)
+                )
+
+            else ->
+                Result.failure(
+                    IllegalArgumentException("Unhandled validation result state")
                 )
         }
     }
 }
-

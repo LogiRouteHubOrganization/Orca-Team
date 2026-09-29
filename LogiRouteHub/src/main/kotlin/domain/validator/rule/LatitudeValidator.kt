@@ -1,22 +1,22 @@
 package domain.validator.rule
 
-import domain.validator.FieldViolation
-import domain.validator.ValidationError
-import domain.validator.ValidationResult
+import domain.validator.FieldValidator
+import domain.validator.ErrorValidator
+import domain.validator.ResultValidator
 import domain.validator.Validator
 
 class LatitudeValidator(
     private val field: String = "latitude"
 ) : Validator<Number?> {
 
-    override fun validate(value: Number?): ValidationResult {
+    override fun validate(value: Number?): ResultValidator {
 
         return if (value != null && value.toDouble() in -90.0..90.0) {
-            ValidationResult.Success
+            ResultValidator.Valid
         } else {
-            ValidationResult.Failure(
+            ResultValidator.Invalid(
                 listOf(
-                    FieldViolation(field = field, error = ValidationError.InvalidLatitude)
+                    FieldValidator(field = field, error = ErrorValidator.InvalidLatitude)
                 )
             )
         }

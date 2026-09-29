@@ -1,8 +1,8 @@
 package domain.validator.rule
 
-import domain.validator.FieldViolation
-import domain.validator.ValidationError
-import domain.validator.ValidationResult
+import domain.validator.FieldValidator
+import domain.validator.ErrorValidator
+import domain.validator.ResultValidator
 import domain.validator.Validator
 
 class PriorityValidator(
@@ -14,23 +14,23 @@ class PriorityValidator(
     )
 ) : Validator<String?> {
 
-    override fun validate(value: String?): ValidationResult {
+    override fun validate(value: String?): ResultValidator {
 
         if (value.isNullOrBlank()) {
-            return ValidationResult.Failure(
+            return ResultValidator.Invalid(
                 listOf(
-                    FieldViolation(field = field, error = ValidationError.BlankPriority)
+                    FieldValidator(field = field, error = ErrorValidator.BlankPriority)
                 )
             )
         }
         return if (value in allowedPriorities) {
-            ValidationResult.Success
+            ResultValidator.Valid
         } else {
-            ValidationResult.Failure(
+            ResultValidator.Invalid(
                 listOf(
-                    FieldViolation(
+                    FieldValidator(
                         field = field,
-                        error = ValidationError.InvalidPriority(
+                        error = ErrorValidator.InvalidPriority(
                             allowedPriorities = allowedPriorities
                         )
                     )

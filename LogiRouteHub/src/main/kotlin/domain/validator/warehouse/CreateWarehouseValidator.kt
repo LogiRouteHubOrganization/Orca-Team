@@ -1,6 +1,6 @@
 package domain.validator.warehouse
 
-import domain.validator.ValidationResult
+import domain.validator.ResultValidator
 import domain.validator.rule.IdValidator
 import domain.validator.rule.LatitudeValidator
 import domain.validator.rule.LongitudeValidator
@@ -14,30 +14,26 @@ class CreateWarehouseValidator {
         regionalZone: String,
         latitude: Double,
         longitude: Double
-    ): ValidationResult {
+    ): ResultValidator {
 
-        val results = listOf(
 
+        val results: List<ResultValidator> = listOf(
             IdValidator(
                 field = "id",
                 allowedPrefixes = setOf("WH-")
             ).validate(id),
 
-
             NonBlankStringValidator(
                 field = "name"
             ).validate(name),
-
 
             NonBlankStringValidator(
                 field = "regionalZone"
             ).validate(regionalZone),
 
-
             LatitudeValidator(
                 field = "latitude"
             ).validate(latitude),
-
 
             LongitudeValidator(
                 field = "longitude"
@@ -45,13 +41,13 @@ class CreateWarehouseValidator {
         )
 
         val errors = results
-            .filterIsInstance<ValidationResult.Failure>()
+            .filterIsInstance<ResultValidator.Invalid>()
             .flatMap { it.errors }
 
         return if (errors.isEmpty()) {
-            ValidationResult.Success
+            ResultValidator.Valid
         } else {
-            ValidationResult.Failure(errors)
+            ResultValidator.Invalid(errors)
         }
     }
 }

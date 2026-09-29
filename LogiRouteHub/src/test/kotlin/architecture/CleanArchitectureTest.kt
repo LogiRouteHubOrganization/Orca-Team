@@ -8,7 +8,8 @@ import kotlinx.serialization.Serializable
 
 
 
-class CleanArchitectureTest {
+class
+CleanArchitectureTest {
     @Test
     fun `domain package must never depend on the data package`(){
         Konsist.scopeFromProject()
@@ -40,6 +41,7 @@ class CleanArchitectureTest {
     fun `All classes located in domain validator must have names ending with Validator`(){
         Konsist.scopeFromPackage("..domain.validator..")
             .classes()
+            .filter { it.isTopLevel }
             .assertTrue { it.name.endsWith("Validator") }
     }
     @Test

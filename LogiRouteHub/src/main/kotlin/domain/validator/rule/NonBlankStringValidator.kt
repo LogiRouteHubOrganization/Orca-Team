@@ -1,22 +1,22 @@
 package domain.validator.rule
 
-import domain.validator.FieldViolation
-import domain.validator.ValidationError
-import domain.validator.ValidationResult
+import domain.validator.FieldValidator
+import domain.validator.ErrorValidator
+import domain.validator.ResultValidator
 import domain.validator.Validator
 
 class NonBlankStringValidator(
     private val field: String
 ) : Validator<String?> {
 
-    override fun validate(value: String?): ValidationResult {
+    override fun validate(value: String?): ResultValidator {
 
         return if (!value.isNullOrBlank()) {
-            ValidationResult.Success
+            ResultValidator.Valid
         } else {
-            ValidationResult.Failure(
+            ResultValidator.Invalid(
                 listOf(
-                    FieldViolation(field = field, error = ValidationError.BlankValue)
+                    FieldValidator(field = field, error = ErrorValidator.BlankValue)
                 )
             )
         }

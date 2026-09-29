@@ -2,7 +2,7 @@ package domain.usecase.crud.route
 
 import domain.exception.EntityValidationException
 import domain.repository.RouteRepository
-import domain.validator.ValidationResult
+import domain.validator.ResultValidator
 import domain.validator.rule.IdValidator
 
 class DeleteRouteUseCase(
@@ -16,12 +16,17 @@ class DeleteRouteUseCase(
                 allowedPrefixes = setOf("RT-")
             ).validate(routeId)
         ) {
-            ValidationResult.Success ->
+            ResultValidator.Valid ->
                 routeRepository.delete(routeId)
 
-            is ValidationResult.Failure ->
+            is ResultValidator.Invalid ->
                 Result.failure(
                     EntityValidationException(validationResult.errors)
+                )
+
+            else ->
+                Result.failure(
+                    IllegalArgumentException("Unhandled validation result state")
                 )
         }
     }
