@@ -17,10 +17,10 @@ class GetRouteByIdUseCase(
                 allowedPrefixes = setOf("RT-")
             ).validate(routeId)
         ) {
-            ValidationResult.Success ->
+            ValidationResult.Valid ->
                 routeRepository.findById(routeId)
 
-            is ValidationResult.Failure ->
+            is ValidationResult.Invalid ->
                 Result.failure(
                     EntityValidationException(validationResult.errors)
                 )

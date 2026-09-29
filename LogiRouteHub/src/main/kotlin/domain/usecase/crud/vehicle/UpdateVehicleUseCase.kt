@@ -23,7 +23,7 @@ class UpdateVehicleUseCase(
             allowedPrefixes = setOf("TRK-")
         ).validate(id)
 
-        if (idValidationResult is ValidationResult.Failure) {
+        if (idValidationResult is ValidationResult.Invalid) {
             return Result.failure(
                 EntityValidationException(idValidationResult.errors)
             )
@@ -31,12 +31,12 @@ class UpdateVehicleUseCase(
         return when (
             val validationResult = vehicleValidator(updateRequest)
         ) {
-            ValidationResult.Success ->
+            ValidationResult.Valid ->
                 vehicleRepository.update(
                     id,
                     updateRequest
                 )
-            is ValidationResult.Failure ->
+            is ValidationResult.Invalid ->
                 Result.failure(
                     EntityValidationException(validationResult.errors)
                 )

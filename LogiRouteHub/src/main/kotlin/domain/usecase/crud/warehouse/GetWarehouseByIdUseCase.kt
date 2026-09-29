@@ -20,10 +20,10 @@ class GetWarehouseByIdUseCase(
                 allowedPrefixes = setOf("WH-")
             ).validate(id)
         ) {
-            ValidationResult.Success ->
+            ValidationResult.Valid ->
                 warehouseRepository.findById(id)
 
-            is ValidationResult.Failure ->
+            is ValidationResult.Invalid ->
                 Result.failure(
                     EntityValidationException(validationResult.errors)
                 )

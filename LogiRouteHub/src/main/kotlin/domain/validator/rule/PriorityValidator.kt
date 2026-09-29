@@ -17,16 +17,16 @@ class PriorityValidator(
     override fun validate(value: String?): ValidationResult {
 
         if (value.isNullOrBlank()) {
-            return ValidationResult.Failure(
+            return ValidationResult.Invalid(
                 listOf(
                     FieldViolation(field = field, error = ValidationError.BlankPriority)
                 )
             )
         }
         return if (value in allowedPriorities) {
-            ValidationResult.Success
+            ValidationResult.Valid
         } else {
-            ValidationResult.Failure(
+            ValidationResult.Invalid(
                 listOf(
                     FieldViolation(
                         field = field,

@@ -12,9 +12,9 @@ class PositiveNumberValidator(
     override fun validate(value: Number?): ValidationResult {
 
         return if (value != null && value.toDouble() > 0) {
-            ValidationResult.Success
+            ValidationResult.Valid
         } else {
-            ValidationResult.Failure(
+            ValidationResult.Invalid(
                 listOf(
                     FieldViolation(field = field, error = ValidationError.MustBePositive)
                 )

@@ -12,9 +12,9 @@ class LongitudeValidator(
     override fun validate(value: Number?): ValidationResult {
 
         return if (value != null && value.toDouble() in -180.0..180.0) {
-            ValidationResult.Success
+            ValidationResult.Valid
         } else {
-            ValidationResult.Failure(
+            ValidationResult.Invalid(
                 listOf(
                     FieldViolation(field = field, error = ValidationError.InvalidLongitude)
                 )

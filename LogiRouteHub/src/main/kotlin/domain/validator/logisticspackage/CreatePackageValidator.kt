@@ -53,13 +53,13 @@ class CreatePackageValidator {
         )
 
         val errors = results
-            .filterIsInstance<ValidationResult.Failure>()
+            .filterIsInstance<ValidationResult.Invalid>()
             .flatMap { it.errors }
 
         return if (errors.isEmpty()) {
-            ValidationResult.Success
+            ValidationResult.Valid
         } else {
-            ValidationResult.Failure(errors)
+            ValidationResult.Invalid(errors)
         }
     }
 }

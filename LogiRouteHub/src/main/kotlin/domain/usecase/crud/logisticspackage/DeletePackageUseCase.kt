@@ -19,10 +19,10 @@ class DeletePackageUseCase(
                 allowedPrefixes = setOf("PKG-")
             ).validate(id)
         ) {
-            ValidationResult.Success ->
+            ValidationResult.Valid ->
                 packageRepository.delete(id)
 
-            is ValidationResult.Failure ->
+            is ValidationResult.Invalid ->
                 Result.failure(
                     EntityValidationException(validationResult.errors)
                 )

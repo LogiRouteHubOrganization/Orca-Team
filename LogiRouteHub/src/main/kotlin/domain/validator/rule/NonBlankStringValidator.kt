@@ -12,9 +12,9 @@ class NonBlankStringValidator(
     override fun validate(value: String?): ValidationResult {
 
         return if (!value.isNullOrBlank()) {
-            ValidationResult.Success
+            ValidationResult.Valid
         } else {
-            ValidationResult.Failure(
+            ValidationResult.Invalid(
                 listOf(
                     FieldViolation(field = field, error = ValidationError.BlankValue)
                 )

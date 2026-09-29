@@ -17,7 +17,7 @@ data class Vehicle(
             currentWarehouse = currentWarehouse
         )
 
-        if (validationResult is ValidationResult.Failure) {
+        if (validationResult is ValidationResult.Invalid) {
             throw EntityValidationException(validationResult.errors)
         }
     }
