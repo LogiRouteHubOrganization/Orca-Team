@@ -1,19 +1,19 @@
 package domain.validator.logisticspackage
 
 import domain.model.updateinput.PackageUpdateModel
-import domain.validator.FieldViolator
+import domain.validator.FieldValidator
 import domain.validator.ErrorValidator
-import domain.validator.ResultVaildator
+import domain.validator.ResultValidator
 import domain.validator.rule.IdValidator
 import domain.validator.rule.PositiveNumberValidator
 import domain.validator.rule.PriorityValidator
 
 class UpdatePackageValidator {
 
-    operator fun invoke(updateModel: PackageUpdateModel): ResultVaildator {
+    operator fun invoke(updateModel: PackageUpdateModel): ResultValidator {
         if (!hasAnyUpdate(updateModel)) {
-            return ResultVaildator.Invalid(
-                listOf(FieldViolator(field = "update", error = ErrorValidator.EmptyUpdate))
+            return ResultValidator.Invalid(
+                listOf(FieldValidator(field = "update", error = ErrorValidator.EmptyUpdate))
             )
         }
 
@@ -33,8 +33,8 @@ class UpdatePackageValidator {
             }
         )
 
-        val errors = results.filterIsInstance<ResultVaildator.Invalid>().flatMap { it.errors }
-        return if (errors.isEmpty()) ResultVaildator.Valid else ResultVaildator.Invalid(errors)
+        val errors = results.filterIsInstance<ResultValidator.Invalid>().flatMap { it.errors }
+        return if (errors.isEmpty()) ResultValidator.Valid else ResultValidator.Invalid(errors)
     }
 
     private fun hasAnyUpdate(updateModel: PackageUpdateModel): Boolean {

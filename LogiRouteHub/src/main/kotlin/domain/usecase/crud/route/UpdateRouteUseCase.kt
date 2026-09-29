@@ -4,7 +4,7 @@ import domain.exception.EntityValidationException
 import domain.model.Route
 import domain.model.updateinput.RouteUpdateModel
 import domain.repository.RouteRepository
-import domain.validator.ResultVaildator
+import domain.validator.ResultValidator
 import domain.validator.route.UpdateRouteValidator
 
 class UpdateRouteUseCase(
@@ -23,15 +23,18 @@ class UpdateRouteUseCase(
                 updateModel = updateModel
             )
         ) {
-            ResultVaildator.Valid -> routeRepository.update(
-                    routeId = routeId,
-                    updateModel = updateModel
-                )
+            ResultValidator.Valid -> routeRepository.update(
+                routeId = routeId,
+                updateModel = updateModel
+            )
 
-            is ResultVaildator.Invalid -> Result.failure(
-                    EntityValidationException(validationResult.errors)
-                )
+            is ResultValidator.Invalid -> Result.failure(
+                EntityValidationException(validationResult.errors)
+            )
+
+            else -> Result.failure(
+                IllegalArgumentException("Unhandled validation result state")
+            )
         }
     }
 }
-

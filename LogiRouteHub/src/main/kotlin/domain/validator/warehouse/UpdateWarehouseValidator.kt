@@ -1,19 +1,19 @@
 package domain.validator.warehouse
 
 import domain.model.updateinput.WarehouseUpdateModel
-import domain.validator.FieldViolator
+import domain.validator.FieldValidator
 import domain.validator.ErrorValidator
-import domain.validator.ResultVaildator
+import domain.validator.ResultValidator
 import domain.validator.rule.LatitudeValidator
 import domain.validator.rule.LongitudeValidator
 import domain.validator.rule.NonBlankStringValidator
 
 class UpdateWarehouseValidator {
 
-    operator fun invoke(updateModel: WarehouseUpdateModel): ResultVaildator {
+    operator fun invoke(updateModel: WarehouseUpdateModel): ResultValidator {
         if (!hasAnyUpdate(updateModel)) {
-            return ResultVaildator.Invalid(
-                listOf(FieldViolator(field = "update", error = ErrorValidator.EmptyUpdate))
+            return ResultValidator.Invalid(
+                listOf(FieldValidator(field = "update", error = ErrorValidator.EmptyUpdate))
             )
         }
 
@@ -28,9 +28,9 @@ class UpdateWarehouseValidator {
                 LongitudeValidator("longitude").validate(it) }
         )
 
-        val errors = results.filterIsInstance<ResultVaildator.Invalid>().flatMap { it.errors }
+        val errors = results.filterIsInstance<ResultValidator.Invalid>().flatMap { it.errors }
 
-        return if (errors.isEmpty()) ResultVaildator.Valid else ResultVaildator.Invalid(errors)
+        return if (errors.isEmpty()) ResultValidator.Valid else ResultValidator.Invalid(errors)
     }
 
     private fun hasAnyUpdate(updateModel: WarehouseUpdateModel): Boolean {

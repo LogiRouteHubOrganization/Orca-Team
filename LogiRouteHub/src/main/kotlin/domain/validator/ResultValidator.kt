@@ -6,6 +6,6 @@ sealed class ResultValidator {
     data object Valid : ResultValidator()
 
     data class Invalid(
-        val errors: List<FieldViolator>
+        val errors: List<FieldValidator>
     ) : ResultValidator()
 }

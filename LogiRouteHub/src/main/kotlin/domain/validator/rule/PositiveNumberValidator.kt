@@ -1,22 +1,22 @@
 package domain.validator.rule
 
-import domain.validator.FieldViolator
+import domain.validator.FieldValidator
 import domain.validator.ErrorValidator
-import domain.validator.ResultVaildator
+import domain.validator.ResultValidator
 import domain.validator.Validator
 
 class PositiveNumberValidator(
     private val field: String
 ) : Validator<Number?> {
 
-    override fun validate(value: Number?): ResultVaildator {
+    override fun validate(value: Number?): ResultValidator {
 
         return if (value != null && value.toDouble() > 0) {
-            ResultVaildator.Valid
+            ResultValidator.Valid
         } else {
-            ResultVaildator.Invalid(
+            ResultValidator.Invalid(
                 listOf(
-                    FieldViolator(field = field, error = ErrorValidator.MustBePositive)
+                    FieldValidator(field = field, error = ErrorValidator.MustBePositive)
                 )
             )
         }

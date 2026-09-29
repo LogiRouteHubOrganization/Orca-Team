@@ -1,8 +1,8 @@
 package domain.validator.rule
 
-import domain.validator.FieldViolator
+import domain.validator.FieldValidator
 import domain.validator.ErrorValidator
-import domain.validator.ResultVaildator
+import domain.validator.ResultValidator
 import domain.validator.Validator
 
 class IdValidator(
@@ -10,11 +10,11 @@ class IdValidator(
     private val allowedPrefixes: Set<String>
 ) : Validator<String?> {
 
-    override fun validate(value: String?): ResultVaildator {
+    override fun validate(value: String?): ResultValidator {
         if (value.isNullOrBlank()) {
-            return ResultVaildator.Invalid(
+            return ResultValidator.Invalid(
                 listOf(
-                    FieldViolator(
+                    FieldValidator(
                         field = field,
                         error = ErrorValidator.BlankId
                     )
@@ -25,9 +25,9 @@ class IdValidator(
             value.startsWith(prefix)
         }
         if (matchedPrefix == null) {
-            return ResultVaildator.Invalid(
+            return ResultValidator.Invalid(
                 listOf(
-                    FieldViolator(
+                    FieldValidator(
                         field = field,
                         error = ErrorValidator.InvalidIdPrefix(
                             allowedPrefixes = allowedPrefixes
@@ -39,15 +39,15 @@ class IdValidator(
         val numericPart = value.removePrefix(matchedPrefix)
 
         if (!numericPart.matches(Regex("\\d{6}"))) {
-            return ResultVaildator.Invalid(
+            return ResultValidator.Invalid(
                 listOf(
-                    FieldViolator(
+                    FieldValidator(
                         field = field,
                         error = ErrorValidator.InvalidIdFormat
                     )
                 )
             )
         }
-        return ResultVaildator.Valid
+        return ResultValidator.Valid
     }
 }

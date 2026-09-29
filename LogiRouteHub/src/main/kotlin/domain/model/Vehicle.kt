@@ -1,6 +1,6 @@
 package domain.model
 import domain.exception.EntityValidationException
-import domain.validator.ResultVaildator
+import domain.validator.ResultValidator
 import domain.validator.vehicle.CreateVehicleValidator
 
 data class Vehicle(
@@ -17,7 +17,7 @@ data class Vehicle(
             currentWarehouse = currentWarehouse
         )
 
-        if (validationResult is ResultVaildator.Invalid) {
+        if (validationResult is ResultValidator.Invalid) {
             throw EntityValidationException(validationResult.errors)
         }
     }
