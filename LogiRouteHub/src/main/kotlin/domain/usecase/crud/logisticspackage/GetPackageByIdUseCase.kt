@@ -1,10 +1,9 @@
-
 package domain.usecase.crud.logisticspackage
 
 import domain.exception.EntityValidationException
 import domain.model.Package
 import domain.repository.PackageRepository
-import domain.validator.ValidationResult
+import domain.validator.ResultValidator
 import domain.validator.rule.IdValidator
 
 class GetPackageByIdUseCase(
@@ -20,15 +19,18 @@ class GetPackageByIdUseCase(
                 allowedPrefixes = setOf("PKG-")
             ).validate(id)
         ) {
-            ValidationResult.Success ->
+            ResultValidator.Valid ->
                 packageRepository.findById(id)
 
-            is ValidationResult.Failure ->
+            is ResultValidator.Invalid ->
                 Result.failure(
                     EntityValidationException(validationResult.errors)
+                )
+
+            else ->
+                Result.failure(
+                    IllegalArgumentException("Unhandled validation result state")
                 )
         }
     }
 }
-
-

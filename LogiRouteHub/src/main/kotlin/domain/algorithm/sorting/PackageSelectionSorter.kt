@@ -1,6 +1,6 @@
 package domain.algorithm.sorting
 
-import data.dataholder.LogisticsPackageRaw
+import domain.model.Package
 
 private const val URGENT_PRIORITY = "URGENT"
 private const val STANDARD_PRIORITY = "STANDARD"
@@ -13,12 +13,12 @@ private const val LOW_PRIORITY_LEVEL = 1
 private const val FIRST_PACKAGE_INDEX = 0
 private const val SINGLE_INDEX_STEP = 1
 
-fun sortPackages(logisticsPackages: MutableList<LogisticsPackageRaw>) {
+fun sortPackages(logisticsPackages: MutableList<Package>) {
     sortPackagesByWeight(logisticsPackages)
     sortPackagesByPriority(logisticsPackages)
 }
 
-private fun sortPackagesByWeight(logisticsPackages: MutableList<LogisticsPackageRaw>) {
+private fun sortPackagesByWeight(logisticsPackages: MutableList<Package>) {
     for (currentSortingIndex in FIRST_PACKAGE_INDEX until logisticsPackages.lastIndex) {
         val packageWithHighestWeightIndex = findPackageWithHighestWeightIndex(
             logisticsPackages = logisticsPackages,
@@ -33,7 +33,7 @@ private fun sortPackagesByWeight(logisticsPackages: MutableList<LogisticsPackage
 }
 
 private fun findPackageWithHighestWeightIndex(
-    logisticsPackages: MutableList<LogisticsPackageRaw>,
+    logisticsPackages: MutableList<Package>,
     searchStartingIndex: Int
 ): Int {
     var packageWithHighestWeightIndex =
@@ -57,15 +57,15 @@ private fun findPackageWithHighestWeightIndex(
 }
 
 private fun hasHigherWeight(
-    currentPackage: LogisticsPackageRaw,
-    packageWithHighestWeight: LogisticsPackageRaw
+    currentPackage: Package,
+    packageWithHighestWeight: Package
 ): Boolean {
 
-    return currentPackage.packageWeightByKg > packageWithHighestWeight.packageWeightByKg
+    return currentPackage.weightByKg > packageWithHighestWeight.weightByKg
 }
 
 private fun sortPackagesByPriority(
-    logisticsPackages: MutableList<LogisticsPackageRaw>
+    logisticsPackages: MutableList<Package>
 ) {
     for (
     currentSortingIndex in
@@ -85,7 +85,7 @@ private fun sortPackagesByPriority(
 }
 
 private fun findPackageWithHighestPriorityIndex(
-    logisticsPackages: MutableList<LogisticsPackageRaw>,
+    logisticsPackages: MutableList<Package>,
     searchStartingIndex: Int
 ): Int {
     var packageWithHighestPriorityIndex = searchStartingIndex
@@ -107,15 +107,15 @@ private fun findPackageWithHighestPriorityIndex(
 }
 
 private fun hasHigherPriority(
-    currentPackage: LogisticsPackageRaw,
-    packageWithHighestPriority: LogisticsPackageRaw
+    currentPackage: Package,
+    packageWithHighestPriority: Package
 ): Boolean {
 
     val currentPackagePriorityLevel = getPriorityLevel(
-        currentPackage.packagePriority
+        currentPackage. priority
     )
     val highestPackagePriorityLevel = getPriorityLevel(
-        packageWithHighestPriority.packagePriority
+        packageWithHighestPriority. priority
     )
 
     return currentPackagePriorityLevel > highestPackagePriorityLevel
@@ -136,7 +136,7 @@ private fun getPriorityLevel(
 }
 
 private fun placePackageAtSortingIndex(
-    logisticsPackages: MutableList<LogisticsPackageRaw>,
+    logisticsPackages: MutableList<Package>,
     packageCurrentIndex: Int,
     requiredSortingIndex: Int
 ) {

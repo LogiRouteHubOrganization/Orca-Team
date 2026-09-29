@@ -1,7 +1,7 @@
 package domain.model
 
 import domain.exception.EntityValidationException
-import domain.validator.ValidationResult
+import domain.validator.ResultValidator
 import domain.validator.route.CreateRouteValidator
 
 data class Route(
@@ -21,7 +21,7 @@ data class Route(
             typicalDelayMin = typicalDelayMin
         )
 
-        if (validationResult is ValidationResult.Failure) {
+        if (validationResult is ResultValidator.Invalid) {
             throw EntityValidationException(validationResult.errors)
         }
     }

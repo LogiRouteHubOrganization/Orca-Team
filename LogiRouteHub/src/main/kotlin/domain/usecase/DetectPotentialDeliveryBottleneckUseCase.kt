@@ -1,14 +1,10 @@
 package domain.usecase
 
 import domain.model.Warehouse
+import domain.model.request.PotentialDeliveryBottleneck
+import domain.model.request.WarehouseCapacityInfo
 import domain.repository.WarehouseRepository
 
-data class PotentialDeliveryBottleneck(
-    val warehouse: Warehouse,
-    val totalCargoWeightKg: Double,
-    val totalVehicleCapacityKg: Double,
-    val capacityGapKg: Double
-)
 
 class DetectDeliveryBottleneckUseCase(
     private val warehouseRepository: WarehouseRepository
@@ -18,14 +14,14 @@ class DetectDeliveryBottleneckUseCase(
             val warehouses = warehouseRepository.findAll().getOrThrow()
 
             warehouses.map { warehouse ->
-                    WarehouseCapacityInfo(
-                        warehouse = warehouse,
-                        totalCargoWeightKg = warehouse.cargoQueue
-                            .sumOf { it.weightByKg },
-                        totalVehicleCapacityKg = warehouse.stationedVehicles
-                            .sumOf { it.maxCapacityKg }
-                    )
-                }
+                WarehouseCapacityInfo(
+                    warehouse = warehouse,
+                    totalCargoWeightKg = warehouse.cargoQueue
+                        .sumOf { it.weightByKg },
+                    totalVehicleCapacityKg = warehouse.stationedVehicles
+                        .sumOf { it.maxCapacityKg }
+                )
+            }
                 .filter { capacityInfo ->
                     capacityInfo.totalCargoWeightKg >
                             capacityInfo.totalVehicleCapacityKg
@@ -39,9 +35,4 @@ class DetectDeliveryBottleneckUseCase(
                     )
                 }
         }
-    private data class WarehouseCapacityInfo(
-        val warehouse: Warehouse,
-        val totalCargoWeightKg: Double,
-        val totalVehicleCapacityKg: Double
-    )
 }

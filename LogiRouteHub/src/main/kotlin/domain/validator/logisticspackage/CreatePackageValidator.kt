@@ -1,7 +1,7 @@
 package domain.validator.logisticspackage
 
 import domain.model.Warehouse
-import domain.validator.ValidationResult
+import domain.validator.ResultValidator
 import domain.validator.rule.DifferentLocationsValidator
 import domain.validator.rule.IdValidator
 import domain.validator.rule.PositiveNumberValidator
@@ -15,9 +15,9 @@ class CreatePackageValidator {
         priority: String,
         originWarehouse: Warehouse,
         destinationWarehouse: Warehouse
-    ): ValidationResult {
+    ): ResultValidator {
 
-        val results = listOf(
+        val results: List<ResultValidator> = listOf(
 
             IdValidator(
                 field = "id",
@@ -53,13 +53,13 @@ class CreatePackageValidator {
         )
 
         val errors = results
-            .filterIsInstance<ValidationResult.Failure>()
+            .filterIsInstance<ResultValidator.Invalid>()
             .flatMap { it.errors }
 
         return if (errors.isEmpty()) {
-            ValidationResult.Success
+            ResultValidator.Valid
         } else {
-            ValidationResult.Failure(errors)
+            ResultValidator.Invalid(errors)
         }
     }
 }

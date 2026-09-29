@@ -3,7 +3,7 @@ package domain.usecase.crud.warehouse
 import domain.exception.EntityValidationException
 import domain.model.Warehouse
 import domain.repository.WarehouseRepository
-import domain.validator.ValidationResult
+import domain.validator.ResultValidator
 import domain.validator.rule.IdValidator
 
 class GetWarehouseByIdUseCase(
@@ -20,12 +20,17 @@ class GetWarehouseByIdUseCase(
                 allowedPrefixes = setOf("WH-")
             ).validate(id)
         ) {
-            ValidationResult.Success ->
+            ResultValidator.Valid ->
                 warehouseRepository.findById(id)
 
-            is ValidationResult.Failure ->
+            is ResultValidator.Invalid ->
                 Result.failure(
                     EntityValidationException(validationResult.errors)
+                )
+
+            else ->
+                Result.failure(
+                    IllegalArgumentException("Unhandled validation result state")
                 )
         }
     }
