@@ -1,6 +1,6 @@
 package domain.validator.warehouse
 
-import domain.validator.ValidationResult
+import domain.validator.ResultVaildator
 import domain.validator.rule.IdValidator
 import domain.validator.rule.LatitudeValidator
 import domain.validator.rule.LongitudeValidator
@@ -14,7 +14,7 @@ class CreateWarehouseValidator {
         regionalZone: String,
         latitude: Double,
         longitude: Double
-    ): ValidationResult {
+    ): ResultVaildator {
 
         val results = listOf(
 
@@ -45,13 +45,13 @@ class CreateWarehouseValidator {
         )
 
         val errors = results
-            .filterIsInstance<ValidationResult.Invalid>()
+            .filterIsInstance<ResultVaildator.Invalid>()
             .flatMap { it.errors }
 
         return if (errors.isEmpty()) {
-            ValidationResult.Valid
+            ResultVaildator.Valid
         } else {
-            ValidationResult.Invalid(errors)
+            ResultVaildator.Invalid(errors)
         }
     }
 }

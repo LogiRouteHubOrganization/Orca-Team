@@ -5,7 +5,7 @@ import domain.model.Warehouse
 import domain.model.updateinput.VehicleUpdateModel
 import domain.repository.VehicleRepository
 import domain.repository.WarehouseRepository
-import domain.validator.ValidationResult
+import domain.validator.ResultVaildator
 import domain.validator.vehicle.UpdateVehicleValidator
 
 class AddVehicleToHubUseCase(
@@ -29,7 +29,7 @@ class AddVehicleToHubUseCase(
 
         val validationResult = updateVehicleValidator(vehicleUpdateModel)
 
-        if (validationResult is ValidationResult.Invalid) {
+        if (validationResult is ResultVaildator.Invalid) {
             throw EntityValidationException(
                 validationResult.errors
             )

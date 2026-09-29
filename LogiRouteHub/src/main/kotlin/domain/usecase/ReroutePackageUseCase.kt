@@ -6,7 +6,7 @@ import domain.model.request.ReroutePackageRequest
 import domain.model.updateinput.PackageUpdateModel
 import domain.repository.PackageRepository
 import domain.repository.WarehouseRepository
-import domain.validator.ValidationResult
+import domain.validator.ResultVaildator
 import domain.validator.logisticspackage.UpdatePackageValidator
 
 class ReroutePackageUseCase(
@@ -39,7 +39,7 @@ class ReroutePackageUseCase(
         val validationResult =
             updatePackageValidator(packageUpdateModel)
 
-        if (validationResult is ValidationResult.Invalid) {
+        if (validationResult is ResultVaildator.Invalid) {
             throw EntityValidationException(validationResult.errors)
         }
 

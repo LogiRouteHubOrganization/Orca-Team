@@ -4,7 +4,7 @@ import domain.exception.EntityValidationException
 import domain.model.Vehicle
 import domain.model.updateinput.VehicleUpdateModel
 import domain.repository.VehicleRepository
-import domain.validator.ValidationResult
+import domain.validator.ResultVaildator
 import domain.validator.rule.IdValidator
 import domain.validator.vehicle.UpdateVehicleValidator
 
@@ -23,7 +23,7 @@ class UpdateVehicleUseCase(
             allowedPrefixes = setOf("TRK-")
         ).validate(id)
 
-        if (idValidationResult is ValidationResult.Invalid) {
+        if (idValidationResult is ResultVaildator.Invalid) {
             return Result.failure(
                 EntityValidationException(idValidationResult.errors)
             )
@@ -31,12 +31,12 @@ class UpdateVehicleUseCase(
         return when (
             val validationResult = vehicleValidator(updateRequest)
         ) {
-            ValidationResult.Valid ->
+            ResultVaildator.Valid ->
                 vehicleRepository.update(
                     id,
                     updateRequest
                 )
-            is ValidationResult.Invalid ->
+            is ResultVaildator.Invalid ->
                 Result.failure(
                     EntityValidationException(validationResult.errors)
                 )

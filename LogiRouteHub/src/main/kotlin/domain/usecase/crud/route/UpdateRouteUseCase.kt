@@ -4,7 +4,7 @@ import domain.exception.EntityValidationException
 import domain.model.Route
 import domain.model.updateinput.RouteUpdateModel
 import domain.repository.RouteRepository
-import domain.validator.ValidationResult
+import domain.validator.ResultVaildator
 import domain.validator.route.UpdateRouteValidator
 
 class UpdateRouteUseCase(
@@ -23,12 +23,12 @@ class UpdateRouteUseCase(
                 updateModel = updateModel
             )
         ) {
-            ValidationResult.Valid -> routeRepository.update(
+            ResultVaildator.Valid -> routeRepository.update(
                     routeId = routeId,
                     updateModel = updateModel
                 )
 
-            is ValidationResult.Invalid -> Result.failure(
+            is ResultVaildator.Invalid -> Result.failure(
                     EntityValidationException(validationResult.errors)
                 )
         }

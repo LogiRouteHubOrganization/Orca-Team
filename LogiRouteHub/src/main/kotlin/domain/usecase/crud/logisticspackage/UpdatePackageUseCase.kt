@@ -4,7 +4,7 @@ import domain.exception.EntityValidationException
 import domain.model.Package
 import domain.model.updateinput.PackageUpdateModel
 import domain.repository.PackageRepository
-import domain.validator.ValidationResult
+import domain.validator.ResultVaildator
 import domain.validator.logisticspackage.UpdatePackageValidator
 import domain.validator.rule.IdValidator
 
@@ -22,7 +22,7 @@ class UpdatePackageUseCase(
             allowedPrefixes = setOf("PKG-")
         ).validate(id)
 
-        if (idValidationResult is ValidationResult.Invalid) {
+        if (idValidationResult is ResultVaildator.Invalid) {
             return Result.failure(
                 EntityValidationException(idValidationResult.errors)
             )
@@ -30,9 +30,9 @@ class UpdatePackageUseCase(
         return when (
             val validationResult = packageValidator(updateRequest)
         ) {
-            ValidationResult.Valid -> packageRepository.update(id, updateRequest)
+            ResultVaildator.Valid -> packageRepository.update(id, updateRequest)
 
-            is ValidationResult.Invalid ->
+            is ResultVaildator.Invalid ->
                 Result.failure(
                     EntityValidationException(validationResult.errors)
                 )
