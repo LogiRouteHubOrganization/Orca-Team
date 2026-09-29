@@ -1,32 +1,32 @@
 package domain.validator
 
-sealed class ValidationError {
+sealed class ErrorValidator {
 
-    data object DifferentLocations : ValidationError()
+    data object DifferentLocations : ErrorValidator()
 
-    data object BlankId : ValidationError()
+    data object BlankId : ErrorValidator()
 
     data class InvalidIdPrefix(
         val allowedPrefixes: Set<String>
-    ) : ValidationError()
+    ) : ErrorValidator()
 
-    data object InvalidIdFormat : ValidationError()
+    data object InvalidIdFormat : ErrorValidator()
 
-    data object InvalidLatitude : ValidationError()
+    data object InvalidLatitude : ErrorValidator()
 
-    data object InvalidLongitude : ValidationError()
+    data object InvalidLongitude : ErrorValidator()
 
-    data object BlankValue : ValidationError()
+    data object BlankValue : ErrorValidator()
 
-    data object MustBeNonNegative : ValidationError()
+    data object MustBeNonNegative : ErrorValidator()
 
-    data object MustBePositive : ValidationError()
+    data object MustBePositive : ErrorValidator()
 
-    data object BlankPriority : ValidationError()
+    data object BlankPriority : ErrorValidator()
 
     data class InvalidPriority(
         val allowedPriorities: Set<String>
-    ) : ValidationError()
+    ) : ErrorValidator()
 
-    data object EmptyUpdate : ValidationError()
+    data object EmptyUpdate : ErrorValidator()
 }

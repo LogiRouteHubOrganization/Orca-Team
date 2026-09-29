@@ -1,6 +1,6 @@
 package domain.validator
 
-data class FieldViolation(
+data class FieldViolator(
     val field: String,
-    val error: ValidationError
+    val error: ErrorValidator
 )

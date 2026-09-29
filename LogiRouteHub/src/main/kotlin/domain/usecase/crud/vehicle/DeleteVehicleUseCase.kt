@@ -2,7 +2,7 @@ package domain.usecase.crud.vehicle
 
 import domain.exception.EntityValidationException
 import domain.repository.VehicleRepository
-import domain.validator.ValidationResult
+import domain.validator.ResultVaildator
 import domain.validator.rule.IdValidator
 
 class DeleteVehicleUseCase(
@@ -19,10 +19,10 @@ class DeleteVehicleUseCase(
                 allowedPrefixes = setOf("TRK-")
             ).validate(id)
         ) {
-            ValidationResult.Valid ->
+            ResultVaildator.Valid ->
                 vehicleRepository.delete(id)
 
-            is ValidationResult.Invalid ->
+            is ResultVaildator.Invalid ->
                 Result.failure(
                     EntityValidationException(validationResult.errors)
                 )

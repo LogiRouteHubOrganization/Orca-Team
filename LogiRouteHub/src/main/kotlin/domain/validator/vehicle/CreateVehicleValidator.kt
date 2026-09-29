@@ -1,7 +1,7 @@
 package domain.validator.vehicle
 
 import domain.model.Warehouse
-import domain.validator.ValidationResult
+import domain.validator.ResultVaildator
 import domain.validator.rule.IdValidator
 import domain.validator.rule.PositiveNumberValidator
 
@@ -12,7 +12,7 @@ class CreateVehicleValidator {
         maxCapacityKg: Double,
         costPerKm: Double,
         currentWarehouse: Warehouse
-    ): ValidationResult {
+    ): ResultVaildator {
 
         val results = listOf(
 
@@ -39,13 +39,13 @@ class CreateVehicleValidator {
         )
 
         val errors = results
-            .filterIsInstance<ValidationResult.Invalid>()
+            .filterIsInstance<ResultVaildator.Invalid>()
             .flatMap { it.errors }
 
         return if (errors.isEmpty()) {
-            ValidationResult.Valid
+            ResultVaildator.Valid
         } else {
-            ValidationResult.Invalid(errors)
+            ResultVaildator.Invalid(errors)
         }
     }
 }

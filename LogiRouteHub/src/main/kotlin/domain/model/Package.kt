@@ -4,7 +4,7 @@ import domain.pricing.DispatchStrategy
 import domain.pricing.decorator.PackageComponent
 import domain.validator.logisticspackage.CreatePackageValidator
 import domain.exception.EntityValidationException
-import domain.validator.ValidationResult
+import domain.validator.ResultVaildator
 
 data class Package(
     val id: String,
@@ -23,7 +23,7 @@ data class Package(
             destinationWarehouse = destinationWarehouse
         )
 
-        if (validationResult is ValidationResult.Invalid) {
+        if (validationResult is ResultVaildator.Invalid) {
             throw EntityValidationException(validationResult.errors)
         }
     }

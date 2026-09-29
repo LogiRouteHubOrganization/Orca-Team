@@ -1,9 +1,9 @@
 package domain.validator.route
 
 import domain.model.updateinput.RouteUpdateModel
-import domain.validator.FieldViolation
-import domain.validator.ValidationError
-import domain.validator.ValidationResult
+import domain.validator.FieldViolator
+import domain.validator.ErrorValidator
+import domain.validator.ResultVaildator
 import domain.validator.rule.IdValidator
 import domain.validator.rule.NonNegativeNumberValidator
 import domain.validator.rule.PositiveNumberValidator
@@ -13,10 +13,10 @@ class UpdateRouteValidator {
     operator fun invoke(
         routeId: String,
         updateModel: RouteUpdateModel
-    ): ValidationResult {
+    ): ResultVaildator {
         if (!hasAnyUpdate(updateModel)) {
-            return ValidationResult.Invalid(
-                listOf(FieldViolation(field = "update", error = ValidationError.EmptyUpdate))
+            return ResultVaildator.Invalid(
+                listOf(FieldViolator(field = "update", error = ErrorValidator.EmptyUpdate))
             )
         }
 
@@ -37,8 +37,8 @@ class UpdateRouteValidator {
             }
         )
 
-        val errors = results.filterIsInstance<ValidationResult.Invalid>().flatMap { it.errors }
-        return if (errors.isEmpty()) ValidationResult.Valid else ValidationResult.Invalid(errors)
+        val errors = results.filterIsInstance<ResultVaildator.Invalid>().flatMap { it.errors }
+        return if (errors.isEmpty()) ResultVaildator.Valid else ResultVaildator.Invalid(errors)
     }
 
     private fun hasAnyUpdate(updateModel: RouteUpdateModel): Boolean {

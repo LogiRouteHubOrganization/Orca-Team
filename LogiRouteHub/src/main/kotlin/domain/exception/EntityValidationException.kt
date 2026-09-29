@@ -1,9 +1,9 @@
 package domain.exception
 
-import domain.validator.FieldViolation
+import domain.validator.FieldViolator
 
 class EntityValidationException(
-    val errors: List<FieldViolation>
+    val errors: List<FieldViolator>
 ) : DomainException(
     message = "Entity validation failed"
 )

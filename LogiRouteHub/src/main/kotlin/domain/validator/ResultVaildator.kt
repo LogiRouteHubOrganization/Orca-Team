@@ -1,10 +1,11 @@
 package domain.validator
 
-sealed class ValidationResult {
+sealed class ResultValidator {
 
-    data object Valid : ValidationResult()
+
+    data object Valid : ResultValidator()
 
     data class Invalid(
-        val errors: List<FieldViolation>
-    ) : ValidationResult()
+        val errors: List<FieldViolator>
+    ) : ResultValidator()
 }

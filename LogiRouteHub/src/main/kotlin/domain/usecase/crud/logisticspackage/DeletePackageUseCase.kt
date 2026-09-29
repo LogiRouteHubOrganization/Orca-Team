@@ -3,7 +3,7 @@ package domain.usecase.crud.logisticspackage
 
 import domain.exception.EntityValidationException
 import domain.repository.PackageRepository
-import domain.validator.ValidationResult
+import domain.validator.ResultVaildator
 import domain.validator.rule.IdValidator
 
 class DeletePackageUseCase(
@@ -19,10 +19,10 @@ class DeletePackageUseCase(
                 allowedPrefixes = setOf("PKG-")
             ).validate(id)
         ) {
-            ValidationResult.Valid ->
+            ResultVaildator.Valid ->
                 packageRepository.delete(id)
 
-            is ValidationResult.Invalid ->
+            is ResultVaildator.Invalid ->
                 Result.failure(
                     EntityValidationException(validationResult.errors)
                 )

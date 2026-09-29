@@ -1,8 +1,8 @@
 package domain.validator.rule
 
-import domain.validator.FieldViolation
-import domain.validator.ValidationError
-import domain.validator.ValidationResult
+import domain.validator.FieldViolator
+import domain.validator.ErrorValidator
+import domain.validator.ResultVaildator
 import domain.validator.Validator
 
 class IdValidator(
@@ -10,13 +10,13 @@ class IdValidator(
     private val allowedPrefixes: Set<String>
 ) : Validator<String?> {
 
-    override fun validate(value: String?): ValidationResult {
+    override fun validate(value: String?): ResultVaildator {
         if (value.isNullOrBlank()) {
-            return ValidationResult.Invalid(
+            return ResultVaildator.Invalid(
                 listOf(
-                    FieldViolation(
+                    FieldViolator(
                         field = field,
-                        error = ValidationError.BlankId
+                        error = ErrorValidator.BlankId
                     )
                 )
             )
@@ -25,11 +25,11 @@ class IdValidator(
             value.startsWith(prefix)
         }
         if (matchedPrefix == null) {
-            return ValidationResult.Invalid(
+            return ResultVaildator.Invalid(
                 listOf(
-                    FieldViolation(
+                    FieldViolator(
                         field = field,
-                        error = ValidationError.InvalidIdPrefix(
+                        error = ErrorValidator.InvalidIdPrefix(
                             allowedPrefixes = allowedPrefixes
                         )
                     )
@@ -39,15 +39,15 @@ class IdValidator(
         val numericPart = value.removePrefix(matchedPrefix)
 
         if (!numericPart.matches(Regex("\\d{6}"))) {
-            return ValidationResult.Invalid(
+            return ResultVaildator.Invalid(
                 listOf(
-                    FieldViolation(
+                    FieldViolator(
                         field = field,
-                        error = ValidationError.InvalidIdFormat
+                        error = ErrorValidator.InvalidIdFormat
                     )
                 )
             )
         }
-        return ValidationResult.Valid
+        return ResultVaildator.Valid
     }
 }

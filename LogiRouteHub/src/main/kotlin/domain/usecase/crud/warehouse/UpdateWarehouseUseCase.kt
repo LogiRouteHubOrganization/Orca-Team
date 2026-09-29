@@ -4,7 +4,7 @@ import domain.exception.EntityValidationException
 import domain.model.Warehouse
 import domain.model.updateinput.WarehouseUpdateModel
 import domain.repository.WarehouseRepository
-import domain.validator.ValidationResult
+import domain.validator.ResultVaildator
 import domain.validator.rule.IdValidator
 import domain.validator.warehouse.UpdateWarehouseValidator
 
@@ -23,7 +23,7 @@ class UpdateWarehouseUseCase(
             allowedPrefixes = setOf("WH-")
         ).validate(id)
 
-        if (idValidationResult is ValidationResult.Invalid) {
+        if (idValidationResult is ResultVaildator.Invalid) {
             return Result.failure(
                 EntityValidationException(idValidationResult.errors)
             )
@@ -32,11 +32,11 @@ class UpdateWarehouseUseCase(
         return when (
             val validationResult = warehouseValidator(updateRequest)
         ) {
-            ValidationResult.Valid -> warehouseRepository.update(
+            ResultVaildator.Valid -> warehouseRepository.update(
                     id,
                     updateRequest
                 )
-            is ValidationResult.Invalid -> Result.failure(
+            is ResultVaildator.Invalid -> Result.failure(
                     EntityValidationException(validationResult.errors)
                 )
         }

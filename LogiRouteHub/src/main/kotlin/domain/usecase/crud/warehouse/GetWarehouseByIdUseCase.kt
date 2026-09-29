@@ -3,7 +3,7 @@ package domain.usecase.crud.warehouse
 import domain.exception.EntityValidationException
 import domain.model.Warehouse
 import domain.repository.WarehouseRepository
-import domain.validator.ValidationResult
+import domain.validator.ResultVaildator
 import domain.validator.rule.IdValidator
 
 class GetWarehouseByIdUseCase(
@@ -20,10 +20,10 @@ class GetWarehouseByIdUseCase(
                 allowedPrefixes = setOf("WH-")
             ).validate(id)
         ) {
-            ValidationResult.Valid ->
+            ResultVaildator.Valid ->
                 warehouseRepository.findById(id)
 
-            is ValidationResult.Invalid ->
+            is ResultVaildator.Invalid ->
                 Result.failure(
                     EntityValidationException(validationResult.errors)
                 )
