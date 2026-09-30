@@ -23,7 +23,6 @@ import data.remote.datasource.supabase.WarehouseRemoteDataSourceImpl
 import data.remote.datasource.supabase.RouteRemoteDataSourceImpl
 import data.repository.PackageRepositoryImpl
 import data.repository.WarehouseRepositoryImpl
-import data.repository.local.LocalPackageRepositoryImpl
 import data.repository.local.LocalRouteRepositoryImpl
 import data.repository.local.LocalVehicleRepositoryImpl
 import data.repository.remote.RemoteRouteRepositoryImpl
