@@ -1,4 +1,5 @@
 package data.remote.mapper
+import data.dataholder.FleetRaw
 import data.dataholder.LogisticsPackageRaw
 import data.dataholder.WarehouseRaw
 import data.remote.dto.response.PackageDto
@@ -73,5 +74,13 @@ fun PackageDto.toRaw(): LogisticsPackageRaw {
         originHubId = originWarehouseId,
         destinationHubId = destinationWarehouseId,
         packagePriority = priority
+    )
+}
+fun VehicleDto.toRaw(): FleetRaw {
+    return FleetRaw(
+        vehicleId = id,
+        currentHubId = currentWarehouseId,
+        maxCapacityKg = maxCapacityKg,
+        costPerKm = costPerKm
     )
 }

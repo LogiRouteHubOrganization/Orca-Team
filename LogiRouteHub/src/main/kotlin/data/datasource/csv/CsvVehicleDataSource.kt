@@ -32,4 +32,70 @@ class CsvVehicleDataSource(
             fleetParser.parseFleetRow(row)
         }
     }
+
+    override fun addVehicle(vehicle: FleetRaw) {
+        val vehicles = loadVehicles().toMutableList()
+
+        vehicles.add(vehicle)
+
+        writeVehicles(vehicles)
+    }
+
+    override fun updateVehicle(vehicle: FleetRaw) {
+        val vehicles = loadVehicles().toMutableList()
+
+        val vehicleIndex = vehicles.indexOfFirst {
+            it.vehicleId == vehicle.vehicleId
+        }
+
+        if (vehicleIndex == -1) {
+            throw LocalDataException(
+                "Vehicle '${vehicle.vehicleId}' was not found in local data"
+            )
+        }
+
+        vehicles[vehicleIndex] = vehicle
+
+        writeVehicles(vehicles)
+    }
+
+    override fun deleteVehicle(vehicleId: String) {
+        val vehicles = loadVehicles().toMutableList()
+
+        val wasRemoved = vehicles.removeIf {
+            it.vehicleId == vehicleId
+        }
+
+        if (!wasRemoved) {
+            throw LocalDataException(
+                "Vehicle '$vehicleId' was not found in local data"
+            )
+        }
+
+        writeVehicles(vehicles)
+    }
+
+    override fun replaceVehicles(
+        vehicles: List<FleetRaw>
+    ) {
+        writeVehicles(vehicles)
+    }
+
+    private fun writeVehicles(
+        vehicles: List<FleetRaw>
+    ) {
+        val header = "vehicleId,currentHubId,maxCapacityKg,costPerKm"
+
+        val content = buildList {
+            add(header)
+
+            vehicles.forEach { vehicle ->
+                add(
+                    fleetParser.toCsvRow(vehicle)
+                )
+            }
+        }.joinToString("\n")
+
+        vehicleFile.writeText(content)
+    }
 }
