@@ -154,6 +154,4 @@ class PriorityValidatorTest {
 
         assertThat(result).isEqualTo(expected)
     }
-
-
 }
