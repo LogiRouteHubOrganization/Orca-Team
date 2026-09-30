@@ -1,4 +1,4 @@
-package main.domain.validator.logisticspackage
+package mainTest.domainTest.validatorTest.logisticspackageTest
 
 import com.google.common.truth.Truth.assertThat
 import domain.model.Warehouse

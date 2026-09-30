@@ -1,4 +1,4 @@
-package main.domain.validator.vehicle
+package mainTest.domainTest.validatorTest.vehicleTest
 
 import com.google.common.truth.Truth.assertThat
 import domain.model.updateinput.VehicleUpdateModel

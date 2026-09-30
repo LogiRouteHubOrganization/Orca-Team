@@ -1,4 +1,4 @@
-package main.domain.validator.warehouse
+package mainTest.domainTest.validatorTest.warehouseTest
 
 import domain.model.updateinput.WarehouseUpdateModel
 import domain.validator.ErrorValidator

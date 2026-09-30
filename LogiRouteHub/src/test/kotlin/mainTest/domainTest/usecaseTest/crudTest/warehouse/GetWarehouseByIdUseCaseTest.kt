@@ -1,4 +1,4 @@
-package main.domain.usecase.crud.warehouse
+package mainTest.domainTest.usecaseTest.crudTest.warehouse
 
 import com.google.common.truth.Truth.assertThat
 import domain.exception.EntityValidationException

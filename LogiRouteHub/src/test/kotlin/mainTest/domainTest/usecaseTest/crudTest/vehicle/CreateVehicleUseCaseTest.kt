@@ -1,4 +1,4 @@
-package main.domain.usecase.crud.vehicle
+package mainTest.domainTest.usecaseTest.crudTest.vehicle
 
 import com.google.common.truth.Truth.assertThat
 import domain.model.Vehicle

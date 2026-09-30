@@ -1,4 +1,4 @@
-package main.domain.validator.vehicle
+package mainTest.domainTest.validatorTest.vehicleTest
 
 
 import org.junit.jupiter.api.Test
