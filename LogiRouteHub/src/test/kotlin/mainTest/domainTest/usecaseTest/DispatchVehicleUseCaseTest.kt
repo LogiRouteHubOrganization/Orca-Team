@@ -1,12 +1,6 @@
-package main.domain.usecase
+package mainTest.domainTest.usecaseTest
 
-import io.mockk.mockk
-import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.every
-import kotlinx.coroutines.test.runTest
-import org.junit.jupiter.api.Test
-import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth
 import domain.model.Package
 import domain.model.Vehicle
 import domain.model.Warehouse
@@ -14,14 +8,15 @@ import domain.model.request.DispatchVehicleRequest
 import domain.repository.VehicleRepository
 import domain.repository.WarehouseRepository
 import domain.usecase.DispatchVehicleUseCase
-import domain.validator.ErrorValidator
-import domain.validator.FieldValidator
-import domain.validator.ResultValidator
-import domain.validator.vehicle.UpdateVehicleValidator
 import io.mockk.Runs
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.just
+import io.mockk.mockk
 import io.mockk.verify
-import kotlin.collections.emptyList
+import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.Test
 
 class DispatchVehicleUseCaseTest {
 
@@ -73,7 +68,7 @@ class DispatchVehicleUseCaseTest {
         val result = dispatchVehicleUseCase(input)
 
         // Then
-        assertThat(result).isEqualTo(
+        Truth.assertThat(result).isEqualTo(
             Result.success(listOf(package1, package2))
         )
     }
@@ -106,7 +101,7 @@ class DispatchVehicleUseCaseTest {
         val result = dispatchVehicleUseCase(input)
 
         // Then
-        assertThat(result).isEqualTo(
+        Truth.assertThat(result).isEqualTo(
             Result.success(emptyList<Package>())
         )
 
@@ -149,7 +144,7 @@ class DispatchVehicleUseCaseTest {
         val result = dispatchVehicleUseCase(input)
 
         // Then
-        assertThat(result).isEqualTo(
+        Truth.assertThat(result).isEqualTo(
             Result.success(emptyList<Package>())
         )
     }
@@ -220,7 +215,7 @@ class DispatchVehicleUseCaseTest {
         val result = dispatchVehicleUseCase(input)
 
         // Then
-        assertThat(result).isEqualTo(
+        Truth.assertThat(result).isEqualTo(
             Result.success(listOf(package1))
         )
     }
@@ -278,7 +273,7 @@ class DispatchVehicleUseCaseTest {
         )
 
         // Then
-        assertThat(result).isEqualTo(
+        Truth.assertThat(result).isEqualTo(
             Result.success(emptyList<Package>())
         )
 
@@ -366,7 +361,7 @@ class DispatchVehicleUseCaseTest {
         )
 
         // Then
-        assertThat(result).isEqualTo(
+        Truth.assertThat(result).isEqualTo(
             Result.success(
                 listOf(package1, package2)
             )
@@ -426,7 +421,7 @@ class DispatchVehicleUseCaseTest {
         )
 
         // Then
-        assertThat(result).isEqualTo(
+        Truth.assertThat(result).isEqualTo(
             Result.success(emptyList<Package>())
         )
 
@@ -486,7 +481,7 @@ class DispatchVehicleUseCaseTest {
         )
 
         // Then
-        assertThat(result).isEqualTo(
+        Truth.assertThat(result).isEqualTo(
             Result.success(emptyList<Package>())
         )
     }

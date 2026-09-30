@@ -1,9 +1,7 @@
-package main.domain.usecase
+package mainTest.domainTest.usecaseTest
 
-import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth
 import domain.model.Vehicle
-import domain.model.Warehouse
-import domain.repository.WarehouseRepository
 import domain.usecase.FindStationedVehiclesByCapacityUseCase
 import domain.usecase.RecommendVehicleByCapacityAndCostUseCase
 import io.mockk.coEvery
@@ -56,7 +54,7 @@ class RecommendVehicleByCapacityAndCostUseCaseTest {
         )
 
         // Then
-        assertThat(result).isEqualTo(
+        Truth.assertThat(result).isEqualTo(
             Result.success(vehicle1)
         )
     }
@@ -98,7 +96,6 @@ class RecommendVehicleByCapacityAndCostUseCaseTest {
         )
 
 
-
         // When
         val result = recommendVehicleByCapacityAndCostUseCase(
             warehouseId = warehouseId,
@@ -106,7 +103,7 @@ class RecommendVehicleByCapacityAndCostUseCaseTest {
         )
 
         // Then
-        assertThat(result).isEqualTo(
+        Truth.assertThat(result).isEqualTo(
             Result.success(cheapVehicle)
         )
     }
@@ -171,7 +168,7 @@ class RecommendVehicleByCapacityAndCostUseCaseTest {
         )
 
         // Then
-        assertThat(result).isEqualTo(
+        Truth.assertThat(result).isEqualTo(
             Result.success(partiallyLoadedVehicle)
         )
     }
@@ -206,7 +203,7 @@ class RecommendVehicleByCapacityAndCostUseCaseTest {
         )
 
         // Then
-        assertThat(result).isEqualTo(
+        Truth.assertThat(result).isEqualTo(
             Result.success(null)
         )
     }
@@ -247,7 +244,7 @@ class RecommendVehicleByCapacityAndCostUseCaseTest {
         )
 
         // Then
-        assertThat(result).isEqualTo(
+        Truth.assertThat(result).isEqualTo(
             Result.success(vehicle)
         )
     }
@@ -284,7 +281,7 @@ class RecommendVehicleByCapacityAndCostUseCaseTest {
         )
 
         // Then
-        assertThat(result.isFailure).isTrue()
-        assertThat(result.exceptionOrNull()).isEqualTo(exception)
+        Truth.assertThat(result.isFailure).isTrue()
+        Truth.assertThat(result.exceptionOrNull()).isEqualTo(exception)
     }
 }

@@ -1,6 +1,6 @@
-package main.domain.usecase
+package mainTest.domainTest.usecaseTest
 
-import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth
 import domain.model.Package
 import domain.model.Vehicle
 import domain.usecase.ValidateVehicleCapacityUseCase
@@ -45,7 +45,7 @@ class ValidateVehicleCapacityUseCaseTest {
         )
 
         // Then
-        assertThat(result).isTrue()
+        Truth.assertThat(result).isTrue()
     }
 
     @Test
@@ -78,7 +78,7 @@ class ValidateVehicleCapacityUseCaseTest {
         )
 
         // Then
-        assertThat(result).isTrue()
+        Truth.assertThat(result).isTrue()
     }
 
     @Test
@@ -111,7 +111,7 @@ class ValidateVehicleCapacityUseCaseTest {
         )
 
         // Then
-        assertThat(result).isFalse()
+        Truth.assertThat(result).isFalse()
     }
 
     @Test
@@ -139,7 +139,7 @@ class ValidateVehicleCapacityUseCaseTest {
         )
 
         // Then
-        assertThat(result).isTrue()
+        Truth.assertThat(result).isTrue()
     }
 
     @Test
@@ -177,7 +177,7 @@ class ValidateVehicleCapacityUseCaseTest {
         )
 
         // Then
-        assertThat(result).isTrue()
+        Truth.assertThat(result).isTrue()
     }
 
     @Test
@@ -220,6 +220,6 @@ class ValidateVehicleCapacityUseCaseTest {
             packages = listOf(package1, package2, package3))
 
         // Then
-        assertThat(result).isFalse()
+        Truth.assertThat(result).isFalse()
     }
 }

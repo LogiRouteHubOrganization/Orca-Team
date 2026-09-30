@@ -1,6 +1,6 @@
-package main.domain.usecase
+package mainTest.domainTest.usecaseTest
 
-import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth
 import domain.model.Vehicle
 import domain.model.Warehouse
 import domain.repository.WarehouseRepository
@@ -53,7 +53,7 @@ class FindStationedVehiclesByCapacityUseCaseTest {
         )
 
         // Then
-        assertThat(result).isEqualTo(
+        Truth.assertThat(result).isEqualTo(
             Result.success(listOf(vehicle1, vehicle2))
         )
     }
@@ -83,7 +83,7 @@ class FindStationedVehiclesByCapacityUseCaseTest {
         )
 
         // Then
-        assertThat(result).isEqualTo(
+        Truth.assertThat(result).isEqualTo(
             Result.success(emptyList<Vehicle>())
         )
     }
@@ -130,7 +130,7 @@ class FindStationedVehiclesByCapacityUseCaseTest {
         )
 
         // Then
-        assertThat(result).isEqualTo(
+        Truth.assertThat(result).isEqualTo(
             Result.success(emptyList<Vehicle>())
         )
     }
@@ -172,7 +172,7 @@ class FindStationedVehiclesByCapacityUseCaseTest {
         )
 
         // Then
-        assertThat(result).isEqualTo(
+        Truth.assertThat(result).isEqualTo(
             Result.success(listOf(vehicle))
         )
     }
@@ -214,7 +214,7 @@ class FindStationedVehiclesByCapacityUseCaseTest {
         )
 
         // Then
-        assertThat(result).isEqualTo(
+        Truth.assertThat(result).isEqualTo(
             Result.success(emptyList<Vehicle>())
         )
     }
@@ -261,7 +261,7 @@ class FindStationedVehiclesByCapacityUseCaseTest {
         )
 
         // Then
-        assertThat(result).isEqualTo(
+        Truth.assertThat(result).isEqualTo(
             Result.success(listOf(suitableVehicle))
         )
     }
@@ -297,7 +297,7 @@ class FindStationedVehiclesByCapacityUseCaseTest {
         )
 
         // Then
-        assertThat(result).isEqualTo(
+        Truth.assertThat(result).isEqualTo(
             Result.success(emptyList<Vehicle>())
         )
     }
@@ -328,7 +328,7 @@ class FindStationedVehiclesByCapacityUseCaseTest {
         )
 
         // Then
-        assertThat(result.isFailure).isTrue()
-        assertThat(result.exceptionOrNull()).isEqualTo(exception)
+        Truth.assertThat(result.isFailure).isTrue()
+        Truth.assertThat(result.exceptionOrNull()).isEqualTo(exception)
     }
 }

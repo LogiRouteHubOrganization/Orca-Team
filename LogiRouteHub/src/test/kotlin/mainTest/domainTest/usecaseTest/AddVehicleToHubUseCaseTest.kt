@@ -1,12 +1,6 @@
-package main.domain.usecase
+package mainTest.domainTest.usecaseTest
 
-import io.mockk.mockk
-import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.every
-import kotlinx.coroutines.test.runTest
-import org.junit.jupiter.api.Test
-import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth
 import domain.exception.EntityValidationException
 import domain.model.Vehicle
 import domain.model.Warehouse
@@ -18,7 +12,12 @@ import domain.validator.ErrorValidator
 import domain.validator.FieldValidator
 import domain.validator.ResultValidator
 import domain.validator.vehicle.UpdateVehicleValidator
-
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.every
+import io.mockk.mockk
+import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.Test
 
 class AddVehicleToHubUseCaseTest {
 
@@ -89,10 +88,10 @@ class AddVehicleToHubUseCaseTest {
         )
 
         // Then
-        assertThat(result.isSuccess).isTrue()
-        assertThat(result.getOrNull()).isSameInstanceAs(warehouse)
+        Truth.assertThat(result.isSuccess).isTrue()
+        Truth.assertThat(result.getOrNull()).isSameInstanceAs(warehouse)
 
-        assertThat(warehouse.stationedVehicles)
+        Truth.assertThat(warehouse.stationedVehicles)
             .containsExactly(updatedVehicle)
 
 
@@ -140,8 +139,8 @@ class AddVehicleToHubUseCaseTest {
         )
 
         // Then
-        assertThat(result.isSuccess).isTrue()
-        assertThat(result.getOrNull()).isNull()
+        Truth.assertThat(result.isSuccess).isTrue()
+        Truth.assertThat(result.getOrNull()).isNull()
 
 
         coVerify(exactly = 1) {
@@ -200,8 +199,8 @@ class AddVehicleToHubUseCaseTest {
         )
 
         // Then
-        assertThat(result.isSuccess).isTrue()
-        assertThat(result.getOrNull()).isNull()
+        Truth.assertThat(result.isSuccess).isTrue()
+        Truth.assertThat(result.getOrNull()).isNull()
 
         coVerify(exactly = 1) {
             warehouseRepository.findById(warehouse.id)
@@ -281,8 +280,8 @@ class AddVehicleToHubUseCaseTest {
         )
 
         // Then
-        assertThat(result.isFailure).isTrue()
-        assertThat(result.exceptionOrNull())
+        Truth.assertThat(result.isFailure).isTrue()
+        Truth.assertThat(result.exceptionOrNull())
             .isInstanceOf(EntityValidationException::class.java)
 
         coVerify(exactly = 1) {
@@ -363,8 +362,8 @@ class AddVehicleToHubUseCaseTest {
         )
 
         // Then
-        assertThat(result.isFailure).isTrue()
-        assertThat(result.exceptionOrNull())
+        Truth.assertThat(result.isFailure).isTrue()
+        Truth.assertThat(result.exceptionOrNull())
             .isSameInstanceAs(updateException)
 
 
@@ -386,7 +385,7 @@ class AddVehicleToHubUseCaseTest {
                 vehicleUpdateModel
             )
         }
-        assertThat(warehouse.stationedVehicles).isEmpty()
+        Truth.assertThat(warehouse.stationedVehicles).isEmpty()
     }
 
 
