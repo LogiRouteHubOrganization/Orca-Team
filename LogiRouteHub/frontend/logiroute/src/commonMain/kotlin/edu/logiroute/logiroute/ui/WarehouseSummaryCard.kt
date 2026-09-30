@@ -4,6 +4,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -11,17 +12,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import domain.model.Warehouse
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.widthIn
-
-
-private val JetBlack=Color(0xFF0D141C)
-val borderColor = Color(0xFF40454E)
-val textPrimary = Color(0xFFE0E0E0)
-private val Scorpion =Color(0xFF606060)
+import androidx.compose.foundation.layout.safeContentPadding
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.tooling.preview.Preview
+import edu.logiroute.logiroute.fakeData.SampleData
+import edu.logiroute.logiroute.theme.JetBlack
+import edu.logiroute.logiroute.theme.borderColor
+import edu.logiroute.logiroute.theme.textPrimary
+import edu.logiroute.logiroute.theme.Scorpion
 
 private fun priorityWeight(priority: String): Int {
     return when (priority.trim().uppercase()) {
@@ -79,5 +80,23 @@ fun WarehouseSummaryCard(
         }
     }
 
+}
+
+@Preview(showBackground = true)
+@Composable
+fun WarehouseComponentPreviews(){
+    Column(
+        modifier = Modifier
+            .background(Color.Black)
+            .safeContentPadding()
+            .fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        SampleData.sampleWarehouses.forEach { wh ->
+            WarehouseSummaryCard(warehouse = wh)
+
+        }
+    }
 }
 
