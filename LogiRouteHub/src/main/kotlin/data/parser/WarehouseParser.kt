@@ -155,4 +155,14 @@ class WarehouseParser {
 
         return "$prefix-$normalizedNumericPart"
     }
+    fun toCsvRow(warehouse: WarehouseRaw): String {
+        return listOf(
+            warehouse.warehouseId,
+            warehouse.warehouseName,
+            warehouse.regionalZone,
+            warehouse.latitude,
+            warehouse.longitude
+        ).joinToString(csvSeparator)
+    }
 }
+
