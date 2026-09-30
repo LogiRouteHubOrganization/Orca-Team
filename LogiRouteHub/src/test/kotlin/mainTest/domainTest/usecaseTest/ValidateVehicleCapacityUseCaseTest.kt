@@ -1,6 +1,6 @@
-package main.domain.usecase
+package mainTest.domainTest.usecaseTest
 
-import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth
 import domain.model.Package
 import domain.model.Vehicle
 import domain.usecase.ValidateVehicleCapacityUseCase
@@ -21,22 +21,14 @@ class ValidateVehicleCapacityUseCaseTest {
         val package1 = mockk<Package>()
         val package2 = mockk<Package>()
 
-        every {
-            vehicle.calculateTotalLoadedWeightKg()
+        every { vehicle.calculateTotalLoadedWeightKg()
         } returns 20.0
 
-        every {
-            vehicle.maxCapacityKg
-        } returns 100.0
+        every { vehicle.maxCapacityKg } returns 100.0
 
-        every {
-            package1.weightByKg
-        } returns 30.0
+        every { package1.weightByKg } returns 30.0
 
-        every {
-            package2.weightByKg
-        } returns 40.0
-
+        every { package2.weightByKg } returns 40.0
 
         // When
         val result = validateVehicleCapacityUseCase(
@@ -45,7 +37,7 @@ class ValidateVehicleCapacityUseCaseTest {
         )
 
         // Then
-        assertThat(result).isTrue()
+        Truth.assertThat(result).isTrue()
     }
 
     @Test
@@ -58,18 +50,12 @@ class ValidateVehicleCapacityUseCaseTest {
         val vehicle = mockk<Vehicle>()
         val package1 = mockk<Package>()
 
-        every {
-            vehicle.calculateTotalLoadedWeightKg()
+        every { vehicle.calculateTotalLoadedWeightKg()
         } returns 20.0
 
-        every {
-            vehicle.maxCapacityKg
-        } returns 100.0
+        every { vehicle.maxCapacityKg } returns 100.0
 
-        every {
-            package1.weightByKg
-        } returns 80.0
-
+        every { package1.weightByKg } returns 80.0
 
         // When
         val result = validateVehicleCapacityUseCase(
@@ -78,7 +64,7 @@ class ValidateVehicleCapacityUseCaseTest {
         )
 
         // Then
-        assertThat(result).isTrue()
+        Truth.assertThat(result).isTrue()
     }
 
     @Test
@@ -91,18 +77,12 @@ class ValidateVehicleCapacityUseCaseTest {
         val vehicle = mockk<Vehicle>()
         val package1 = mockk<Package>()
 
-        every {
-            vehicle.calculateTotalLoadedWeightKg()
+        every { vehicle.calculateTotalLoadedWeightKg()
         } returns 20.0
 
-        every {
-            vehicle.maxCapacityKg
-        } returns 100.0
+        every { vehicle.maxCapacityKg } returns 100.0
 
-        every {
-            package1.weightByKg
-        } returns 81.0
-
+        every { package1.weightByKg } returns 81.0
 
         // When
         val result = validateVehicleCapacityUseCase(
@@ -111,7 +91,7 @@ class ValidateVehicleCapacityUseCaseTest {
         )
 
         // Then
-        assertThat(result).isFalse()
+        Truth.assertThat(result).isFalse()
     }
 
     @Test
@@ -123,23 +103,18 @@ class ValidateVehicleCapacityUseCaseTest {
 
         val vehicle = mockk<Vehicle>()
 
-        every {
-            vehicle.calculateTotalLoadedWeightKg()
+        every { vehicle.calculateTotalLoadedWeightKg()
         } returns 60.0
 
-        every {
-            vehicle.maxCapacityKg
-        } returns 100.0
-
+        every { vehicle.maxCapacityKg } returns 100.0
 
         // When
         val result = validateVehicleCapacityUseCase(
             vehicle = vehicle,
             packages = emptyList()
         )
-
         // Then
-        assertThat(result).isTrue()
+        Truth.assertThat(result).isTrue()
     }
 
     @Test
@@ -153,22 +128,14 @@ class ValidateVehicleCapacityUseCaseTest {
         val package1 = mockk<Package>()
         val package2 = mockk<Package>()
 
-        every {
-            vehicle.calculateTotalLoadedWeightKg()
+        every { vehicle.calculateTotalLoadedWeightKg()
         } returns 0.0
 
-        every {
-            vehicle.maxCapacityKg
-        } returns 100.0
+        every { vehicle.maxCapacityKg } returns 100.0
 
-        every {
-            package1.weightByKg
-        } returns 30.0
+        every { package1.weightByKg } returns 30.0
 
-        every {
-            package2.weightByKg
-        } returns 40.0
-
+        every { package2.weightByKg } returns 40.0
 
         // When
         val result = validateVehicleCapacityUseCase(
@@ -177,7 +144,7 @@ class ValidateVehicleCapacityUseCaseTest {
         )
 
         // Then
-        assertThat(result).isTrue()
+        Truth.assertThat(result).isTrue()
     }
 
     @Test
@@ -193,26 +160,16 @@ class ValidateVehicleCapacityUseCaseTest {
         val package2 = mockk<Package>()
         val package3 = mockk<Package>()
 
-        every {
-            vehicle.calculateTotalLoadedWeightKg()
+        every { vehicle.calculateTotalLoadedWeightKg()
         } returns 20.0
 
-        every {
-            vehicle.maxCapacityKg
-        } returns 100.0
+        every { vehicle.maxCapacityKg } returns 100.0
 
-        every {
-            package1.weightByKg
-        } returns 30.0
+        every { package1.weightByKg } returns 30.0
 
-        every {
-            package2.weightByKg
-        } returns 40.0
+        every { package2.weightByKg } returns 40.0
 
-        every {
-            package3.weightByKg
-        } returns 20.0
-
+        every { package3.weightByKg } returns 20.0
 
         // When
         val result = validateVehicleCapacityUseCase(
@@ -220,6 +177,6 @@ class ValidateVehicleCapacityUseCaseTest {
             packages = listOf(package1, package2, package3))
 
         // Then
-        assertThat(result).isFalse()
+        Truth.assertThat(result).isFalse()
     }
 }
