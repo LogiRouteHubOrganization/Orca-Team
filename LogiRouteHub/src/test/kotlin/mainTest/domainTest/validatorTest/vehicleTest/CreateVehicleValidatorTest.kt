@@ -15,18 +15,18 @@ class CreateVehicleValidatorTest {
 
     @Test
     fun `returns valid when all vehicle data is valid`() {
-        // Arrange
+        // Given
         val validator = CreateVehicleValidator()
         val warehouse = createValidWarehouse()
 
-        // Act
+        // When
         val result = validator(
             id = "TRK-000001",
             maxCapacityKg = 1000.0,
             costPerKm = 2.5,
             currentWarehouse = warehouse
         )
-        // Assert
+        // Then
         assertThat(result).isEqualTo(ResultValidator.Valid)
 
     }
@@ -34,18 +34,18 @@ class CreateVehicleValidatorTest {
     @Test
     fun `returns blank id error when vehicle id is blank`() {
 
-        // Arrange
+        // Given
         val validator = CreateVehicleValidator()
         val warehouse = createValidWarehouse()
 
-        // Act
+        // When
         val result = validator(
             id = "",
             maxCapacityKg = 1000.0,
             costPerKm = 2.5,
             currentWarehouse = warehouse
         )
-        // Assert
+        // Then
         assertThat(result).isInstanceOf(ResultValidator.Invalid::class.java)
 
         val invalidResult = result as ResultValidator.Invalid
@@ -60,11 +60,11 @@ class CreateVehicleValidatorTest {
     @Test
     fun `returns invalid prefix error when vehicle id has invalid prefix`() {
 
-        // Arrange
+        // Given
         val validator = CreateVehicleValidator()
         val warehouse = createValidWarehouse()
 
-        // Act
+        // When
         val result = validator(
             id = "CAR-000001",
             maxCapacityKg = 1000.0,
@@ -72,7 +72,7 @@ class CreateVehicleValidatorTest {
             currentWarehouse = warehouse
         )
 
-        // Assert
+        // Then
         assertThat(result).isInstanceOf(ResultValidator.Invalid::class.java)
 
         val invalidResult = result as ResultValidator.Invalid
@@ -90,11 +90,11 @@ class CreateVehicleValidatorTest {
     @Test
     fun `returns invalid format error when vehicle id has invalid format`() {
 
-        // Arrange
+        // Given
         val validator = CreateVehicleValidator()
         val warehouse = createValidWarehouse()
 
-        // Act
+        // When
         val result = validator(
             id = "TRK-123",
             maxCapacityKg = 1000.0,
@@ -102,7 +102,7 @@ class CreateVehicleValidatorTest {
             currentWarehouse = warehouse
         )
 
-        // Assert
+        // Then
         assertThat(result).isInstanceOf(ResultValidator.Invalid::class.java)
 
         val invalidResult = result as ResultValidator.Invalid
@@ -117,11 +117,11 @@ class CreateVehicleValidatorTest {
 
     @Test
     fun `negative max capacity should return MustBePositive error`() {
-        // Arrange
+        // Given
         val validator = CreateVehicleValidator()
         val warehouse = createValidWarehouse()
 
-        // Act
+        // When
         val result = validator(
             id = "TRK-000001",
             maxCapacityKg = -100.0,
@@ -129,7 +129,7 @@ class CreateVehicleValidatorTest {
             currentWarehouse = warehouse
         )
 
-        // Assert
+        // Then
         assertThat(result).isInstanceOf(ResultValidator.Invalid::class.java)
         val invalidResult = result as ResultValidator.Invalid
 
@@ -143,11 +143,11 @@ class CreateVehicleValidatorTest {
 
     @Test
     fun `zero max capacity should return MustBePositive error`() {
-        // Arrange
+        // Given
         val validator = CreateVehicleValidator()
         val warehouse = createValidWarehouse()
 
-        // Act
+        // When
         val result = validator(
             id = "TRK-000001",
             maxCapacityKg = 0.0,
@@ -155,7 +155,7 @@ class CreateVehicleValidatorTest {
             currentWarehouse = warehouse
         )
 
-        // Assert
+        // Then
         assertThat(result).isInstanceOf(ResultValidator.Invalid::class.java)
         val invalidResult = result as ResultValidator.Invalid
 
@@ -169,11 +169,11 @@ class CreateVehicleValidatorTest {
 
     @Test
     fun `negative cost per km should return MustBePositive error`() {
-        // Arrange
+        // Given
         val validator = CreateVehicleValidator()
         val warehouse = createValidWarehouse()
 
-        // Act
+        // When
         val result = validator(
             id = "TRK-000001",
             maxCapacityKg = 1000.0,
@@ -181,7 +181,7 @@ class CreateVehicleValidatorTest {
             currentWarehouse = warehouse
         )
 
-        // Assert
+        // Then
         assertThat(result).isInstanceOf(ResultValidator.Invalid::class.java)
         val invalidResult = result as ResultValidator.Invalid
 
@@ -195,11 +195,11 @@ class CreateVehicleValidatorTest {
 
     @Test
     fun `zero cost per km should return MustBePositive error`() {
-        // Arrange
+        // Given
         val validator = CreateVehicleValidator()
         val warehouse = createValidWarehouse()
 
-        // Act
+        // When
         val result = validator(
             id = "TRK-000001",
             maxCapacityKg = 1000.0,
@@ -207,7 +207,7 @@ class CreateVehicleValidatorTest {
             currentWarehouse = warehouse
         )
 
-        // Assert
+        // Then
         assertThat(result).isInstanceOf(ResultValidator.Invalid::class.java)
         val invalidResult = result as ResultValidator.Invalid
 
@@ -221,13 +221,13 @@ class CreateVehicleValidatorTest {
 
     @Test
     fun `invalid warehouse id prefix should return InvalidIdPrefix error`() {
-        // Arrange
+        // Given
         val validator = CreateVehicleValidator()
 
         val warehouse = mockk<Warehouse>()
         every { warehouse.id } returns "TRK-000001"
 
-        // Act
+        // When
         val result = validator(
             id = "TRK-000001",
             maxCapacityKg = 100.0,
@@ -235,7 +235,7 @@ class CreateVehicleValidatorTest {
             currentWarehouse = warehouse
         )
 
-        // Assert
+        // Then
         assertThat(result).isInstanceOf(ResultValidator.Invalid::class.java)
         val invalidResult = result as ResultValidator.Invalid
 
@@ -251,13 +251,13 @@ class CreateVehicleValidatorTest {
 
     @Test
     fun `invalid warehouse id format should return InvalidIdFormat error`() {
-        // Arrange
+        // Given
         val validator = CreateVehicleValidator()
 
         val warehouse = mockk<Warehouse>()
         every { warehouse.id } returns "WH-ABCDEF"
 
-        // Act
+        // When
         val result = validator(
             id = "TRK-000001",
             maxCapacityKg = 100.0,
@@ -265,7 +265,7 @@ class CreateVehicleValidatorTest {
             currentWarehouse = warehouse
         )
 
-        // Assert
+        // Then
         assertThat(result).isInstanceOf(ResultValidator.Invalid::class.java)
         val invalidResult = result as ResultValidator.Invalid
 
@@ -279,13 +279,13 @@ class CreateVehicleValidatorTest {
 
     @Test
     fun `multiple invalid fields should return all validation errors`() {
-        // Arrange
+        // Given
         val validator = CreateVehicleValidator()
 
         val warehouse = mockk<Warehouse>()
         every { warehouse.id } returns "TRK-ABCDEF"
 
-        // Act
+        // When
         val result = validator(
             id = "TRK-ABCDEF",
             maxCapacityKg = -100.0,
@@ -293,7 +293,7 @@ class CreateVehicleValidatorTest {
             currentWarehouse = warehouse
         )
 
-        // Assert
+        // Then
         assertThat(result).isInstanceOf(ResultValidator.Invalid::class.java)
         val invalidResult = result as ResultValidator.Invalid
 

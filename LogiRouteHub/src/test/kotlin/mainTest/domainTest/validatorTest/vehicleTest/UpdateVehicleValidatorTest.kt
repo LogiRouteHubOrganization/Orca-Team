@@ -12,13 +12,13 @@ class UpdateVehicleValidatorTest {
 
     @Test
     fun `should return EmptyUpdate when update model is empty`() {
-        // Arrange
+        // Given
         val updateModel = VehicleUpdateModel()
 
-        // Act
+        // When
         val result = UpdateVehicleValidator().invoke(updateModel)
 
-        // Assert
+        // Then
         assertThat(result).isInstanceOf(ResultValidator.Invalid::class.java)
 
         val invalidResult = result as ResultValidator.Invalid
@@ -33,25 +33,25 @@ class UpdateVehicleValidatorTest {
 
     @Test
     fun `should return Valid when maxCapacityKg is positive`() {
-        // Arrange
+        // Given
         val updateModel = VehicleUpdateModel(maxCapacityKg = 1500.0)
 
-        // Act
+        // When
         val result = UpdateVehicleValidator().invoke(updateModel)
 
-        // Assert
+        // Then
         assertThat(result).isEqualTo(ResultValidator.Valid)
     }
 
     @Test
     fun `should return MustBePositive when maxCapacityKg is not positive`() {
-        // Arrange
+        // Given
         val updateModel = VehicleUpdateModel(maxCapacityKg = 0.0)
 
-        // Act
+        // When
         val result = UpdateVehicleValidator().invoke(updateModel)
 
-        // Assert
+        // Then
         assertThat(result).isInstanceOf(ResultValidator.Invalid::class.java)
 
         val invalidResult = result as ResultValidator.Invalid
@@ -66,25 +66,25 @@ class UpdateVehicleValidatorTest {
 
     @Test
     fun `should return Valid when costPerKm is positive`() {
-        // Arrange
+        // Given
         val updateModel = VehicleUpdateModel(costPerKm = 2.5)
 
-        // Act
+        // When
         val result = UpdateVehicleValidator().invoke(updateModel)
 
-        // Assert
+        // Then
         assertThat(result).isEqualTo(ResultValidator.Valid)
     }
 
     @Test
     fun `should return MustBePositive when costPerKm is not positive`() {
-        // Arrange
+        // Given
         val updateModel = VehicleUpdateModel(costPerKm = -3.0)
 
-        // Act
+        // When
         val result = UpdateVehicleValidator().invoke(updateModel)
 
-        // Assert
+        // Then
         assertThat(result).isInstanceOf(ResultValidator.Invalid::class.java)
 
         val invalidResult = result as ResultValidator.Invalid
@@ -99,25 +99,25 @@ class UpdateVehicleValidatorTest {
 
     @Test
     fun `should return Valid when warehouseId is valid`() {
-        // Arrange
+        // Given
         val updateModel = VehicleUpdateModel(currentWarehouseId = "WH-000001")
 
-        // Act
+        // When
         val result = UpdateVehicleValidator().invoke(updateModel)
 
-        // Assert
+        // Then
         assertThat(result).isEqualTo(ResultValidator.Valid)
     }
 
     @Test
     fun `should return InvalidIdPrefix when warehouseId has invalid prefix`() {
-        // Arrange
+        // Given
         val updateModel = VehicleUpdateModel(currentWarehouseId = "WA-000001")
 
-        // Act
+        // When
         val result = UpdateVehicleValidator().invoke(updateModel)
 
-        // Assert
+        // Then
         assertThat(result).isInstanceOf(ResultValidator.Invalid::class.java)
 
         val invalidResult = result as ResultValidator.Invalid
@@ -134,33 +134,33 @@ class UpdateVehicleValidatorTest {
 
     @Test
     fun `should return Valid when all update fields are valid`(){
-        // Arrange
+        // Given
         val updateModel = VehicleUpdateModel(
             maxCapacityKg = 2000.0,
             costPerKm = 4.0,
             currentWarehouseId = "WH-000001"
         )
 
-        // Act
+        // When
         val result = UpdateVehicleValidator().invoke(updateModel)
 
-        // Assert
+        // Then
         assertThat(result).isEqualTo(ResultValidator.Valid)
     }
 
     @Test
     fun `should return all validation errors when multiple update fields are invalid`() {
-        // Arrange
+        // Given
         val updateModel = VehicleUpdateModel(
             maxCapacityKg = 0.0,
             costPerKm = -5.0,
             currentWarehouseId = "ZA-001"
         )
 
-        // Act
+        // When
         val result = UpdateVehicleValidator().invoke(updateModel)
 
-        // Assert
+        // Then
         assertThat(result).isInstanceOf(ResultValidator.Invalid::class.java)
 
         val invalidResult = result as ResultValidator.Invalid
