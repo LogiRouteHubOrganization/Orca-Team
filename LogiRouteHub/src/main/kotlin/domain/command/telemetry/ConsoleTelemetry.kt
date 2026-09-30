@@ -1,5 +1,7 @@
 package domain.command.telemetry
 
+import domain.command.CommandState
+
 class ConsoleTelemetry : CommandTelemetry {
 
     override fun recordCommandExecution(
@@ -43,16 +45,16 @@ class ConsoleTelemetry : CommandTelemetry {
 
     override fun recordStateTransition(
         commandType: String,
-        beforeState: String,
-        afterState: String
+        beforeState: CommandState,
+        afterState: CommandState
     ) {
         println()
         println("  STATE CHANGE | $commandType")
         println("  Before:")
-        printIndentedState(beforeState)
+        printIndentedState(beforeState.describe())
 
         println("  After:")
-        printIndentedState(afterState)
+        printIndentedState(afterState.describe())
     }
 
     private fun printHistoryEvent(
@@ -78,3 +80,4 @@ class ConsoleTelemetry : CommandTelemetry {
         }
     }
 }
+

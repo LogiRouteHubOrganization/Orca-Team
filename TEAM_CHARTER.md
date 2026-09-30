@@ -28,6 +28,7 @@ This charter defines how the ORCA team collaborates, writes code, manages the re
 | Member 2      | Raghad      |
 | Member 3      | Fatima      |
 | Member 4      | Ruba        |
+| Member 5      | Wlaa        |
 
 ### 1.2 Branch Strategy
 

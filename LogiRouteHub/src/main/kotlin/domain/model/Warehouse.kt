@@ -1,12 +1,43 @@
 package domain.model
 
+import domain.exception.EntityValidationException
+import domain.validator.ResultValidator
+import domain.validator.warehouse.CreateWarehouseValidator
+
 class Warehouse(
     val id: String,
-    val name: String,
-    val regionalZone: String,
-    val latitude: Double,
-    val longitude: Double
+    name: String,
+    regionalZone: String,
+    latitude: Double,
+    longitude: Double
 ) {
+
+    init {
+        val validationResult = CreateWarehouseValidator().invoke(
+            id = id,
+            name = name,
+            regionalZone = regionalZone,
+            latitude = latitude,
+            longitude = longitude
+        )
+
+        if (validationResult is ResultValidator.Invalid) {
+            throw EntityValidationException(validationResult.errors)
+        }
+    }
+
+    var name: String = name
+        private set
+
+    var regionalZone: String = regionalZone
+        private set
+
+    var latitude: Double = latitude
+        private set
+
+    var longitude: Double = longitude
+        private set
+
     private val cargoQueueList = mutableListOf<Package>()
     private val outgoingRoutesList = mutableListOf<Route>()
     private val stationedVehiclesList = mutableListOf<Vehicle>()
@@ -68,5 +99,17 @@ class Warehouse(
         route: Route
     ) {
         outgoingRoutesList[routeIndex] = route
+    }
+
+    fun updateDetails(
+        name: String,
+        regionalZone: String,
+        latitude: Double,
+        longitude: Double
+    ) {
+        this.name = name
+        this.regionalZone = regionalZone
+        this.latitude = latitude
+        this.longitude = longitude
     }
 }

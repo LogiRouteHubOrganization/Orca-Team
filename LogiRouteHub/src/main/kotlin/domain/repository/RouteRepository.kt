@@ -1,14 +1,22 @@
+
 package domain.repository
 
 import domain.model.Route
+import domain.model.updateinput.RouteUpdateModel
 
 interface RouteRepository {
 
-    fun findById(routeId: String): Route?
+    suspend fun findById(routeId: String): Result<Route?>
 
-    fun findAll(): List<Route>
+    suspend fun findAll(): Result<List<Route>>
 
-    fun add(route: Route)
+    suspend fun add(route: Route): Result<Route>
 
-    fun update(route: Route)
+    suspend fun update(
+        routeId: String,
+        updateModel: RouteUpdateModel
+    ): Result<Route>
+
+    suspend fun delete(routeId: String): Result<Unit>
 }
+

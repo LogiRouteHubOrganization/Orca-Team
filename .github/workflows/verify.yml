@@ -2,9 +2,9 @@ name: CI Verification Workflow
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main" ,  "develop" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main" ,  "develop"]
 
 jobs:
   build-and-test:
@@ -21,7 +21,6 @@ jobs:
           java-version: '21'
           cache: 'gradle'
 
-      # هذه الخطوة المهمة جداً لمنع خطأ Permission denied
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
         working-directory: LogiRouteHub

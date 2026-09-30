@@ -1,0 +1,16 @@
+package domain.usecase.crud.warehouse
+
+import domain.model.Warehouse
+import domain.repository.WarehouseRepository
+
+class CreateWarehouseUseCase(
+    private val warehouseRepository: WarehouseRepository
+) {
+
+    suspend operator fun invoke(
+        warehouse: Warehouse
+    ): Result<Warehouse> {
+        return warehouseRepository.add(warehouse)
+    }
+}
+
