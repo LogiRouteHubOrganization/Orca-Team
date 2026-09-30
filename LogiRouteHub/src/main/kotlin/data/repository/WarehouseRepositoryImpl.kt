@@ -19,10 +19,12 @@ class WarehouseRepositoryImpl(
     private val warehouseRemoteDataSource: WarehouseRemoteDataSource,
     private val warehouseMapper: WarehouseMapper
 ) : WarehouseRepository {
+    private val warehouses = mutableListOf<Warehouse>()
+    private var isLoaded = false
 
     override suspend fun findAll(): Result<List<Warehouse>> =
         runCatching {
-            loadLocalWarehouses()
+            loadLocalWarehouses().toList()
         }.mapLocalDataException()
 
     override suspend fun findById(
@@ -36,16 +38,25 @@ class WarehouseRepositoryImpl(
 
     override suspend fun add(
         warehouse: Warehouse
-    ): Result<Warehouse> = runCatching {
+    ): Result<Warehouse> =
+        runCatching {
+            loadLocalWarehouses()
+
             val createdDto = warehouseRemoteDataSource.createWarehouse(
-                warehouse.toCreateDto()
-            )
+                    warehouse.toCreateDto()
+                )
 
-            warehouseDataSource.addWarehouse(
-                createdDto.toRaw()
-            )
+            val createdRaw = createdDto.toRaw()
 
-            findLocalWarehouseOrThrow(createdDto.id)
+            warehouseDataSource.addWarehouse(createdRaw)
+
+            val createdWarehouse = warehouseMapper.mapToDomainModel(
+                    createdRaw
+                )
+
+            warehouses.add(createdWarehouse)
+
+            createdWarehouse
         }.mapRepositoryException(
             resourceId = warehouse.id
         )
@@ -54,30 +65,53 @@ class WarehouseRepositoryImpl(
         warehouseId: String,
         updateModel: WarehouseUpdateModel
     ): Result<Warehouse> = runCatching {
+            loadLocalWarehouses()
             val updatedDto = warehouseRemoteDataSource.updateWarehouse(
-                id = warehouseId,
-                warehouseRequest = updateModel.toUpdateDto()
-            )
+                    id = warehouseId,
+                    warehouseRequest = updateModel.toUpdateDto()
+                )
 
             warehouseDataSource.updateWarehouse(
                 updatedDto.toRaw()
             )
 
-            findLocalWarehouseOrThrow(warehouseId)
+            val existingWarehouse = warehouses.find {
+                    it.id == warehouseId
+                } ?: throw ResourceNotFoundException.WarehouseNotFound(
+                    warehouseId
+                )
+
+            existingWarehouse.updateDetails(
+                name = updatedDto.name,
+                regionalZone = updatedDto.regionalZone,
+                latitude = updatedDto.latitude,
+                longitude = updatedDto.longitude
+            )
+
+            existingWarehouse
         }.mapRepositoryException(
             resourceId = warehouseId
         )
 
     override suspend fun delete(
         warehouseId: String
-    ): Result<Unit> = runCatching {
+    ): Result<Unit> =
+        runCatching {
+            loadLocalWarehouses()
             warehouseRemoteDataSource.deleteWarehouse(
                 warehouseId
             )
+            warehouseDataSource.deleteWarehouse(warehouseId)
 
-            warehouseDataSource.deleteWarehouse(
-                warehouseId
-            )
+            val warehouse = warehouses.find {
+                    it.id == warehouseId
+                } ?: throw ResourceNotFoundException.WarehouseNotFound(
+                    warehouseId
+                )
+
+            warehouses.remove(warehouse)
+
+            Unit
         }.mapRepositoryException(
             resourceId = warehouseId
         )
@@ -93,12 +127,27 @@ class WarehouseRepositoryImpl(
             warehouseDataSource.replaceWarehouses(
                 localWarehouses
             )
+
+            reloadLocalWarehouses()
         }.mapRepositoryException()
 
     private fun loadLocalWarehouses(): List<Warehouse> {
-        return warehouseDataSource
-            .loadWarehouses()
-            .map(warehouseMapper::mapToDomainModel)
+        if (!isLoaded) {
+            reloadLocalWarehouses()
+        }
+
+        return warehouses
+    }
+
+    private fun reloadLocalWarehouses() {
+        val loadedWarehouses = warehouseDataSource
+                .loadWarehouses()
+                .map(warehouseMapper::mapToDomainModel)
+
+        warehouses.clear()
+        warehouses.addAll(loadedWarehouses)
+
+        isLoaded = true
     }
 
     private fun findLocalWarehouseOrThrow(

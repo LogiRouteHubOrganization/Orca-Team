@@ -14,12 +14,14 @@ import data.parser.PackageParser
 import data.parser.RouteParser
 import data.parser.WarehouseParser
 import data.remote.datasource.VehicleRemoteDataSource
+import data.remote.datasource.supabase.PackageRemoteDataSourceImpl
 import data.remote.dto.request.VehicleCreateRequestDto
 import data.remote.dto.request.VehicleUpdateRequestDto
 import data.remote.dto.response.VehicleDto
 import data.remote.datasource.supabase.VehicleRemoteDataSourceImpl
 import data.remote.datasource.supabase.WarehouseRemoteDataSourceImpl
 import data.remote.datasource.supabase.RouteRemoteDataSourceImpl
+import data.repository.PackageRepositoryImpl
 import data.repository.WarehouseRepositoryImpl
 import data.repository.local.LocalPackageRepositoryImpl
 import data.repository.local.LocalRouteRepositoryImpl
@@ -132,11 +134,27 @@ private suspend fun runApplication() {
                         "Using existing local data."
             )
         }
-    val packageRepository = LocalPackageRepositoryImpl(
+    val packageRemoteDataSource = PackageRemoteDataSourceImpl()
+
+    val packageRepository = PackageRepositoryImpl(
         packageDataSource = packageDataSource,
+        packageRemoteDataSource = packageRemoteDataSource,
         packageMapper = packageMapper,
         warehouseRepository = warehouseRepository
     )
+    packageRepository.refresh().onFailure { exception ->
+            println(
+                "Package refresh failed: ${exception.message}. " +
+                        "Using existing local data."
+            )
+        }
+
+    packageRepository.initializeCargoQueues()
+        .onFailure { exception ->
+            println("Cargo queue initialization failed: " +
+                        "${exception.message}"
+            )
+        }
 
     val vehicleRepository = LocalVehicleRepositoryImpl(
         vehicleDataSource = vehicleDataSource,

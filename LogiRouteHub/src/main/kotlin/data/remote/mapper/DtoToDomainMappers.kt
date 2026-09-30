@@ -1,4 +1,5 @@
 package data.remote.mapper
+import data.dataholder.LogisticsPackageRaw
 import data.dataholder.WarehouseRaw
 import data.remote.dto.response.PackageDto
 import data.remote.dto.response.RouteDto
@@ -65,3 +66,12 @@ fun WarehouseDto.toRaw(): WarehouseRaw {
     )
 }
 
+fun PackageDto.toRaw(): LogisticsPackageRaw {
+    return LogisticsPackageRaw(
+        packageId = id,
+        packageWeightByKg = weightByKg,
+        originHubId = originWarehouseId,
+        destinationHubId = destinationWarehouseId,
+        packagePriority = priority
+    )
+}

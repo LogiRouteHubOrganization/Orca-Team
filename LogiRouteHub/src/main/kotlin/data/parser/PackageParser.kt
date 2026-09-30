@@ -172,4 +172,15 @@ class PackageParser {
             "Warning: Empty required package field -> $packageCsvRow"
         )
     }
+    fun toCsvRow(
+        logisticsPackage: LogisticsPackageRaw
+    ): String {
+        return listOf(
+            logisticsPackage.packageId,
+            logisticsPackage.packageWeightByKg,
+            logisticsPackage.originHubId,
+            logisticsPackage.destinationHubId,
+            logisticsPackage.packagePriority
+        ).joinToString(csvSeparator)
+    }
 }
