@@ -1,4 +1,4 @@
-package mainTest.domainTest.usecaseTest.crudTest
+package mainTest.domainTest.usecaseTest
 
 import com.google.common.truth.Truth
 import domain.model.Package
