@@ -5,7 +5,7 @@ import domain.model.Package
 import domain.model.Vehicle
 import domain.model.Warehouse
 import domain.repository.WarehouseRepository
-import domain.usecase.DetectDeliveryBottleneckUseCase
+import domain.usecase.DetectPotentialDeliveryBottleneckUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -36,7 +36,7 @@ class DetectDeliveryBottleneckUseCaseTest {
             warehouseRepository.findAll()
         } returns Result.success(listOf(overloadedWarehouse, normalWarehouse))
 
-        val useCase = DetectDeliveryBottleneckUseCase(warehouseRepository)
+        val useCase = DetectPotentialDeliveryBottleneckUseCase(warehouseRepository)
 
 
         val result = useCase()
@@ -72,7 +72,7 @@ class DetectDeliveryBottleneckUseCaseTest {
             warehouseRepository.findAll()
         } returns Result.success(listOf(normalWarehouse))
 
-        val useCase = DetectDeliveryBottleneckUseCase(warehouseRepository)
+        val useCase = DetectPotentialDeliveryBottleneckUseCase(warehouseRepository)
 
 
         val result = useCase()
@@ -94,7 +94,7 @@ class DetectDeliveryBottleneckUseCaseTest {
             warehouseRepository.findAll()
         } returns Result.failure(exception)
 
-        val useCase = DetectDeliveryBottleneckUseCase(warehouseRepository)
+        val useCase = DetectPotentialDeliveryBottleneckUseCase(warehouseRepository)
 
 
         val result = useCase()
