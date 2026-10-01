@@ -1,6 +1,6 @@
-package mainTest.domainTest.usecaseTest.crudTest.dispatcherTest
+package mainTest.domainTest.usecaseTest.crudTest
 
-import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth
 import domain.algorithm.dispatcher.VehicleCoverage
 import domain.algorithm.dispatcher.VehicleCoverageMapper
 import domain.model.Route
@@ -41,8 +41,8 @@ class GetGreedyDispatchDataUseCaseTest {
         val result = useCase()
 
 
-        assertThat(result.isSuccess).isTrue()
-        assertThat(result.getOrNull()).isEqualTo(expectedCoverage)
+        Truth.assertThat(result.isSuccess).isTrue()
+        Truth.assertThat(result.getOrNull()).isEqualTo(expectedCoverage)
 
         coVerify(exactly = 1) { vehicleRepository.findAll() }
         coVerify(exactly = 1) { routeRepository.findAll() }
@@ -70,8 +70,8 @@ class GetGreedyDispatchDataUseCaseTest {
         val result = useCase()
 
 
-        assertThat(result.isFailure).isTrue()
-        assertThat(result.exceptionOrNull()).isEqualTo(exception)
+        Truth.assertThat(result.isFailure).isTrue()
+        Truth.assertThat(result.exceptionOrNull()).isEqualTo(exception)
 
         coVerify(exactly = 1) { vehicleRepository.findAll() }
         coVerify(exactly = 0) { routeRepository.findAll() }
@@ -101,8 +101,8 @@ class GetGreedyDispatchDataUseCaseTest {
         val result = useCase()
 
 
-        assertThat(result.isFailure).isTrue()
-        assertThat(result.exceptionOrNull()).isEqualTo(exception)
+        Truth.assertThat(result.isFailure).isTrue()
+        Truth.assertThat(result.exceptionOrNull()).isEqualTo(exception)
 
         coVerify(exactly = 1) { vehicleRepository.findAll() }
         coVerify(exactly = 1) { routeRepository.findAll() }

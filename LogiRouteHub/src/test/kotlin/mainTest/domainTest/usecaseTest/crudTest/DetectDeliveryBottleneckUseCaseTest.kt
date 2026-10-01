@@ -1,6 +1,6 @@
-package mainTest.domainTest.validatorTest.ruleTest
+package mainTest.domainTest.usecaseTest.crudTest
 
-import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth
 import domain.model.Package
 import domain.model.Vehicle
 import domain.model.Warehouse
@@ -42,17 +42,17 @@ class DetectDeliveryBottleneckUseCaseTest {
         val result = useCase()
 
 
-        assertThat(result.isSuccess).isTrue()
+        Truth.assertThat(result.isSuccess).isTrue()
 
         val bottlenecks = result.getOrNull()
-        assertThat(bottlenecks).isNotNull()
-        assertThat(bottlenecks).hasSize(1)
+        Truth.assertThat(bottlenecks).isNotNull()
+        Truth.assertThat(bottlenecks).hasSize(1)
 
         val bottleneck = bottlenecks!![0]
-        assertThat(bottleneck.warehouse.id).isEqualTo("WH-001")
-        assertThat(bottleneck.totalCargoWeightKg).isEqualTo(1000.0)
-        assertThat(bottleneck.totalVehicleCapacityKg).isEqualTo(600.0)
-        assertThat(bottleneck.capacityGapKg).isEqualTo(400.0)
+        Truth.assertThat(bottleneck.warehouse.id).isEqualTo("WH-001")
+        Truth.assertThat(bottleneck.totalCargoWeightKg).isEqualTo(1000.0)
+        Truth.assertThat(bottleneck.totalVehicleCapacityKg).isEqualTo(600.0)
+        Truth.assertThat(bottleneck.capacityGapKg).isEqualTo(400.0)
 
         coVerify(exactly = 1) { warehouseRepository.findAll() }
     }
@@ -78,8 +78,8 @@ class DetectDeliveryBottleneckUseCaseTest {
         val result = useCase()
 
 
-        assertThat(result.isSuccess).isTrue()
-        assertThat(result.getOrNull()).isEmpty()
+        Truth.assertThat(result.isSuccess).isTrue()
+        Truth.assertThat(result.getOrNull()).isEmpty()
 
         coVerify(exactly = 1) { warehouseRepository.findAll() }
     }
@@ -100,8 +100,8 @@ class DetectDeliveryBottleneckUseCaseTest {
         val result = useCase()
 
 
-        assertThat(result.isFailure).isTrue()
-        assertThat(result.exceptionOrNull()).isEqualTo(exception)
+        Truth.assertThat(result.isFailure).isTrue()
+        Truth.assertThat(result.exceptionOrNull()).isEqualTo(exception)
 
         coVerify(exactly = 1) { warehouseRepository.findAll() }
     }
