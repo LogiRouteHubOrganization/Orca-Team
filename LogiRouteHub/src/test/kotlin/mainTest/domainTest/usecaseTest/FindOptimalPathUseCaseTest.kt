@@ -1,10 +1,11 @@
 
-package domain.usecase
+package mainTest.domainTest.usecaseTest
 
 import com.google.common.truth.Truth.assertThat
 import domain.model.Warehouse
 import domain.repository.WarehouseRepository
 import domain.routing.ShortestPathFinder
+import domain.usecase.FindOptimalPathUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
