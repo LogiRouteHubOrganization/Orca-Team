@@ -18,7 +18,7 @@ class GetGreedyDispatchDataUseCaseTest {
 
     @Test
     fun `returns success with vehicle coverage list when repositories succeed`() = runTest {
-        // Given
+
         val vehicleRepository = mockk<VehicleRepository>()
         val routeRepository = mockk<RouteRepository>()
         val greedyInputPreparer = mockk<VehicleCoverageMapper>()
@@ -37,10 +37,10 @@ class GetGreedyDispatchDataUseCaseTest {
             greedyInputPreparer
         )
 
-        // When
+
         val result = useCase()
 
-        // Then
+
         assertThat(result.isSuccess).isTrue()
         assertThat(result.getOrNull()).isEqualTo(expectedCoverage)
 
@@ -66,10 +66,10 @@ class GetGreedyDispatchDataUseCaseTest {
             greedyInputPreparer
         )
 
-        // When
+
         val result = useCase()
 
-        // Then
+
         assertThat(result.isFailure).isTrue()
         assertThat(result.exceptionOrNull()).isEqualTo(exception)
 
@@ -97,10 +97,10 @@ class GetGreedyDispatchDataUseCaseTest {
             greedyInputPreparer
         )
 
-        // When
+
         val result = useCase()
 
-        // Then
+
         assertThat(result.isFailure).isTrue()
         assertThat(result.exceptionOrNull()).isEqualTo(exception)
 

@@ -20,14 +20,12 @@ class DetectDeliveryBottleneckUseCaseTest {
         // Given
         val warehouseRepository = mockk<WarehouseRepository>()
 
-        // مخزن فيه أوزان شحنات (1000 كجم) أثقل من سعة السيارات (600 كجم) -> يوجد اختناق 400 كجم
         val overloadedWarehouse = createWarehouse(
             id = "WH-001",
             cargoList = listOf(createPackage(weight = 400.0), createPackage(weight = 600.0)),
             vehicleList = listOf(createVehicle(capacity = 600.0))
         )
 
-        // مخزن طبيعي لا يوجد به اختناق
         val normalWarehouse = createWarehouse(
             id = "WH-002",
             cargoList = listOf(createPackage(weight = 200.0)),
@@ -40,10 +38,10 @@ class DetectDeliveryBottleneckUseCaseTest {
 
         val useCase = DetectDeliveryBottleneckUseCase(warehouseRepository)
 
-        // When
+
         val result = useCase()
 
-        // Then
+
         assertThat(result.isSuccess).isTrue()
 
         val bottlenecks = result.getOrNull()
@@ -61,7 +59,7 @@ class DetectDeliveryBottleneckUseCaseTest {
 
     @Test
     fun `returns empty list when all warehouses have sufficient vehicle capacity`() = runTest {
-        // Given
+
         val warehouseRepository = mockk<WarehouseRepository>()
 
         val normalWarehouse = createWarehouse(
@@ -76,10 +74,10 @@ class DetectDeliveryBottleneckUseCaseTest {
 
         val useCase = DetectDeliveryBottleneckUseCase(warehouseRepository)
 
-        // When
+
         val result = useCase()
 
-        // Then
+
         assertThat(result.isSuccess).isTrue()
         assertThat(result.getOrNull()).isEmpty()
 
@@ -88,7 +86,7 @@ class DetectDeliveryBottleneckUseCaseTest {
 
     @Test
     fun `returns failure when warehouse repository fails`() = runTest {
-        // Given
+
         val warehouseRepository = mockk<WarehouseRepository>()
         val exception = RuntimeException("Database error")
 
@@ -98,17 +96,16 @@ class DetectDeliveryBottleneckUseCaseTest {
 
         val useCase = DetectDeliveryBottleneckUseCase(warehouseRepository)
 
-        // When
+
         val result = useCase()
 
-        // Then
+
         assertThat(result.isFailure).isTrue()
         assertThat(result.exceptionOrNull()).isEqualTo(exception)
 
         coVerify(exactly = 1) { warehouseRepository.findAll() }
     }
 
-    // دوال مساعدة معتمدة على mockk لتجنب استدعاء CreateWarehouseValidator المكتوب بداخل init
     private fun createWarehouse(
         id: String,
         cargoList: List<Package>,
