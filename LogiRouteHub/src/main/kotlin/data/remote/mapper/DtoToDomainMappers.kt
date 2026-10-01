@@ -1,4 +1,6 @@
 package data.remote.mapper
+import data.dataholder.LogisticsPackageRaw
+import data.dataholder.WarehouseRaw
 import data.remote.dto.response.PackageDto
 import data.remote.dto.response.RouteDto
 import data.remote.dto.response.VehicleDto
@@ -52,5 +54,24 @@ fun PackageDto.toDomain(
         priority = priority,
         originWarehouse = originWarehouse,
         destinationWarehouse = destinationWarehouse
+    )
+}
+fun WarehouseDto.toRaw(): WarehouseRaw {
+    return WarehouseRaw(
+        warehouseId = id,
+        warehouseName = name,
+        regionalZone = regionalZone,
+        latitude = latitude,
+        longitude = longitude
+    )
+}
+
+fun PackageDto.toRaw(): LogisticsPackageRaw {
+    return LogisticsPackageRaw(
+        packageId = id,
+        packageWeightByKg = weightByKg,
+        originHubId = originWarehouseId,
+        destinationHubId = destinationWarehouseId,
+        packagePriority = priority
     )
 }

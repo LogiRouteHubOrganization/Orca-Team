@@ -14,19 +14,19 @@ import data.parser.PackageParser
 import data.parser.RouteParser
 import data.parser.WarehouseParser
 import data.remote.datasource.VehicleRemoteDataSource
+import data.remote.datasource.supabase.PackageRemoteDataSourceImpl
 import data.remote.dto.request.VehicleCreateRequestDto
 import data.remote.dto.request.VehicleUpdateRequestDto
 import data.remote.dto.response.VehicleDto
 import data.remote.datasource.supabase.VehicleRemoteDataSourceImpl
 import data.remote.datasource.supabase.WarehouseRemoteDataSourceImpl
 import data.remote.datasource.supabase.RouteRemoteDataSourceImpl
-import data.repository.local.LocalPackageRepositoryImpl
+import data.repository.PackageRepositoryImpl
+import data.repository.WarehouseRepositoryImpl
 import data.repository.local.LocalRouteRepositoryImpl
 import data.repository.local.LocalVehicleRepositoryImpl
-import data.repository.local.LocalWarehouseRepositoryImpl
 import data.repository.remote.RemoteRouteRepositoryImpl
 import data.repository.remote.RemoteVehicleRepositoryImpl
-import data.repository.remote.RemoteWarehouseRepositoryImpl
 import data.validation.LocalDataSourceValidator
 import domain.algorithm.dispatcher.GreedyFleetDispatcher
 import domain.algorithm.dispatcher.VehicleCoverageMapper
@@ -119,16 +119,41 @@ private suspend fun runApplication() {
     val vehicleMapper = VehicleMapper()
     val routeMapper = RouteMapper()
 
-    val warehouseRepository = LocalWarehouseRepositoryImpl(
-        warehouseDataSource = warehouseDataSource,
-        warehouseMapper = warehouseMapper
-    )
+    val warehouseRemoteDataSource = WarehouseRemoteDataSourceImpl()
 
-    val packageRepository = LocalPackageRepositoryImpl(
+    val warehouseRepository = WarehouseRepositoryImpl(
+            warehouseDataSource = warehouseDataSource,
+            warehouseRemoteDataSource = warehouseRemoteDataSource,
+            warehouseMapper = warehouseMapper
+        )
+
+    warehouseRepository.refresh().onFailure { exception ->
+            println(
+                "Warehouse refresh failed: ${exception.message}. " +
+                        "Using existing local data."
+            )
+        }
+    val packageRemoteDataSource = PackageRemoteDataSourceImpl()
+
+    val packageRepository = PackageRepositoryImpl(
         packageDataSource = packageDataSource,
+        packageRemoteDataSource = packageRemoteDataSource,
         packageMapper = packageMapper,
         warehouseRepository = warehouseRepository
     )
+    packageRepository.refresh().onFailure { exception ->
+            println(
+                "Package refresh failed: ${exception.message}. " +
+                        "Using existing local data."
+            )
+        }
+
+    packageRepository.initializeCargoQueues()
+        .onFailure { exception ->
+            println("Cargo queue initialization failed: " +
+                        "${exception.message}"
+            )
+        }
 
     val vehicleRepository = LocalVehicleRepositoryImpl(
         vehicleDataSource = vehicleDataSource,
@@ -218,26 +243,16 @@ private suspend fun runApplication() {
      * -------------------------------------------------------------
      */
 
-    val remoteWarehouseRepository =
-        RemoteWarehouseRepositoryImpl(
-            warehouseRemoteDataSource =
-                WarehouseRemoteDataSourceImpl()
+
+
+    val remoteVehicleRepository = RemoteVehicleRepositoryImpl(
+            vehicleRemoteDataSource = VehicleRemoteDataSourceImpl(),
+            warehouseRepository = warehouseRepository
         )
 
-    val remoteVehicleRepository =
-        RemoteVehicleRepositoryImpl(
-            vehicleRemoteDataSource =
-                VehicleRemoteDataSourceImpl(),
-            warehouseRepository =
-                remoteWarehouseRepository
-        )
-
-    val remoteRouteRepository =
-        RemoteRouteRepositoryImpl(
-            routeRemoteDataSource =
-                RouteRemoteDataSourceImpl(),
-            warehouseRepository =
-                remoteWarehouseRepository
+    val remoteRouteRepository = RemoteRouteRepositoryImpl(
+            routeRemoteDataSource = RouteRemoteDataSourceImpl(),
+            warehouseRepository = warehouseRepository
         )
 
     /*
