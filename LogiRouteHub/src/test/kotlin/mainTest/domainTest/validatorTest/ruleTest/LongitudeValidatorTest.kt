@@ -1,9 +1,10 @@
-package domain.validator.rule
 
+package mainTest.domainTest.validatorTest.ruleTest
+
+import com.google.common.truth.Truth.assertThat
 import domain.validator.ErrorValidator
 import domain.validator.ResultValidator
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
+import domain.validator.rule.LongitudeValidator
 import org.junit.jupiter.api.Test
 
 class LongitudeValidatorTest {
@@ -19,7 +20,7 @@ class LongitudeValidatorTest {
         val result = validator.validate(longitude)
 
         // Then
-        assertEquals(ResultValidator.Valid, result)
+        assertThat(result).isEqualTo(ResultValidator.Valid)
     }
 
     @Test
@@ -31,7 +32,7 @@ class LongitudeValidatorTest {
         val result = validator.validate(longitude)
 
         // Then
-        assertEquals(ResultValidator.Valid, result)
+        assertThat(result).isEqualTo(ResultValidator.Valid)
     }
 
     @Test
@@ -43,7 +44,7 @@ class LongitudeValidatorTest {
         val result = validator.validate(longitude)
 
         // Then
-        assertEquals(ResultValidator.Valid, result)
+        assertThat(result).isEqualTo(ResultValidator.Valid)
     }
 
     @Test
@@ -55,14 +56,12 @@ class LongitudeValidatorTest {
         val result = validator.validate(longitude)
 
         // Then
-        assertTrue(result is ResultValidator.Invalid)
+        assertThat(result).isInstanceOf(ResultValidator.Invalid::class.java)
 
         val failure = result as ResultValidator.Invalid
 
-        assertEquals(
-            ErrorValidator.InvalidLongitude,
-            failure.errors.first().error
-        )
+        assertThat(failure.errors.first().error)
+            .isEqualTo(ErrorValidator.InvalidLongitude)
     }
 
     @Test
@@ -74,14 +73,12 @@ class LongitudeValidatorTest {
         val result = validator.validate(longitude)
 
         // Then
-        assertTrue(result is ResultValidator.Invalid)
+        assertThat(result).isInstanceOf(ResultValidator.Invalid::class.java)
 
         val failure = result as ResultValidator.Invalid
 
-        assertEquals(
-            ErrorValidator.InvalidLongitude,
-            failure.errors.first().error
-        )
+        assertThat(failure.errors.first().error)
+            .isEqualTo(ErrorValidator.InvalidLongitude)
     }
 
     @Test
@@ -93,13 +90,12 @@ class LongitudeValidatorTest {
         val result = validator.validate(longitude)
 
         // Then
-        assertTrue(result is ResultValidator.Invalid)
+        assertThat(result).isInstanceOf(ResultValidator.Invalid::class.java)
 
         val failure = result as ResultValidator.Invalid
 
-        assertEquals(
-            ErrorValidator.InvalidLongitude,
-            failure.errors.first().error
-        )
+        assertThat(failure.errors.first().error)
+            .isEqualTo(ErrorValidator.InvalidLongitude)
     }
 }
+

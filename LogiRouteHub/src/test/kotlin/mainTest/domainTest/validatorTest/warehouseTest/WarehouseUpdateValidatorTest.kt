@@ -1,12 +1,12 @@
+
 package mainTest.domainTest.validatorTest.warehouseTest
 
+import com.google.common.truth.Truth.assertThat
 import domain.model.updateinput.WarehouseUpdateModel
 import domain.validator.ErrorValidator
 import domain.validator.FieldValidator
 import domain.validator.ResultValidator
 import domain.validator.warehouse.UpdateWarehouseValidator
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class WarehouseUpdateValidatorTest {
@@ -22,7 +22,7 @@ class WarehouseUpdateValidatorTest {
         val result = validator(updateModel)
 
         // Then
-        assertEquals(
+        assertThat(result).isEqualTo(
             ResultValidator.Invalid(
                 listOf(
                     FieldValidator(
@@ -30,8 +30,7 @@ class WarehouseUpdateValidatorTest {
                         error = ErrorValidator.EmptyUpdate
                     )
                 )
-            ),
-            result
+            )
         )
     }
 
@@ -46,7 +45,7 @@ class WarehouseUpdateValidatorTest {
         val result = validator(updateModel)
 
         // Then
-        assertEquals(ResultValidator.Valid, result)
+        assertThat(result).isEqualTo(ResultValidator.Valid)
     }
 
     @Test
@@ -60,7 +59,7 @@ class WarehouseUpdateValidatorTest {
         val result = validator(updateModel)
 
         // Then
-        assertEquals(
+        assertThat(result).isEqualTo(
             ResultValidator.Invalid(
                 listOf(
                     FieldValidator(
@@ -68,8 +67,7 @@ class WarehouseUpdateValidatorTest {
                         error = ErrorValidator.BlankValue
                     )
                 )
-            ),
-            result
+            )
         )
     }
 
@@ -84,7 +82,7 @@ class WarehouseUpdateValidatorTest {
         val result = validator(updateModel)
 
         // Then
-        assertEquals(ResultValidator.Valid, result)
+        assertThat(result).isEqualTo(ResultValidator.Valid)
     }
 
     @Test
@@ -98,7 +96,7 @@ class WarehouseUpdateValidatorTest {
         val result = validator(updateModel)
 
         // Then
-        assertEquals(
+        assertThat(result).isEqualTo(
             ResultValidator.Invalid(
                 listOf(
                     FieldValidator(
@@ -106,8 +104,7 @@ class WarehouseUpdateValidatorTest {
                         error = ErrorValidator.BlankValue
                     )
                 )
-            ),
-            result
+            )
         )
     }
 
@@ -122,7 +119,7 @@ class WarehouseUpdateValidatorTest {
         val result = validator(updateModel)
 
         // Then
-        assertEquals(ResultValidator.Valid, result)
+        assertThat(result).isEqualTo(ResultValidator.Valid)
     }
 
     @Test
@@ -136,7 +133,7 @@ class WarehouseUpdateValidatorTest {
         val result = validator(updateModel)
 
         // Then
-        assertEquals(
+        assertThat(result).isEqualTo(
             ResultValidator.Invalid(
                 listOf(
                     FieldValidator(
@@ -144,8 +141,7 @@ class WarehouseUpdateValidatorTest {
                         error = ErrorValidator.InvalidLatitude
                     )
                 )
-            ),
-            result
+            )
         )
     }
 
@@ -160,7 +156,7 @@ class WarehouseUpdateValidatorTest {
         val result = validator(updateModel)
 
         // Then
-        assertEquals(ResultValidator.Valid, result)
+        assertThat(result).isEqualTo(ResultValidator.Valid)
     }
 
     @Test
@@ -174,7 +170,7 @@ class WarehouseUpdateValidatorTest {
         val result = validator(updateModel)
 
         // Then
-        assertEquals(
+        assertThat(result).isEqualTo(
             ResultValidator.Invalid(
                 listOf(
                     FieldValidator(
@@ -182,8 +178,7 @@ class WarehouseUpdateValidatorTest {
                         error = ErrorValidator.InvalidLongitude
                     )
                 )
-            ),
-            result
+            )
         )
     }
 
@@ -201,7 +196,7 @@ class WarehouseUpdateValidatorTest {
         val result = validator(updateModel)
 
         // Then
-        assertEquals(ResultValidator.Valid, result)
+        assertThat(result).isEqualTo(ResultValidator.Valid)
     }
 
     @Test
@@ -218,30 +213,27 @@ class WarehouseUpdateValidatorTest {
         val result = validator(updateModel)
 
         // Then
-        assertTrue(result is ResultValidator.Invalid)
+        assertThat(result).isInstanceOf(ResultValidator.Invalid::class.java)
 
         val errors = (result as ResultValidator.Invalid).errors
 
-        assertEquals(4, errors.size)
+        assertThat(errors).hasSize(4)
 
-        assertEquals(
-            FieldValidator("name", ErrorValidator.BlankValue),
-            errors[0]
+        assertThat(errors[0]).isEqualTo(
+            FieldValidator("name", ErrorValidator.BlankValue)
         )
 
-        assertEquals(
-            FieldValidator("regionalZone", ErrorValidator.BlankValue),
-            errors[1]
+        assertThat(errors[1]).isEqualTo(
+            FieldValidator("regionalZone", ErrorValidator.BlankValue)
         )
 
-        assertEquals(
-            FieldValidator("latitude", ErrorValidator.InvalidLatitude),
-            errors[2]
+        assertThat(errors[2]).isEqualTo(
+            FieldValidator("latitude", ErrorValidator.InvalidLatitude)
         )
 
-        assertEquals(
-            FieldValidator("longitude", ErrorValidator.InvalidLongitude),
-            errors[3]
+        assertThat(errors[3]).isEqualTo(
+            FieldValidator("longitude", ErrorValidator.InvalidLongitude)
         )
     }
 }
+

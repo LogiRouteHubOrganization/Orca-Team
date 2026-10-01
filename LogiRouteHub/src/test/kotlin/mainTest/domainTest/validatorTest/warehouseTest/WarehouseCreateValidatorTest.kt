@@ -1,11 +1,11 @@
+
 package mainTest.domainTest.validatorTest.warehouseTest
 
+import com.google.common.truth.Truth.assertThat
 import domain.validator.ErrorValidator
 import domain.validator.FieldValidator
 import domain.validator.ResultValidator
 import domain.validator.warehouse.CreateWarehouseValidator
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class WarehouseCreateValidatorTest {
@@ -31,7 +31,7 @@ class WarehouseCreateValidatorTest {
         )
 
         // Then
-        assertEquals(ResultValidator.Valid, result)
+        assertThat(result).isEqualTo(ResultValidator.Valid)
     }
 
     @Test
@@ -49,7 +49,7 @@ class WarehouseCreateValidatorTest {
         )
 
         // Then
-        assertEquals(
+        assertThat(result).isEqualTo(
             ResultValidator.Invalid(
                 listOf(
                     FieldValidator(
@@ -57,8 +57,7 @@ class WarehouseCreateValidatorTest {
                         error = ErrorValidator.BlankId
                     )
                 )
-            ),
-            result
+            )
         )
     }
 
@@ -77,7 +76,7 @@ class WarehouseCreateValidatorTest {
         )
 
         // Then
-        assertEquals(
+        assertThat(result).isEqualTo(
             ResultValidator.Invalid(
                 listOf(
                     FieldValidator(
@@ -87,8 +86,7 @@ class WarehouseCreateValidatorTest {
                         )
                     )
                 )
-            ),
-            result
+            )
         )
     }
 
@@ -107,7 +105,7 @@ class WarehouseCreateValidatorTest {
         )
 
         // Then
-        assertEquals(
+        assertThat(result).isEqualTo(
             ResultValidator.Invalid(
                 listOf(
                     FieldValidator(
@@ -115,8 +113,7 @@ class WarehouseCreateValidatorTest {
                         error = ErrorValidator.InvalidIdFormat
                     )
                 )
-            ),
-            result
+            )
         )
     }
 
@@ -135,7 +132,7 @@ class WarehouseCreateValidatorTest {
         )
 
         // Then
-        assertEquals(
+        assertThat(result).isEqualTo(
             ResultValidator.Invalid(
                 listOf(
                     FieldValidator(
@@ -143,8 +140,7 @@ class WarehouseCreateValidatorTest {
                         error = ErrorValidator.BlankValue
                     )
                 )
-            ),
-            result
+            )
         )
     }
 
@@ -163,7 +159,7 @@ class WarehouseCreateValidatorTest {
         )
 
         // Then
-        assertEquals(
+        assertThat(result).isEqualTo(
             ResultValidator.Invalid(
                 listOf(
                     FieldValidator(
@@ -171,8 +167,7 @@ class WarehouseCreateValidatorTest {
                         error = ErrorValidator.BlankValue
                     )
                 )
-            ),
-            result
+            )
         )
     }
 
@@ -191,7 +186,7 @@ class WarehouseCreateValidatorTest {
         )
 
         // Then
-        assertEquals(
+        assertThat(result).isEqualTo(
             ResultValidator.Invalid(
                 listOf(
                     FieldValidator(
@@ -199,8 +194,7 @@ class WarehouseCreateValidatorTest {
                         error = ErrorValidator.InvalidLatitude
                     )
                 )
-            ),
-            result
+            )
         )
     }
 
@@ -219,7 +213,7 @@ class WarehouseCreateValidatorTest {
         )
 
         // Then
-        assertEquals(
+        assertThat(result).isEqualTo(
             ResultValidator.Invalid(
                 listOf(
                     FieldValidator(
@@ -227,8 +221,7 @@ class WarehouseCreateValidatorTest {
                         error = ErrorValidator.InvalidLongitude
                     )
                 )
-            ),
-            result
+            )
         )
     }
 
@@ -244,35 +237,31 @@ class WarehouseCreateValidatorTest {
         )
 
         // Then
-        assertTrue(result is ResultValidator.Invalid)
+        assertThat(result).isInstanceOf(ResultValidator.Invalid::class.java)
 
         val errors = (result as ResultValidator.Invalid).errors
 
-        assertEquals(5, errors.size)
+        assertThat(errors).hasSize(5)
 
-        assertEquals(
-            FieldValidator("id", ErrorValidator.BlankId),
-            errors[0]
+        assertThat(errors[0]).isEqualTo(
+            FieldValidator("id", ErrorValidator.BlankId)
         )
 
-        assertEquals(
-            FieldValidator("name", ErrorValidator.BlankValue),
-            errors[1]
+        assertThat(errors[1]).isEqualTo(
+            FieldValidator("name", ErrorValidator.BlankValue)
         )
 
-        assertEquals(
-            FieldValidator("regionalZone", ErrorValidator.BlankValue),
-            errors[2]
+        assertThat(errors[2]).isEqualTo(
+            FieldValidator("regionalZone", ErrorValidator.BlankValue)
         )
 
-        assertEquals(
-            FieldValidator("latitude", ErrorValidator.InvalidLatitude),
-            errors[3]
+        assertThat(errors[3]).isEqualTo(
+            FieldValidator("latitude", ErrorValidator.InvalidLatitude)
         )
 
-        assertEquals(
-            FieldValidator("longitude", ErrorValidator.InvalidLongitude),
-            errors[4]
+        assertThat(errors[4]).isEqualTo(
+            FieldValidator("longitude", ErrorValidator.InvalidLongitude)
         )
     }
 }
+
