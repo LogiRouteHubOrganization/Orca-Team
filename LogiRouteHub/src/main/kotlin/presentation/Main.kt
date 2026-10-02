@@ -22,9 +22,9 @@ import data.remote.datasource.supabase.VehicleRemoteDataSourceImpl
 import data.remote.datasource.supabase.WarehouseRemoteDataSourceImpl
 import data.remote.datasource.supabase.RouteRemoteDataSourceImpl
 import data.repository.PackageRepositoryImpl
+import data.repository.VehicleRepositoryImpl
 import data.repository.WarehouseRepositoryImpl
 import data.repository.local.LocalRouteRepositoryImpl
-import data.repository.local.LocalVehicleRepositoryImpl
 import data.repository.remote.RemoteRouteRepositoryImpl
 import data.repository.remote.RemoteVehicleRepositoryImpl
 import data.validation.LocalDataSourceValidator
@@ -153,11 +153,29 @@ private suspend fun runApplication() {
             )
         }
 
-    val vehicleRepository = LocalVehicleRepositoryImpl(
+    val vehicleRemoteDataSource = VehicleRemoteDataSourceImpl()
+
+    val vehicleRepository = VehicleRepositoryImpl(
         vehicleDataSource = vehicleDataSource,
+        vehicleRemoteDataSource = vehicleRemoteDataSource,
         vehicleMapper = vehicleMapper,
         warehouseRepository = warehouseRepository
     )
+    vehicleRepository.refresh()
+        .onFailure { exception ->
+            println(
+                "Vehicle refresh failed: ${exception.message}. " +
+                        "Using existing local data."
+            )
+        }
+
+    vehicleRepository.initializeStationedVehicles()
+        .onFailure { exception ->
+            println(
+                "Vehicle initialization failed: " +
+                        "${exception.message}"
+            )
+        }
 
     val routeRepository = LocalRouteRepositoryImpl(
         routeDataSource = routeDataSource,
@@ -243,11 +261,6 @@ private suspend fun runApplication() {
 
 
 
-    val remoteVehicleRepository = RemoteVehicleRepositoryImpl(
-            vehicleRemoteDataSource = VehicleRemoteDataSourceImpl(),
-            warehouseRepository = warehouseRepository
-        )
-
     val remoteRouteRepository = RemoteRouteRepositoryImpl(
             routeRemoteDataSource = RouteRemoteDataSourceImpl(),
             warehouseRepository = warehouseRepository
@@ -259,20 +272,16 @@ private suspend fun runApplication() {
      * -------------------------------------------------------------
      */
 
-    val liveVehicles =
-        remoteVehicleRepository
-            .findAll()
-            .getOrThrow()
+    val liveVehicles = vehicleRepository.findAll().getOrThrow()
 
     println()
-    println("===== LIVE SUPABASE CRUD =====")
+    println("===== VEHICLE CRUD =====")
 
     if (liveVehicles.isEmpty()) {
         println("No vehicles were returned from Supabase.")
     } else {
-        val getVehicleByIdUseCase =
-            GetVehicleByIdUseCase(
-                vehicleRepository = remoteVehicleRepository
+        val getVehicleByIdUseCase = GetVehicleByIdUseCase(
+                vehicleRepository = vehicleRepository
             )
 
         val existingVehicleId = liveVehicles.first().id
@@ -303,9 +312,8 @@ private suspend fun runApplication() {
     println()
     println("===== INVALID INPUT DEMONSTRATION =====")
 
-    val getVehicleByIdUseCase =
-        GetVehicleByIdUseCase(
-            vehicleRepository = remoteVehicleRepository
+    val getVehicleByIdUseCase = GetVehicleByIdUseCase(
+            vehicleRepository = vehicleRepository
         )
 
     getVehicleByIdUseCase("INVALID-ID")
@@ -350,9 +358,8 @@ private suspend fun runApplication() {
     println()
     println("===== GREEDY FLEET DISPATCH =====")
 
-    val greedyInputUseCase =
-        GetGreedyDispatchDataUseCase(
-            vehicleRepository = remoteVehicleRepository,
+    val greedyInputUseCase = GetGreedyDispatchDataUseCase(
+            vehicleRepository = vehicleRepository,
             routeRepository = remoteRouteRepository,
             greedyInputPreparer = VehicleCoverageMapper()
         )
