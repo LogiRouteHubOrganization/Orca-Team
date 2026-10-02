@@ -1,3 +1,4 @@
+
 package di
 
 import domain.algorithm.dispatcher.VehicleCoverageMapper
@@ -12,7 +13,6 @@ import domain.usecase.AddVehicleToHubUseCase
 import domain.usecase.AnalyzePackageDestinationDemandUseCase
 import domain.usecase.AnalyzeTreePerformanceUseCase
 import domain.usecase.AssignPackageToCargoQueueUseCase
-import org.koin.dsl.module
 import domain.usecase.CalculatePricingUseCase
 import domain.usecase.CheckWarehouseConnectivityUseCase
 import domain.usecase.DetectPotentialDeliveryBottleneckUseCase
@@ -47,14 +47,18 @@ import domain.usecase.crud.warehouse.CreateWarehouseUseCase
 import domain.usecase.crud.warehouse.DeleteWarehouseUseCase
 import domain.usecase.crud.warehouse.GetWarehouseByIdUseCase
 import domain.usecase.crud.warehouse.UpdateWarehouseUseCase
-
+import org.koin.dsl.module
 
 val useCaseModule = module {
 
-    single<PackageDecoratorComposer> { PackageDecoratorComposer() }
+    single<PackageDecoratorComposer> {
+        PackageDecoratorComposer()
+    }
 
     factory {
-        CalculatePricingUseCase(packageDecoratorComposer = get())
+        CalculatePricingUseCase(
+            packageDecoratorComposer = get()
+        )
     }
 
     factory {
@@ -87,16 +91,23 @@ val useCaseModule = module {
         )
     }
 
+    // Package CRUD
     factory {
-        CreatePackageUseCase(packageRepository = get())
+        CreatePackageUseCase(
+            packageRepository = get()
+        )
     }
 
     factory {
-        GetPackageByIdUseCase(packageRepository = get())
+        GetPackageByIdUseCase(
+            packageRepository = get()
+        )
     }
 
     factory {
-        DeletePackageUseCase(packageRepository = get())
+        DeletePackageUseCase(
+            packageRepository = get()
+        )
     }
 
     factory {
@@ -106,16 +117,18 @@ val useCaseModule = module {
         )
     }
 
-
+    // Routing
     factory {
-        FindFewestHopsRouteUseCase(warehouseRepository = get())
+        FindFewestHopsRouteUseCase(
+            warehouseRepository = get()
+        )
     }
 
-
     factory {
-        FindOptimalPathUseCase(warehouseRepository = get())
+        FindOptimalPathUseCase(
+            warehouseRepository = get()
+        )
     }
-
 
     factory {
         CheckWarehouseConnectivityUseCase(
@@ -140,19 +153,28 @@ val useCaseModule = module {
     }
 
     factory {
-        EstimateRouteRiskUseCase(riskConfig = get())
+        EstimateRouteRiskUseCase(
+            riskConfig = get()
+        )
+    }
+
+    // Route CRUD
+    factory {
+        CreateRouteUseCase(
+            routeRepository = get()
+        )
     }
 
     factory {
-        CreateRouteUseCase(routeRepository = get())
+        DeleteRouteUseCase(
+            routeRepository = get()
+        )
     }
 
     factory {
-        DeleteRouteUseCase(routeRepository = get())
-    }
-
-    factory {
-        GetRouteByIdUseCase(routeRepository = get())
+        GetRouteByIdUseCase(
+            routeRepository = get()
+        )
     }
 
     factory {
@@ -162,6 +184,7 @@ val useCaseModule = module {
         )
     }
 
+    // Vehicle
     factory {
         FindStationedVehiclesByCapacityUseCase(
             warehouseRepository = get()
@@ -196,16 +219,23 @@ val useCaseModule = module {
         )
     }
 
+    // Vehicle CRUD
     factory {
-        CreateVehicleUseCase(vehicleRepository = get())
+        CreateVehicleUseCase(
+            vehicleRepository = get()
+        )
     }
 
     factory {
-        DeleteVehicleUseCase(vehicleRepository = get())
+        DeleteVehicleUseCase(
+            vehicleRepository = get()
+        )
     }
 
     factory {
-        GetVehicleByIdUseCase(vehicleRepository = get())
+        GetVehicleByIdUseCase(
+            vehicleRepository = get()
+        )
     }
 
     factory {
@@ -215,14 +245,18 @@ val useCaseModule = module {
         )
     }
 
+    // Tree simulation
     single<SequentialTrackingIdGenerator> {
         SequentialTrackingIdGenerator()
     }
 
-    single<UnbalancedBST> { UnbalancedBST() }
+    single<UnbalancedBST> {
+        UnbalancedBST()
+    }
 
-    single<BalancedBST> { BalancedBST() }
-
+    single<BalancedBST> {
+        BalancedBST()
+    }
 
     factory {
         AnalyzeTreePerformanceUseCase(
@@ -232,7 +266,10 @@ val useCaseModule = module {
         )
     }
 
-    factory<VehicleCoverageMapper> { VehicleCoverageMapper() }
+    // Greedy dispatch
+    factory<VehicleCoverageMapper> {
+        VehicleCoverageMapper()
+    }
 
     factory {
         GetGreedyDispatchDataUseCase(
@@ -242,7 +279,9 @@ val useCaseModule = module {
         )
     }
 
-    factory<PackagePriorityLevels> { PackagePriorityLevels() }
+    factory<PackagePriorityLevels> {
+        PackagePriorityLevels()
+    }
 
     factory {
         PrioritizeDispatchQueueUseCase(
@@ -251,16 +290,21 @@ val useCaseModule = module {
         )
     }
 
+    // Warehouse
     factory {
         GetWarehouseLoadFactorUseCase(
             warehouseRepository = get()
         )
     }
 
-    single<HubLineageTracer> { HubLineageTracer() }
+    single<HubLineageTracer> {
+        HubLineageTracer()
+    }
 
     factory {
-        TraceHubLineageUseCase(hubLineageTracer = get())
+        TraceHubLineageUseCase(
+            hubLineageTracer = get()
+        )
     }
 
     factory {
@@ -269,16 +313,23 @@ val useCaseModule = module {
         )
     }
 
+    // Warehouse CRUD
     factory {
-        CreateWarehouseUseCase(warehouseRepository = get())
+        CreateWarehouseUseCase(
+            warehouseRepository = get()
+        )
     }
 
     factory {
-        DeleteWarehouseUseCase(warehouseRepository = get())
+        DeleteWarehouseUseCase(
+            warehouseRepository = get()
+        )
     }
 
     factory {
-        GetWarehouseByIdUseCase(warehouseRepository = get())
+        GetWarehouseByIdUseCase(
+            warehouseRepository = get()
+        )
     }
 
     factory {
@@ -287,8 +338,4 @@ val useCaseModule = module {
             warehouseValidator = get()
         )
     }
-
-
 }
-
-
