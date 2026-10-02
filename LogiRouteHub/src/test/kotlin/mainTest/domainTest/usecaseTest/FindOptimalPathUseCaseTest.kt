@@ -2,9 +2,9 @@
 package mainTest.domainTest.usecaseTest
 
 import com.google.common.truth.Truth.assertThat
+import domain.model.Route
 import domain.model.Warehouse
 import domain.repository.WarehouseRepository
-import domain.routing.ShortestPathFinder
 import domain.usecase.FindOptimalPathUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -15,11 +15,10 @@ import org.junit.jupiter.api.Test
 class FindOptimalPathUseCaseTest {
 
     private val warehouseRepository = mockk<WarehouseRepository>()
-    private val shortestPathFinder = mockk<ShortestPathFinder>()
+
 
     private val useCase = FindOptimalPathUseCase(
-        warehouseRepository = warehouseRepository,
-        shortestPathFinder = shortestPathFinder
+        warehouseRepository = warehouseRepository
     )
 
     private val startWarehouse = Warehouse(
@@ -41,55 +40,54 @@ class FindOptimalPathUseCaseTest {
     @Test
     fun `should return shortest path when both warehouses exist`() = runTest {
         // Given
-        val expectedPath = listOf(
-            startWarehouse,
-            destinationWarehouse
+        val route = Route(
+            id = "RT-000001",
+            originWarehouse = startWarehouse,
+            destinationWarehouse = destinationWarehouse,
+            distanceKm = 10.0,
+            typicalDelayMin = 5
         )
 
+        startWarehouse.addRoute(route)
+
         coEvery {
-            warehouseRepository.findById("WH-001")
+            warehouseRepository.findById("WH-000001")
         } returns Result.success(startWarehouse)
 
         coEvery {
-            warehouseRepository.findById("WH-002")
+            warehouseRepository.findById("WH-000002")
         } returns Result.success(destinationWarehouse)
 
         coEvery {
-            shortestPathFinder.findShortestPath(
-                startWarehouse = startWarehouse,
-                destinationWarehouse = destinationWarehouse
-            )
-        } returns expectedPath
+            warehouseRepository.findAll()
+        } returns Result.success(
+            listOf(startWarehouse, destinationWarehouse)
+        )
 
         // When
         val result = useCase(
-            startWarehouseId = "WH-001",
-            destinationWarehouseId = "WH-002"
+            startWarehouseId = "WH-000001",
+            destinationWarehouseId = "WH-000002"
         )
 
         // Then
         assertThat(result.isSuccess).isTrue()
-        assertThat(result.getOrNull()).isEqualTo(expectedPath)
-
-        coVerify(exactly = 1) {
-            shortestPathFinder.findShortestPath(
-                startWarehouse = startWarehouse,
-                destinationWarehouse = destinationWarehouse
-            )
-        }
+        assertThat(result.getOrNull()).isEqualTo(
+            listOf(startWarehouse, destinationWarehouse)
+        )
     }
 
     @Test
     fun `should return empty list when start warehouse does not exist`() = runTest {
         // Given
         coEvery {
-            warehouseRepository.findById("WH-001")
+            warehouseRepository.findById("WH-000001")
         } returns Result.success(null)
 
         // When
         val result = useCase(
-            startWarehouseId = "WH-001",
-            destinationWarehouseId = "WH-002"
+            startWarehouseId = "WH-000001",
+            destinationWarehouseId = "WH-000002"
         )
 
         // Then
@@ -97,11 +95,7 @@ class FindOptimalPathUseCaseTest {
         assertThat(result.getOrNull()).isEmpty()
 
         coVerify(exactly = 0) {
-            warehouseRepository.findById("WH-002")
-        }
-
-        coVerify(exactly = 0) {
-            shortestPathFinder.findShortestPath(any(), any())
+            warehouseRepository.findById("WH-000002")
         }
     }
 
@@ -109,26 +103,22 @@ class FindOptimalPathUseCaseTest {
     fun `should return empty list when destination warehouse does not exist`() = runTest {
         // Given
         coEvery {
-            warehouseRepository.findById("WH-001")
+            warehouseRepository.findById("WH-000001")
         } returns Result.success(startWarehouse)
 
         coEvery {
-            warehouseRepository.findById("WH-002")
+            warehouseRepository.findById("WH-000002")
         } returns Result.success(null)
 
         // When
         val result = useCase(
-            startWarehouseId = "WH-001",
-            destinationWarehouseId = "WH-002"
+            startWarehouseId = "WH-000001",
+            destinationWarehouseId = "WH-000002"
         )
 
         // Then
         assertThat(result.isSuccess).isTrue()
         assertThat(result.getOrNull()).isEmpty()
-
-        coVerify(exactly = 0) {
-            shortestPathFinder.findShortestPath(any(), any())
-        }
     }
 
     @Test
@@ -137,13 +127,13 @@ class FindOptimalPathUseCaseTest {
         val exception = RuntimeException("Repository error")
 
         coEvery {
-            warehouseRepository.findById("WH-001")
+            warehouseRepository.findById("WH-000001")
         } returns Result.failure(exception)
 
         // When
         val result = useCase(
-            startWarehouseId = "WH-001",
-            destinationWarehouseId = "WH-002"
+            startWarehouseId = "WH-000001",
+            destinationWarehouseId = "WH-000002"
         )
 
         // Then
@@ -151,49 +141,8 @@ class FindOptimalPathUseCaseTest {
         assertThat(result.exceptionOrNull()).isEqualTo(exception)
 
         coVerify(exactly = 0) {
-            warehouseRepository.findById("WH-002")
-        }
-
-        coVerify(exactly = 0) {
-            shortestPathFinder.findShortestPath(any(), any())
+            warehouseRepository.findById("WH-000002")
         }
     }
 
-    @Test
-    fun `should return failure when shortest path finder fails`() = runTest {
-        // Given
-        val exception = RuntimeException("Path finding error")
-
-        coEvery {
-            warehouseRepository.findById("WH-001")
-        } returns Result.success(startWarehouse)
-
-        coEvery {
-            warehouseRepository.findById("WH-002")
-        } returns Result.success(destinationWarehouse)
-
-        coEvery {
-            shortestPathFinder.findShortestPath(
-                startWarehouse = startWarehouse,
-                destinationWarehouse = destinationWarehouse
-            )
-        } throws exception
-
-        // When
-        val result = useCase(
-            startWarehouseId = "WH-001",
-            destinationWarehouseId = "WH-002"
-        )
-
-        // Then
-        assertThat(result.isFailure).isTrue()
-        assertThat(result.exceptionOrNull()).isEqualTo(exception)
-
-        coVerify(exactly = 1) {
-            shortestPathFinder.findShortestPath(
-                startWarehouse = startWarehouse,
-                destinationWarehouse = destinationWarehouse
-            )
-        }
-    }
 }
