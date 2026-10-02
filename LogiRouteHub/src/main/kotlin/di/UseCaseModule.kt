@@ -4,6 +4,7 @@ import domain.algorithm.dispatcher.VehicleCoverageMapper
 import domain.model.request.PackagePriorityLevels
 import domain.model.request.RouteRiskConfig
 import domain.pricing.decorator.PackageDecoratorComposer
+import domain.tree.hierarchy.HubLineageTracer
 import domain.tree.simulation.BalancedBST
 import domain.tree.simulation.SequentialTrackingIdGenerator
 import domain.tree.simulation.UnbalancedBST
@@ -14,6 +15,7 @@ import domain.usecase.AssignPackageToCargoQueueUseCase
 import org.koin.dsl.module
 import domain.usecase.CalculatePricingUseCase
 import domain.usecase.CheckWarehouseConnectivityUseCase
+import domain.usecase.DetectPotentialDeliveryBottleneckUseCase
 import domain.usecase.DispatchVehicleUseCase
 import domain.usecase.EstimateDeliveryTimeUseCase
 import domain.usecase.EstimateRouteRiskUseCase
@@ -22,10 +24,12 @@ import domain.usecase.FindOptimalPathUseCase
 import domain.usecase.FindStationedVehiclesByCapacityUseCase
 import domain.usecase.GetGreedyDispatchDataUseCase
 import domain.usecase.GetPackageJourneyUseCase
+import domain.usecase.GetWarehouseLoadFactorUseCase
 import domain.usecase.PrioritizeDispatchQueueUseCase
 import domain.usecase.RecommendVehicleByCapacityAndCostUseCase
 import domain.usecase.ReroutePackageUseCase
 import domain.usecase.SortingCargoQueueUseCase
+import domain.usecase.TraceHubLineageUseCase
 import domain.usecase.TriggerFleetRebalancingUseCase
 import domain.usecase.crud.logisticspackage.CreatePackageUseCase
 import domain.usecase.crud.logisticspackage.DeletePackageUseCase
@@ -39,6 +43,10 @@ import domain.usecase.crud.vehicle.CreateVehicleUseCase
 import domain.usecase.crud.vehicle.DeleteVehicleUseCase
 import domain.usecase.crud.vehicle.GetVehicleByIdUseCase
 import domain.usecase.crud.vehicle.UpdateVehicleUseCase
+import domain.usecase.crud.warehouse.CreateWarehouseUseCase
+import domain.usecase.crud.warehouse.DeleteWarehouseUseCase
+import domain.usecase.crud.warehouse.GetWarehouseByIdUseCase
+import domain.usecase.crud.warehouse.UpdateWarehouseUseCase
 
 
 val useCaseModule = module {
@@ -63,7 +71,7 @@ val useCaseModule = module {
     factory {
         GetPackageJourneyUseCase(
             packageRepository = get(),
-            shortestPathRouter = get()
+            findOptimalPathUseCase = get()
         )
     }
 
@@ -100,25 +108,19 @@ val useCaseModule = module {
 
 
     factory {
-        FindFewestHopsRouteUseCase(
-            warehouseRepository = get(),
-            pathFinder = get()
-        )
+        FindFewestHopsRouteUseCase(warehouseRepository = get())
     }
 
 
     factory {
-        FindOptimalPathUseCase(
-            warehouseRepository = get(),
-            shortestPathFinder = get()
-        )
+        FindOptimalPathUseCase(warehouseRepository = get())
     }
 
 
     factory {
         CheckWarehouseConnectivityUseCase(
             warehouseRepository = get(),
-            leastHopRouter = get()
+            findFewestHopsRouteUseCase = get()
         )
     }
 
@@ -246,6 +248,43 @@ val useCaseModule = module {
         PrioritizeDispatchQueueUseCase(
             warehouseRepository = get(),
             priorityLevels = get()
+        )
+    }
+
+    factory {
+        GetWarehouseLoadFactorUseCase(
+            warehouseRepository = get()
+        )
+    }
+
+    single<HubLineageTracer> { HubLineageTracer() }
+
+    factory {
+        TraceHubLineageUseCase(hubLineageTracer = get())
+    }
+
+    factory {
+        DetectPotentialDeliveryBottleneckUseCase(
+            warehouseRepository = get()
+        )
+    }
+
+    factory {
+        CreateWarehouseUseCase(warehouseRepository = get())
+    }
+
+    factory {
+        DeleteWarehouseUseCase(warehouseRepository = get())
+    }
+
+    factory {
+        GetWarehouseByIdUseCase(warehouseRepository = get())
+    }
+
+    factory {
+        UpdateWarehouseUseCase(
+            warehouseRepository = get(),
+            warehouseValidator = get()
         )
     }
 
