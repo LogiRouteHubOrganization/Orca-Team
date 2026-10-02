@@ -1,4 +1,3 @@
-
 package domain.repository
 
 import domain.model.Route
@@ -18,5 +17,8 @@ interface RouteRepository {
     ): Result<Route>
 
     suspend fun delete(routeId: String): Result<Unit>
-}
 
+    suspend fun refresh(): Result<Unit>
+
+    suspend fun initializeOutgoingRoutes(): Result<Unit>
+}

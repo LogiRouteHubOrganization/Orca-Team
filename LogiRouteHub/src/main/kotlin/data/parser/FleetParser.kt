@@ -155,4 +155,12 @@ class FleetParser {
             "Warning: Empty required fleet field -> $fleetCsvRow"
         )
     }
+    fun toCsvRow(vehicle: FleetRaw): String {
+        return listOf(
+            vehicle.vehicleId,
+            vehicle.currentHubId,
+            vehicle.maxCapacityKg,
+            vehicle.costPerKm
+        ).joinToString(csvSeparator)
+    }
 }
