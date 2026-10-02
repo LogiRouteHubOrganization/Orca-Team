@@ -1,19 +1,18 @@
 package data.remote.datasource.supabase
 
-import data.remote.SupabaseClientProvider
 import data.remote.datasource.RouteRemoteDataSource
 import data.remote.dto.response.RouteDto
 import data.remote.dto.request.RouteCreateRequestDto
 import data.remote.dto.request.RouteUpdateRequestDto
 import data.remote.utils.safeApiCall
 import data.remote.retry.RetryableRemoteDatasource
+import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
 
 class RouteRemoteDataSourceImpl(
-    private val retryTemplate: RetryableRemoteDatasource = RetryableRemoteDatasource()
+    private val client: SupabaseClient,
+    private val retryTemplate: RetryableRemoteDatasource
 ) : RouteRemoteDataSource {
-
-    private val client = SupabaseClientProvider.client
     private val tableName = "routes"
 
     override suspend fun getAllRoutes(): List<RouteDto> {

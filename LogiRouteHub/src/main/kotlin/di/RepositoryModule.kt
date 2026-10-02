@@ -138,28 +138,31 @@ val repositoryModule = module {
     // Remote Data Sources
     single<WarehouseRemoteDataSource> {
         WarehouseRemoteDataSourceImpl(
+            client = get(),
             retryTemplate = get()
         )
     }
 
     single<PackageRemoteDataSource> {
         PackageRemoteDataSourceImpl(
+            client = get(),
             retryTemplate = get()
         )
     }
 
     single<VehicleRemoteDataSource> {
         VehicleRemoteDataSourceImpl(
+            client = get(),
             retryTemplate = get()
         )
     }
 
     single<RouteRemoteDataSource> {
         RouteRemoteDataSourceImpl(
+            client = get(),
             retryTemplate = get()
         )
     }
-
 
     // Repositories
     single<WarehouseRepository> {
