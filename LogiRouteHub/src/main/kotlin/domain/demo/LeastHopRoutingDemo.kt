@@ -2,7 +2,6 @@ package domain.demo
 
 import domain.model.Route
 import domain.model.Warehouse
-import domain.routing.LeastHopRouter
 import domain.usecase.FindFewestHopsRouteUseCase
 
 class LeastHopRoutingDemo(

@@ -1,10 +1,9 @@
-
 package mainTest.domainTest.usecaseTest
 
 import com.google.common.truth.Truth.assertThat
+import domain.model.Route
 import domain.model.Warehouse
 import domain.repository.WarehouseRepository
-import domain.routing.LeastHopPathFinder
 import domain.usecase.FindFewestHopsRouteUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -15,15 +14,13 @@ import org.junit.jupiter.api.Test
 class FindFewestHopsRouteUseCaseTest {
 
     private val warehouseRepository = mockk<WarehouseRepository>()
-    private val pathFinder = mockk<LeastHopPathFinder>()
 
     private val useCase = FindFewestHopsRouteUseCase(
-        warehouseRepository = warehouseRepository,
-        pathFinder = pathFinder
+        warehouseRepository = warehouseRepository
     )
 
     private val startWarehouse = Warehouse(
-        id = "WH-001",
+        id = "WH-000001",
         name = "Start Warehouse",
         regionalZone = "North",
         latitude = 31.9,
@@ -31,7 +28,7 @@ class FindFewestHopsRouteUseCaseTest {
     )
 
     private val destinationWarehouse = Warehouse(
-        id = "WH-002",
+        id = "WH-000002",
         name = "Destination Warehouse",
         regionalZone = "South",
         latitude = 31.5,
@@ -41,63 +38,61 @@ class FindFewestHopsRouteUseCaseTest {
     @Test
     fun `should return least hop path when both warehouses exist`() = runTest {
         // Given
-        val expectedPath = listOf(
-            startWarehouse,
-            destinationWarehouse
+        val route = Route(
+            id = "RT-000001",
+            originWarehouse = startWarehouse,
+            destinationWarehouse = destinationWarehouse,
+            distanceKm = 10.0,
+            typicalDelayMin = 5
         )
 
+        startWarehouse.addRoute(route)
+
         coEvery {
-            warehouseRepository.findById("WH-001")
+            warehouseRepository.findById("WH-000001")
         } returns Result.success(startWarehouse)
 
         coEvery {
-            warehouseRepository.findById("WH-002")
+            warehouseRepository.findById("WH-000002")
         } returns Result.success(destinationWarehouse)
-
-        coEvery {
-            pathFinder.findLeastHopPath(
-                startWarehouse = startWarehouse,
-                destinationWarehouse = destinationWarehouse
-            )
-        } returns expectedPath
 
         // When
         val result = useCase(
-            startWarehouseId = "WH-001",
-            destinationWarehouseId = "WH-002"
+            startWarehouseId = "WH-000001",
+            destinationWarehouseId = "WH-000002"
         )
 
         // Then
         assertThat(result.isSuccess).isTrue()
-        assertThat(result.getOrNull()).isEqualTo(expectedPath)
-
-        coVerify(exactly = 1) {
-            pathFinder.findLeastHopPath(
-                startWarehouse = startWarehouse,
-                destinationWarehouse = destinationWarehouse
-            )
-        }
+        assertThat(result.getOrNull()).containsExactly(
+            startWarehouse,
+            destinationWarehouse
+        ).inOrder()
     }
 
     @Test
     fun `should return empty list when start warehouse does not exist`() = runTest {
         // Given
         coEvery {
-            warehouseRepository.findById("WH-001")
+            warehouseRepository.findById("WH-000001")
         } returns Result.success(null)
 
         // When
         val result = useCase(
-            startWarehouseId = "WH-001",
-            destinationWarehouseId = "WH-002"
+            startWarehouseId = "WH-000001",
+            destinationWarehouseId = "WH-000002"
         )
 
         // Then
         assertThat(result.isSuccess).isTrue()
         assertThat(result.getOrNull()).isEmpty()
 
+        coVerify(exactly = 1) {
+            warehouseRepository.findById("WH-000001")
+        }
+
         coVerify(exactly = 0) {
-            pathFinder.findLeastHopPath(any(), any())
+            warehouseRepository.findById("WH-000002")
         }
     }
 
@@ -105,25 +100,29 @@ class FindFewestHopsRouteUseCaseTest {
     fun `should return empty list when destination warehouse does not exist`() = runTest {
         // Given
         coEvery {
-            warehouseRepository.findById("WH-001")
+            warehouseRepository.findById("WH-000001")
         } returns Result.success(startWarehouse)
 
         coEvery {
-            warehouseRepository.findById("WH-002")
+            warehouseRepository.findById("WH-000002")
         } returns Result.success(null)
 
         // When
         val result = useCase(
-            startWarehouseId = "WH-001",
-            destinationWarehouseId = "WH-002"
+            startWarehouseId = "WH-000001",
+            destinationWarehouseId = "WH-000002"
         )
 
         // Then
         assertThat(result.isSuccess).isTrue()
         assertThat(result.getOrNull()).isEmpty()
 
-        coVerify(exactly = 0) {
-            pathFinder.findLeastHopPath(any(), any())
+        coVerify(exactly = 1) {
+            warehouseRepository.findById("WH-000001")
+        }
+
+        coVerify(exactly = 1) {
+            warehouseRepository.findById("WH-000002")
         }
     }
 
@@ -133,48 +132,13 @@ class FindFewestHopsRouteUseCaseTest {
         val exception = RuntimeException("Repository error")
 
         coEvery {
-            warehouseRepository.findById("WH-001")
+            warehouseRepository.findById("WH-000001")
         } returns Result.failure(exception)
 
         // When
         val result = useCase(
-            startWarehouseId = "WH-001",
-            destinationWarehouseId = "WH-002"
-        )
-
-        // Then
-        assertThat(result.isFailure).isTrue()
-        assertThat(result.exceptionOrNull()).isEqualTo(exception)
-
-        coVerify(exactly = 0) {
-            pathFinder.findLeastHopPath(any(), any())
-        }
-    }
-
-    @Test
-    fun `should return failure when path finder fails`() = runTest {
-        // Given
-        val exception = RuntimeException("Path finding error")
-
-        coEvery {
-            warehouseRepository.findById("WH-001")
-        } returns Result.success(startWarehouse)
-
-        coEvery {
-            warehouseRepository.findById("WH-002")
-        } returns Result.success(destinationWarehouse)
-
-        coEvery {
-            pathFinder.findLeastHopPath(
-                startWarehouse = startWarehouse,
-                destinationWarehouse = destinationWarehouse
-            )
-        } throws exception
-
-        // When
-        val result = useCase(
-            startWarehouseId = "WH-001",
-            destinationWarehouseId = "WH-002"
+            startWarehouseId = "WH-000001",
+            destinationWarehouseId = "WH-000002"
         )
 
         // Then
@@ -182,11 +146,11 @@ class FindFewestHopsRouteUseCaseTest {
         assertThat(result.exceptionOrNull()).isEqualTo(exception)
 
         coVerify(exactly = 1) {
-            pathFinder.findLeastHopPath(
-                startWarehouse = startWarehouse,
-                destinationWarehouse = destinationWarehouse
-            )
+            warehouseRepository.findById("WH-001")
+        }
+
+        coVerify(exactly = 0) {
+            warehouseRepository.findById("WH-002")
         }
     }
 }
-

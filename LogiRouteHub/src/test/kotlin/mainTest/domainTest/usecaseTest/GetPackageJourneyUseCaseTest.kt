@@ -1,28 +1,26 @@
 package mainTest.domainTest.usecaseTest
+
 import com.google.common.truth.Truth.assertThat
 import domain.model.Package
 import domain.model.Route
 import domain.model.Warehouse
 import domain.repository.PackageRepository
-import domain.routing.ShortestPathRouter
+import domain.usecase.FindOptimalPathUseCase
 import domain.usecase.GetPackageJourneyUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
-import io.mockk.every
 import io.mockk.mockk
-import io.mockk.verify
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 
 class GetPackageJourneyUseCaseTest {
 
     private val packageRepository = mockk<PackageRepository>()
-
-    private val shortestPathRouter = mockk<ShortestPathRouter>()
+    private val findOptimalPathUseCase = mockk<FindOptimalPathUseCase>()
 
     private val useCase = GetPackageJourneyUseCase(
         packageRepository = packageRepository,
-        shortestPathRouter = shortestPathRouter
+        findOptimalPathUseCase = findOptimalPathUseCase
     )
 
     @Test
@@ -47,6 +45,7 @@ class GetPackageJourneyUseCaseTest {
             distanceKm = 20.0,
             delayMin = 10
         )
+
         warehouseA.addRoute(routeAB)
         warehouseB.addRoute(routeBC)
 
@@ -55,20 +54,20 @@ class GetPackageJourneyUseCaseTest {
             origin = warehouseA,
             destination = warehouseC
         )
+
         coEvery {
             packageRepository.findById("PKG-000001")
         } returns Result.success(logisticsPackage)
 
-        every {
-            shortestPathRouter.findShortestPath(
-                startWarehouse = warehouseA,
-                destinationWarehouse = warehouseC
+        coEvery {
+            findOptimalPathUseCase(
+                startWarehouseId = warehouseA.id,
+                destinationWarehouseId = warehouseC.id
             )
-        } returns listOf(
-            warehouseA,
-            warehouseB,
-            warehouseC
+        } returns Result.success(
+            listOf(warehouseA, warehouseB, warehouseC)
         )
+
         // When
         val result = useCase("PKG-000001")
 
@@ -82,23 +81,28 @@ class GetPackageJourneyUseCaseTest {
 
         assertThat(journey.originWarehouse).isEqualTo(warehouseA)
         assertThat(journey.destinationWarehouse).isEqualTo(warehouseC)
-        assertThat(journey.warehouses).containsExactly(
-                warehouseA, warehouseB, warehouseC).inOrder()
 
-        assertThat(journey.routes).containsExactly(routeAB, routeBC).inOrder()
+        assertThat(journey.warehouses)
+            .containsExactly(
+                warehouseA, warehouseB, warehouseC)
+            .inOrder()
+
+        assertThat(journey.routes)
+            .containsExactly(
+                routeAB, routeBC)
+            .inOrder()
 
         assertThat(journey.totalDistanceKm).isEqualTo(30.0)
-
         assertThat(journey.totalTypicalDelayMin).isEqualTo(15)
 
         coVerify(exactly = 1) {
             packageRepository.findById("PKG-000001")
         }
 
-        verify(exactly = 1) {
-            shortestPathRouter.findShortestPath(
-                startWarehouse = warehouseA,
-                destinationWarehouse = warehouseC
+        coVerify(exactly = 1) {
+            findOptimalPathUseCase(
+                startWarehouseId = warehouseA.id,
+                destinationWarehouseId = warehouseC.id
             )
         }
     }
@@ -121,10 +125,8 @@ class GetPackageJourneyUseCaseTest {
             packageRepository.findById("PKG-000001")
         }
 
-        verify(exactly = 0) {
-            shortestPathRouter.findShortestPath(
-                any(), any()
-            )
+        coVerify(exactly = 0) {
+            findOptimalPathUseCase(any(), any())
         }
     }
 
@@ -150,11 +152,8 @@ class GetPackageJourneyUseCaseTest {
             packageRepository.findById("PKG-000001")
         }
 
-        verify(exactly = 0) {
-            shortestPathRouter.findShortestPath(
-                any(),
-                any()
-            )
+        coVerify(exactly = 0) {
+            findOptimalPathUseCase(any(), any())
         }
     }
 
