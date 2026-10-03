@@ -7,6 +7,7 @@ import domain.model.Warehouse
 import domain.model.request.DispatchVehicleRequest
 import domain.repository.VehicleRepository
 import domain.repository.WarehouseRepository
+import domain.state.CreatedState
 import domain.usecase.DispatchVehicleUseCase
 import io.mockk.Runs
 import io.mockk.coEvery
@@ -35,159 +36,254 @@ class DispatchVehicleUseCaseTest {
     }
 
     @Test
-    fun `should dispatch packages when vehicle and warehouse exist`() = runTest {
+    fun `should dispatch packages within available vehicle capacity`() = runTest {
         // Given
-        val vehicle = mockk<Vehicle>(relaxed = true)
-        val warehouse = mockk<Warehouse>(relaxed = true)
-        val package1 = mockk<Package>()
-        val package2 = mockk<Package>()
+        val vehicle = mockVehicle(capacity = 100.0)
+        val package1 = mockPackage(weight = 30.0, priority = "URGENT")
+        val package2 = mockPackage(weight = 40.0, priority = "STANDARD")
+        val warehouse = mockWarehouse(package1, package2)
 
-        every { vehicle.maxCapacityKg } returns 100.0
-        every { vehicle.calculateTotalLoadedWeightKg() } returns 0.0
-        every { package1.weightByKg } returns 30.0
-        every { package2.weightByKg } returns 40.0
-        every { warehouse.cargoQueue } returns listOf(package1, package2)
-
-        coEvery { vehicleRepository.findById("TRK-000001") } returns Result.success(vehicle)
-        coEvery { warehouseRepository.findById("WH-000001") } returns Result.success(warehouse)
-
-        every { vehicle.addPackage(any()) } just Runs
-        every { warehouse.removePackage(any()) } just Runs
-
-        val input = DispatchVehicleRequest(
-            vehicleId = "TRK-000001",
-            warehouseId = "WH-000001"
-        )
+        stubRepositories(vehicle, warehouse)
 
         // When
-        val result = dispatchVehicleUseCase(input)
+        val result = dispatchVehicleUseCase(
+            DispatchVehicleRequest(
+                vehicleId = "TRK-000001",
+                warehouseId = "WH-000001"
+            )
+        )
 
         // Then
-        assertThat(result).isEqualTo(Result.success(listOf(package1, package2)))
+        assertThat(result).isEqualTo(
+            Result.success(listOf(package1, package2))
+        )
     }
 
     @Test
-    fun `should calculate available capacity after existing vehicle load`() = runTest {
+    fun `should consider already loaded vehicle weight when selecting packages`() = runTest {
         // Given
-        val vehicleId = "TRK-000008"
-        val warehouseId = "WH-000004"
-        val vehicle = mockk<Vehicle>(relaxed = true)
-        val warehouse = mockk<Warehouse>(relaxed = true)
-        val package1 = mockk<Package>()
-        val package2 = mockk<Package>()
-
-        every { vehicle.maxCapacityKg } returns 100.0
-        every { vehicle.calculateTotalLoadedWeightKg() } returns 60.0
-        every { package1.weightByKg } returns 30.0
-        every { package2.weightByKg } returns 20.0
-        every { warehouse.cargoQueue } returns listOf(package1, package2)
-
-        coEvery { vehicleRepository.findById(vehicleId) } returns Result.success(vehicle)
-        coEvery { warehouseRepository.findById(warehouseId) } returns Result.success(warehouse)
-
-        every { vehicle.addPackage(any()) } just Runs
-        every { warehouse.removePackage(any()) } just Runs
-
-        val input = DispatchVehicleRequest(
-            vehicleId = vehicleId,
-            warehouseId = warehouseId
+        val vehicle = mockVehicle(
+            capacity = 100.0,
+            loadedWeight = 60.0
         )
+        val package1 = mockPackage(weight = 30.0, priority = "STANDARD")
+        val package2 = mockPackage(weight = 20.0, priority = "LOW")
+        val warehouse = mockWarehouse(package1, package2)
+
+        stubRepositories(vehicle, warehouse)
 
         // When
-        val result = dispatchVehicleUseCase(input)
+        val result = dispatchVehicleUseCase(
+            DispatchVehicleRequest(
+                vehicleId = "TRK-000001",
+                warehouseId = "WH-000001"
+            )
+        )
 
         // Then
-        assertThat(result).isEqualTo(Result.success(listOf(package1)))
+        assertThat(result).isEqualTo(
+            Result.success(listOf(package1))
+        )
     }
 
     @Test
-    fun `should dispatch only packages that fit within remaining capacity`() = runTest {
+    fun `should skip packages that exceed remaining capacity`() = runTest {
         // Given
-        val vehicleId = "TRK-000003"
-        val warehouseId = "WH-000002"
-        val vehicle = mockk<Vehicle>(relaxed = true)
-        val warehouse = mockk<Warehouse>(relaxed = true)
-        val package1 = mockk<Package>()
-        val package2 = mockk<Package>()
-        val package3 = mockk<Package>()
-
-        every { vehicle.maxCapacityKg } returns 100.0
-        every { vehicle.calculateTotalLoadedWeightKg() } returns 0.0
-        every { package1.weightByKg } returns 40.0
-        every { package2.weightByKg } returns 30.0
-        every { package3.weightByKg } returns 50.0
-        every { warehouse.cargoQueue } returns listOf(package1, package2, package3)
-
-        coEvery { vehicleRepository.findById(vehicleId) } returns Result.success(vehicle)
-        coEvery { warehouseRepository.findById(warehouseId) } returns Result.success(warehouse)
-
-        every { vehicle.addPackage(any()) } just Runs
-        every { warehouse.removePackage(any()) } just Runs
-
-        val input = DispatchVehicleRequest(
-            vehicleId = vehicleId,
-            warehouseId = warehouseId
+        val vehicle = mockVehicle(capacity = 50.0)
+        val heavyPackage = mockPackage(
+            weight = 60.0,
+            priority = "STANDARD"
         )
+        val warehouse = mockWarehouse(heavyPackage)
+
+        stubRepositories(vehicle, warehouse)
 
         // When
-        val result = dispatchVehicleUseCase(input)
+        val result = dispatchVehicleUseCase(
+            DispatchVehicleRequest(
+                vehicleId = "TRK-000001",
+                warehouseId = "WH-000001"
+            )
+        )
 
         // Then
-        assertThat(result).isEqualTo(Result.success(listOf(package1, package2)))
+        assertThat(result).isEqualTo(
+            Result.success(emptyList<Package>())
+        )
+        verify(exactly = 0) {
+            vehicle.addPackage(any())
+        }
+
+        verify(exactly = 0) {
+            warehouse.removePackage(any())
+        }
     }
 
     @Test
     fun `should add dispatched packages to vehicle and remove them from warehouse`() = runTest {
         // Given
-        val vehicleId = "TRK-000001"
-        val warehouseId = "WH-000004"
-        val vehicle = mockk<Vehicle>(relaxed = true)
-        val warehouse = mockk<Warehouse>(relaxed = true)
-        val package1 = mockk<Package>()
-
-        every { vehicle.maxCapacityKg } returns 100.0
-        every { vehicle.calculateTotalLoadedWeightKg() } returns 0.0
-        every { package1.weightByKg } returns 40.0
-        every { warehouse.cargoQueue } returns listOf(package1)
-
-        coEvery { vehicleRepository.findById(vehicleId) } returns Result.success(vehicle)
-        coEvery { warehouseRepository.findById(warehouseId) } returns Result.success(warehouse)
-
-        every { vehicle.addPackage(package1) } just Runs
-        every { warehouse.removePackage(package1) } just Runs
-
-        val input = DispatchVehicleRequest(
-            vehicleId = vehicleId,
-            warehouseId = warehouseId
+        val vehicle = mockVehicle()
+        val logisticsPackage = mockPackage(
+            weight = 40.0,
+            priority = "STANDARD"
         )
+        val warehouse = mockWarehouse(logisticsPackage)
+
+        stubRepositories(vehicle, warehouse)
 
         // When
-        dispatchVehicleUseCase(input)
+        dispatchVehicleUseCase(
+            DispatchVehicleRequest(
+                vehicleId = "TRK-000001",
+                warehouseId = "WH-000001"
+            )
+        )
 
         // Then
-        verify(exactly = 1) { vehicle.addPackage(package1) }
-        verify(exactly = 1) { warehouse.removePackage(package1) }
+        verify(exactly = 1) {
+            vehicle.addPackage(logisticsPackage)
+        }
+
+        verify(exactly = 1) {
+            warehouse.removePackage(logisticsPackage)
+        }
     }
 
+    @Test
+    fun `should dispatch urgent package using express dispatch flow`() = runTest {
+        // Given
+        val vehicle = mockVehicle()
+        val urgentPackage = mockPackage(
+            weight = 30.0,
+            priority = "URGENT"
+        )
+        val warehouse = mockWarehouse(urgentPackage)
+
+        stubRepositories(vehicle, warehouse)
+
+        // When
+        val result = dispatchVehicleUseCase(
+            DispatchVehicleRequest(
+                vehicleId = "TRK-000001",
+                warehouseId = "WH-000001"
+            )
+        )
+
+        // Then
+        assertThat(result).isEqualTo(
+            Result.success(listOf(urgentPackage))
+        )
+
+        verify(exactly = 1) {
+            vehicle.addPackage(urgentPackage)
+        }
+    }
+
+    @Test
+    fun `should dispatch standard package using standard dispatch flow`() = runTest {
+        // Given
+        val vehicle = mockVehicle()
+        val standardPackage = mockPackage(
+            weight = 30.0,
+            priority = "STANDARD"
+        )
+        val warehouse = mockWarehouse(standardPackage)
+
+        stubRepositories(vehicle, warehouse)
+
+        // When
+        val result = dispatchVehicleUseCase(
+            DispatchVehicleRequest(
+                vehicleId = "TRK-000001",
+                warehouseId = "WH-000001"
+            )
+        )
+
+        // Then
+        assertThat(result).isEqualTo(
+            Result.success(listOf(standardPackage))
+        )
+
+        verify(exactly = 1) {
+            vehicle.addPackage(standardPackage)
+        }
+    }
+
+    @Test
+    fun `should dispatch low priority package using standard dispatch flow`() = runTest {
+        // Given
+        val vehicle = mockVehicle()
+        val lowPriorityPackage = mockPackage(
+            weight = 30.0,
+            priority = "LOW"
+        )
+        val warehouse = mockWarehouse(lowPriorityPackage)
+
+        stubRepositories(vehicle, warehouse)
+
+        // When
+        val result = dispatchVehicleUseCase(
+            DispatchVehicleRequest(
+                vehicleId = "TRK-000001",
+                warehouseId = "WH-000001"
+            )
+        )
+
+        // Then
+        assertThat(result).isEqualTo(
+            Result.success(listOf(lowPriorityPackage))
+        )
+
+        verify(exactly = 1) {
+            vehicle.addPackage(lowPriorityPackage)
+        }
+    }
+
+    @Test
+    fun `should return failure for unsupported package priority`() = runTest {
+        // Given
+        val vehicle = mockVehicle()
+        val invalidPackage = mockPackage(
+            weight = 30.0,
+            priority = "INVALID"
+        )
+        val warehouse = mockWarehouse(invalidPackage)
+
+        stubRepositories(vehicle, warehouse)
+
+        // When
+        val result = dispatchVehicleUseCase(
+            DispatchVehicleRequest(
+                vehicleId = "TRK-000001",
+                warehouseId = "WH-000001"
+            )
+        )
+
+        // Then
+        assertThat(result.isFailure).isTrue()
+        assertThat(result.exceptionOrNull())
+            .isInstanceOf(IllegalArgumentException::class.java)
+    }
 
     @Test
     fun `should return empty list when vehicle does not exist`() = runTest {
         // Given
-        val vehicleId = "TRK-000001"
-        val warehouseId = "WH-000001"
-
-        coEvery { vehicleRepository.findById(vehicleId) } returns Result.success(null)
-
-        val input = DispatchVehicleRequest(
-            vehicleId = vehicleId,
-            warehouseId = warehouseId
-        )
+        coEvery {
+            vehicleRepository.findById("TRK-000001")
+        } returns Result.success(null)
 
         // When
-        val result = dispatchVehicleUseCase(input)
+        val result = dispatchVehicleUseCase(
+            DispatchVehicleRequest(
+                vehicleId = "TRK-000001",
+                warehouseId = "WH-000001"
+            )
+        )
 
         // Then
-        assertThat(result).isEqualTo(Result.success(emptyList<Package>()))
+        assertThat(result).isEqualTo(
+            Result.success(emptyList<Package>())
+        )
 
         coVerify(exactly = 0) {
             warehouseRepository.findById(any())
@@ -197,113 +293,138 @@ class DispatchVehicleUseCaseTest {
     @Test
     fun `should return empty list when warehouse does not exist`() = runTest {
         // Given
-        val vehicleId = "TRK-000001"
-        val warehouseId = "WH-000001"
-        val vehicle = mockk<Vehicle>(relaxed = true)
+        val vehicle = mockVehicle()
 
-        coEvery { vehicleRepository.findById(vehicleId) } returns Result.success(vehicle)
-        coEvery { warehouseRepository.findById(warehouseId) } returns Result.success(null)
+        coEvery {
+            vehicleRepository.findById("TRK-000001")
+        } returns Result.success(vehicle)
 
-        val input = DispatchVehicleRequest(
-            vehicleId = vehicleId,
-            warehouseId = warehouseId
-        )
+        coEvery {
+            warehouseRepository.findById("WH-000001")
+        } returns Result.success(null)
 
         // When
-        val result = dispatchVehicleUseCase(input)
-
-        // Then
-        assertThat(result).isEqualTo(Result.success(emptyList<Package>()))
-    }
-
-    @Test
-    fun `should not dispatch package when its weight exceeds remaining capacity`() = runTest {
-        // Given
-        val vehicleId = "TRK-000001"
-        val warehouseId = "WH-000001"
-        val vehicle = mockk<Vehicle>(relaxed = true)
-        val warehouse = mockk<Warehouse>(relaxed = true)
-        val heavyPackage = mockk<Package>()
-
-        every { vehicle.maxCapacityKg } returns 50.0
-        every { vehicle.calculateTotalLoadedWeightKg() } returns 0.0
-        every { heavyPackage.weightByKg } returns 60.0
-        every { warehouse.cargoQueue } returns listOf(heavyPackage)
-
-        coEvery { vehicleRepository.findById(vehicleId) } returns Result.success(vehicle)
-        coEvery { warehouseRepository.findById(warehouseId) } returns Result.success(warehouse)
-
-        val input = DispatchVehicleRequest(
-            vehicleId = vehicleId,
-            warehouseId = warehouseId
+        val result = dispatchVehicleUseCase(
+            DispatchVehicleRequest(
+                vehicleId = "TRK-000001",
+                warehouseId = "WH-000001"
+            )
         )
 
-        // When
-        val result = dispatchVehicleUseCase(input)
-
         // Then
-        assertThat(result).isEqualTo(Result.success(emptyList<Package>()))
-
-        verify(exactly = 0) { vehicle.addPackage(any()) }
-        verify(exactly = 0) { warehouse.removePackage(any()) }
-    }
-
-    @Test
-    fun `should return empty list when vehicle has no available capacity`() = runTest {
-        // Given
-        val vehicleId = "TRK-000001"
-        val warehouseId = "WH-000001"
-        val vehicle = mockk<Vehicle>(relaxed = true)
-        val warehouse = mockk<Warehouse>(relaxed = true)
-        val package1 = mockk<Package>()
-
-        every { vehicle.maxCapacityKg } returns 100.0
-        every { vehicle.calculateTotalLoadedWeightKg() } returns 100.0
-        every { package1.weightByKg } returns 20.0
-        every { warehouse.cargoQueue } returns listOf(package1)
-
-        coEvery { vehicleRepository.findById(vehicleId) } returns Result.success(vehicle)
-        coEvery { warehouseRepository.findById(warehouseId) } returns Result.success(warehouse)
-
-        val input = DispatchVehicleRequest(
-            vehicleId = vehicleId,
-            warehouseId = warehouseId
+        assertThat(result).isEqualTo(
+            Result.success(emptyList<Package>())
         )
-
-        // When
-        val result = dispatchVehicleUseCase(input)
-
-        // Then
-        assertThat(result).isEqualTo(Result.success(emptyList<Package>()))
-
-        verify(exactly = 0) { vehicle.addPackage(any()) }
-        verify(exactly = 0) { warehouse.removePackage(any()) }
     }
 
     @Test
     fun `should return empty list when warehouse cargo queue is empty`() = runTest {
         // Given
-        val vehicleId = "TRK-000002"
-        val warehouseId = "WH-000002"
-        val vehicle = mockk<Vehicle>(relaxed = true)
+        val vehicle = mockVehicle()
         val warehouse = mockk<Warehouse>(relaxed = true)
 
-        every { vehicle.maxCapacityKg } returns 100.0
-        every { vehicle.calculateTotalLoadedWeightKg() } returns 0.0
-        every { warehouse.cargoQueue } returns emptyList()
+        every {
+            warehouse.cargoQueue
+        } returns emptyList()
 
-        coEvery { vehicleRepository.findById(vehicleId) } returns Result.success(vehicle)
-        coEvery { warehouseRepository.findById(warehouseId) } returns Result.success(warehouse)
-
-        val input = DispatchVehicleRequest(
-            vehicleId = vehicleId,
-            warehouseId = warehouseId
-        )
+        stubRepositories(vehicle, warehouse)
 
         // When
-        val result = dispatchVehicleUseCase(input)
+        val result = dispatchVehicleUseCase(
+            DispatchVehicleRequest(
+                vehicleId = "TRK-000001",
+                warehouseId = "WH-000001"
+            )
+        )
 
         // Then
-        assertThat(result).isEqualTo(Result.success(emptyList<Package>()))
+        assertThat(result).isEqualTo(
+            Result.success(emptyList<Package>())
+        )
+    }
+    private fun mockVehicle(
+        id: String = "TRK-000001",
+        capacity: Double = 100.0,
+        loadedWeight: Double = 0.0
+    ): Vehicle {
+        val vehicle = mockk<Vehicle>(relaxed = true)
+
+        every {
+            vehicle.id
+        } returns id
+
+        every {
+            vehicle.maxCapacityKg
+        } returns capacity
+
+        every {
+            vehicle.calculateTotalLoadedWeightKg()
+        } returns loadedWeight
+
+        every {
+            vehicle.addPackage(any())
+        } just Runs
+
+        return vehicle
+    }
+
+    private fun mockPackage(
+        id: String = "PKG-000001",
+        weight: Double,
+        priority: String
+    ): Package {
+        val logisticsPackage = mockk<Package>()
+
+        every {
+            logisticsPackage.id
+        } returns id
+
+        every {
+            logisticsPackage.weightByKg
+        } returns weight
+
+        every {
+            logisticsPackage.priority
+        } returns priority
+
+        every {
+            logisticsPackage.state
+        } returns CreatedState()
+
+        every {
+            logisticsPackage.state = any()
+        } just Runs
+
+        return logisticsPackage
+    }
+
+    private fun mockWarehouse(
+        vararg packages: Package
+    ): Warehouse {
+        val warehouse = mockk<Warehouse>(relaxed = true)
+
+        every {
+            warehouse.cargoQueue
+        } returns packages.toList()
+
+        every {
+            warehouse.removePackage(any())
+        } just Runs
+
+        return warehouse
+    }
+
+    private fun stubRepositories(
+        vehicle: Vehicle,
+        warehouse: Warehouse
+    ) {
+        coEvery {
+            vehicleRepository.findById("TRK-000001")
+        } returns Result.success(vehicle)
+
+        coEvery {
+            warehouseRepository.findById("WH-000001")
+        } returns Result.success(warehouse)
     }
 }
+
