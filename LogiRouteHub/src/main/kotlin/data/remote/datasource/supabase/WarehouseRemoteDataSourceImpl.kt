@@ -1,19 +1,19 @@
 package data.remote.datasource.supabase
 
-import data.remote.SupabaseClientProvider
+
 import data.remote.datasource.WarehouseRemoteDataSource
 import data.remote.dto.response.WarehouseDto
 import data.remote.dto.request.WarehouseCreateRequestDto
 import data.remote.dto.request.WarehouseUpdateRequestDto
 import data.remote.utils.safeApiCall
 import data.remote.retry.RetryableRemoteDatasource
+import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
 
 class WarehouseRemoteDataSourceImpl(
-    private val retryTemplate: RetryableRemoteDatasource = RetryableRemoteDatasource()
+    private val client: SupabaseClient,
+    private val retryTemplate: RetryableRemoteDatasource
 ) : WarehouseRemoteDataSource {
-
-    private val client = SupabaseClientProvider.client
     private val tableName = "warehouses"
 
     override suspend fun getAllWarehouses(): List<WarehouseDto> {

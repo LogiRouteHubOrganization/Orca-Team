@@ -1,19 +1,19 @@
 package data.remote.datasource.supabase
 
-import data.remote.SupabaseClientProvider
+
 import data.remote.datasource.PackageRemoteDataSource
 import data.remote.dto.response.PackageDto
 import data.remote.dto.request.PackageCreateRequestDto
 import data.remote.dto.request.PackageUpdateRequestDto
 import data.remote.utils.safeApiCall
 import data.remote.retry.RetryableRemoteDatasource
+import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
 
 class PackageRemoteDataSourceImpl(
-    private val retryTemplate: RetryableRemoteDatasource = RetryableRemoteDatasource()
+    private val client: SupabaseClient,
+    private val retryTemplate: RetryableRemoteDatasource
 ) : PackageRemoteDataSource {
-
-    private val client = SupabaseClientProvider.client
     private val tableName = "packages"
 
     override suspend fun getAllPackages(): List<PackageDto> {

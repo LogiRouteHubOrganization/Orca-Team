@@ -1,19 +1,18 @@
 package data.remote.datasource.supabase
 
-import data.remote.SupabaseClientProvider
 import data.remote.datasource.VehicleRemoteDataSource
 import data.remote.dto.response.VehicleDto
 import data.remote.dto.request.VehicleCreateRequestDto
 import data.remote.dto.request.VehicleUpdateRequestDto
 import data.remote.utils.safeApiCall
 import data.remote.retry.RetryableRemoteDatasource
+import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
 
 class VehicleRemoteDataSourceImpl(
-    private val retryTemplate: RetryableRemoteDatasource = RetryableRemoteDatasource()
+    private val client: SupabaseClient,
+    private val retryTemplate: RetryableRemoteDatasource
 ) : VehicleRemoteDataSource {
-
-    private val client = SupabaseClientProvider.client
     private val tableName = "vehicles"
 
     override suspend fun getAllVehicles(): List<VehicleDto> {
