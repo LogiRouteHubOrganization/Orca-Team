@@ -26,4 +26,14 @@ val borderColor = Color(0xFF40454E)
 
 val textPrimary = Color(0xFFE0E0E0)
 
- val Scorpion =Color(0xFF606060)
+val Scorpion =Color(0xFF606060)
+
+val WarningAmber=Color(0xFFDBB859)
+
+val Border=Color(0xFF40454E)
+
+val TextPrimary=Color(0xFFE0E0E0)
+
+
+
+
