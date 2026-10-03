@@ -14,6 +14,8 @@ data class Package(
     val destinationWarehouse: Warehouse
 ) : PackageComponent {
 
+    lateinit var state: Any
+
     init {
         val validationResult = CreatePackageValidator().invoke(
             id = id,
