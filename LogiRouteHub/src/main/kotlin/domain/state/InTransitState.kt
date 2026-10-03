@@ -17,3 +17,4 @@ class InTransitState : ShipmentState {
         TODO("Implementation will be added in the corresponding task")
     }
 }
+

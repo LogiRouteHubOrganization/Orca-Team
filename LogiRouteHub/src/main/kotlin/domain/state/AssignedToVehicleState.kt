@@ -1,18 +1,20 @@
 package domain.state
 
-import domain.exception.InvalidShipmentStateTransitionException
+class AssignedToVehicleState : ShipmentState {
 
-class AssignedToVehicleState : ShipmentState  {
+    override fun assignToVehicle(): ShipmentState {
+        TODO("Implementation will be added in the corresponding task")
+    }
 
-    override fun assignToVehicle(): ShipmentState =
-        throw InvalidShipmentStateTransitionException("Not implemented yet")
+    override fun markAsInTransit(): ShipmentState {
+        TODO("Implementation will be added in the corresponding task")
+    }
 
-    override fun markAsInTransit(): ShipmentState =
-        throw InvalidShipmentStateTransitionException("Not implemented yet")
+    override fun markAsDelivered(): ShipmentState {
+        TODO("Implementation will be added in the corresponding task")
+    }
 
-    override fun markAsDelivered(): ShipmentState =
-        throw InvalidShipmentStateTransitionException("Not implemented yet")
-
-    override fun deliveryFailed(): ShipmentState =
-        throw InvalidShipmentStateTransitionException("Not implemented yet")
+    override fun deliveryFailed(): ShipmentState {
+        TODO("Implementation will be added in the corresponding task")
+    }
 }

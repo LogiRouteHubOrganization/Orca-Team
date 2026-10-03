@@ -10,3 +10,4 @@ interface ShipmentState {
 
     fun deliveryFailed(): ShipmentState
 }
+
