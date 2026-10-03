@@ -1,20 +1,28 @@
 package domain.state
 
+import domain.exception.InvalidShipmentStateTransitionException
+
 class AssignedToVehicleState : ShipmentState {
 
     override fun assignToVehicle(): ShipmentState {
-        TODO("Implementation will be added in the corresponding task")
+        throw InvalidShipmentStateTransitionException(
+            "A package cannot be assigned to a vehicle because it is already assigned."
+        )
     }
 
     override fun markAsInTransit(): ShipmentState {
-        TODO("Implementation will be added in the corresponding task")
+        return InTransitState()
     }
 
     override fun markAsDelivered(): ShipmentState {
-        TODO("Implementation will be added in the corresponding task")
+        throw InvalidShipmentStateTransitionException(
+            "A package cannot be delivered before it is in transit."
+        )
     }
 
     override fun deliveryFailed(): ShipmentState {
-        TODO("Implementation will be added in the corresponding task")
+        throw InvalidShipmentStateTransitionException(
+            "A package cannot fail delivery before it is in transit."
+        )
     }
 }
