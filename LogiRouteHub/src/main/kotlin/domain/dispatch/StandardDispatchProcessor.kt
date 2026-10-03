@@ -4,7 +4,6 @@ import domain.exception.InvalidCargoException
 import domain.exception.VehicleCapacityExceededException
 import domain.model.Package
 import domain.model.Vehicle
-import domain.state.ShipmentState
 
 class StandardDispatchProcessor : BaseDispatchProcessor() {
 
@@ -33,17 +32,6 @@ class StandardDispatchProcessor : BaseDispatchProcessor() {
         vehicle.addPackage(logisticsPackage)
     }
 
-    override fun updateShipmentState(
-        logisticsPackage: Package
-    ) {
-        val currentState = logisticsPackage.state as ShipmentState
-
-        logisticsPackage.state =
-            currentState
-                .assignToVehicle()
-                .markAsInTransit()
-    }
-
     override fun notifyDispatchStatus(
         logisticsPackage: Package,
         vehicle: Vehicle
@@ -54,4 +42,3 @@ class StandardDispatchProcessor : BaseDispatchProcessor() {
         )
     }
 }
-
