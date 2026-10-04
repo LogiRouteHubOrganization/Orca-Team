@@ -4,7 +4,8 @@ import domain.model.Package
 import domain.model.request.PackagePriorityLevels
 import kotlin.math.roundToInt
 
-class KnapsackCargoOptimizer {
+class
+KnapsackCargoOptimizer {
 
     private val priorityLevels = PackagePriorityLevels()
 
@@ -67,22 +68,39 @@ class KnapsackCargoOptimizer {
             }
         }
 
+        return backtrackSelectedPackages(
+            packages = packages,
+            packageWeights = packageWeights,
+            priorityDpMatrix = priorityDpMatrix,
+            scaledCapacity = scaledCapacity
+        )
+    }
+
+    private fun backtrackSelectedPackages(
+        packages: List<Package>,
+        packageWeights: List<Int>,
+        priorityDpMatrix: Array<IntArray>,
+        scaledCapacity: Int
+    ): List<Package> {
+
         val selectedPackages = mutableListOf<Package>()
         var currentCapacity = scaledCapacity
 
         for (packageCount in packages.size downTo INITIAL_INDEX) {
 
-            val currentPriority = priorityDpMatrix[packageCount][currentCapacity]
+            val currentPriority =
+                priorityDpMatrix[packageCount][currentCapacity]
+
             val previousPriority =
                 priorityDpMatrix[packageCount - INDEX_OFFSET][currentCapacity]
 
             if (currentPriority != previousPriority) {
-                val selectedPackage = packages[packageCount - INDEX_OFFSET]
 
-                selectedPackages.add(selectedPackage)
+                val packageIndex = packageCount - INDEX_OFFSET
 
-                currentCapacity -=
-                    (selectedPackage.weightByKg * SCALE_FACTOR).roundToInt()
+                selectedPackages.add(packages[packageIndex])
+
+                currentCapacity -= packageWeights[packageIndex]
             }
         }
 
