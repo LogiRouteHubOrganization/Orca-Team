@@ -100,4 +100,76 @@ class KnapsackCargoOptimizerTest {
         // Then
         assertThat(result.sumOf { it.weightByKg }).isAtMost(capacityKg)
     }
+
+    @Test
+    fun `does not select package when its weight exceeds capacity`() {
+        // Given
+        val logisticsPackage = Package(
+            id = "PKG-000003",
+            weightByKg = 15.0,
+            priority = "URGENT",
+            originWarehouse = originWarehouse,
+            destinationWarehouse = destinationWarehouse
+        )
+
+        val packages = listOf(logisticsPackage)
+        val capacityKg = 10.0
+
+        // When
+        val result = optimizer.optimize(
+            packages = packages,
+            capacityKg = capacityKg
+        )
+
+        // Then
+        assertThat(result).isEmpty()
+    }
+
+    @Test
+    fun `selects package when its weight equals capacity`() {
+        // Given
+        val logisticsPackage = Package(
+            id = "PKG-000004",
+            weightByKg = 10.0,
+            priority = "STANDARD",
+            originWarehouse = originWarehouse,
+            destinationWarehouse = destinationWarehouse
+        )
+
+        val packages = listOf(logisticsPackage)
+        val capacityKg = 10.0
+
+        // When
+        val result = optimizer.optimize(
+            packages = packages,
+            capacityKg = capacityKg
+        )
+
+        // Then
+        assertThat(result).containsExactly(logisticsPackage)
+    }
+
+    @Test
+    fun `returns empty list when capacity is zero`() {
+        // Given
+        val logisticsPackage = Package(
+            id = "PKG-000005",
+            weightByKg = 5.0,
+            priority = "LOW",
+            originWarehouse = originWarehouse,
+            destinationWarehouse = destinationWarehouse
+        )
+
+        val packages = listOf(logisticsPackage)
+        val capacityKg = 0.0
+
+        // When
+        val result = optimizer.optimize(
+            packages = packages,
+            capacityKg = capacityKg
+        )
+
+        // Then
+        assertThat(result).isEmpty()
+    }
 }
