@@ -245,6 +245,45 @@ class KnapsackCargoOptimizerTest {
         )
     }
 
+    @Test
+    fun `should return empty list when all packages exceed capacity`() {
+        // Given
+        val firstPackage = createPackage(
+            id = "PKG-000012",
+            weightByKg = 15.0,
+            priority = "URGENT"
+        )
+
+        val secondPackage = createPackage(
+            id = "PKG-000013",
+            weightByKg = 20.0,
+            priority = "STANDARD"
+        )
+
+        val thirdPackage = createPackage(
+            id = "PKG-000014",
+            weightByKg = 12.0,
+            priority = "LOW"
+        )
+
+        val packages = listOf(
+            firstPackage,
+            secondPackage,
+            thirdPackage
+        )
+
+        val capacityKg = 10.0
+
+        // When
+        val result = optimizer.optimize(
+            packages = packages,
+            capacityKg = capacityKg
+        )
+
+        // Then
+        assertThat(result).isEmpty()
+    }
+
     private fun createPackage(
         id: String,
         weightByKg: Double,
