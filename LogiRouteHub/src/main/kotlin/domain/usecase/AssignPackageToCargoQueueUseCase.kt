@@ -1,23 +1,20 @@
 package domain.usecase
 
 import domain.model.Package
-import domain.model.updateinput.WarehouseUpdateModel
-import domain.repository.WarehouseRepository
 
 class AssignPackageToCargoQueueUseCase(
-    private val sortCargoQueue: SortingCargoQueueUseCase,
-    private val warehouseRepository: WarehouseRepository
+    private val sortCargoQueue: SortingCargoQueueUseCase
 ) {
 
-    suspend operator fun invoke(logisticsPackage: Package) {
-        val originWarehouse = logisticsPackage.originWarehouse
+    operator fun invoke(
+        logisticsPackage: Package
+    ): Result<Unit> {
+        return runCatching {
+            val originWarehouse = logisticsPackage.originWarehouse
 
-        originWarehouse.addPackage(logisticsPackage)
+            originWarehouse.addPackage(logisticsPackage)
 
-        sortCargoQueue(originWarehouse)
-
-        val warehouseUpdateModel = WarehouseUpdateModel()
-
-        warehouseRepository.update(originWarehouse.id, warehouseUpdateModel)
+            sortCargoQueue(originWarehouse)
+        }
     }
 }
