@@ -216,5 +216,52 @@ class KnapsackCargoOptimizerTest {
             thirdPackage
         )
     }
+    @Test
+    fun `should return the exact packages selected by optimal solution`() {
+        // Given
+        val firstPackage = Package(
+            id = "PKG-000009",
+            weightByKg = 6.0,
+            priority = "STANDARD",
+            originWarehouse = originWarehouse,
+            destinationWarehouse = destinationWarehouse
+        )
+
+        val secondPackage = Package(
+            id = "PKG-000010",
+            weightByKg = 5.0,
+            priority = "URGENT",
+            originWarehouse = originWarehouse,
+            destinationWarehouse = destinationWarehouse
+        )
+
+        val thirdPackage = Package(
+            id = "PKG-000011",
+            weightByKg = 5.0,
+            priority = "URGENT",
+            originWarehouse = originWarehouse,
+            destinationWarehouse = destinationWarehouse
+        )
+
+        val packages = listOf(
+            firstPackage,
+            secondPackage,
+            thirdPackage
+        )
+
+        val capacityKg = 10.0
+
+        // When
+        val result = optimizer.optimize(
+            packages = packages,
+            capacityKg = capacityKg
+        )
+
+        // Then
+        assertThat(result).containsExactly(
+            secondPackage,
+            thirdPackage
+        )
+    }
 }
 
