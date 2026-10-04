@@ -14,6 +14,7 @@ class KnapsackCargoOptimizer {
         private const val INITIAL_INDEX = 1
         private const val INDEX_OFFSET = 1
         private const val UNUSABLE_PACKAGE_PRIORITY = 0
+        private const val DP_MATRIX_PADDING = 1
     }
 
     fun optimize(
@@ -31,8 +32,11 @@ class KnapsackCargoOptimizer {
             (it.weightByKg * SCALE_FACTOR).roundToInt()
         }
 
-        val priorityDpMatrix = Array(packages.size + 1) {
-            IntArray(scaledCapacity + 1)
+        val rowCount = packages.size + DP_MATRIX_PADDING
+        val columnCount = scaledCapacity + DP_MATRIX_PADDING
+
+        val priorityDpMatrix = Array(rowCount) {
+            IntArray(columnCount)
         }
 
         for (packageCount in INITIAL_INDEX..packages.size) {
@@ -94,3 +98,4 @@ class KnapsackCargoOptimizer {
         }
     }
 }
+
