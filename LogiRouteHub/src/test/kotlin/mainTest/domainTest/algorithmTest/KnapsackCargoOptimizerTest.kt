@@ -172,4 +172,49 @@ class KnapsackCargoOptimizerTest {
         // Then
         assertThat(result).isEmpty()
     }
+
+    @Test
+    fun `selects optimal package combination to maximize total priority within capacity`() {
+        // Given
+        val firstPackage = Package(
+            id = "PKG-000006",
+            weightByKg = 6.0,
+            priority = "STANDARD",
+            originWarehouse = originWarehouse,
+            destinationWarehouse = destinationWarehouse
+        )
+
+        val secondPackage = Package(
+            id = "PKG-000007",
+            weightByKg = 5.0,
+            priority = "URGENT",
+            originWarehouse = originWarehouse,
+            destinationWarehouse = destinationWarehouse
+        )
+
+        val thirdPackage = Package(
+            id = "PKG-000008",
+            weightByKg = 5.0,
+            priority = "URGENT",
+            originWarehouse = originWarehouse,
+            destinationWarehouse = destinationWarehouse
+        )
+
+        val packages = listOf(firstPackage, secondPackage, thirdPackage)
+
+        val capacityKg = 10.0
+
+        // When
+        val result = optimizer.optimize(
+            packages = packages,
+            capacityKg = capacityKg
+        )
+
+        // Then
+        assertThat(result).containsExactly(
+            secondPackage,
+            thirdPackage
+        )
+    }
 }
+
