@@ -8,6 +8,12 @@ class KnapsackCargoOptimizer {
         packages: List<Package>,
         capacityKg: Double
     ): List<Package> {
-        return emptyList()
+
+        if (packages.isEmpty()) {
+            return emptyList()
+        }
+        return packages.filter { logisticsPackage ->
+            logisticsPackage.weightByKg <= capacityKg
+        }
     }
 }
