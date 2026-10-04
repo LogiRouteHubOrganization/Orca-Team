@@ -24,8 +24,211 @@ class GetPackageJourneyUseCaseTest {
     )
 
     @Test
-    fun `returns package journey when package exists`() = runTest {
+    fun `returns package journey when package and path exist`() = runTest {
         // Given
+        val data = createJourneyData()
+
+        stubSuccessfulJourney(data)
+
+        // When
+        val result = useCase(data.logisticsPackage.id)
+
+        // Then
+        assertThat(result.getOrNull()).isNotNull()
+    }
+
+    @Test
+    fun `uses package origin and destination to find optimal path`() = runTest {
+        // Given
+        val data = createJourneyData()
+
+        stubSuccessfulJourney(data)
+
+        // When
+        useCase(data.logisticsPackage.id)
+
+        // Then
+        coVerify(exactly = 1) {
+            findOptimalPathUseCase(
+                startWarehouseId = data.warehouseA.id,
+                destinationWarehouseId = data.warehouseC.id
+            )
+        }
+    }
+
+    @Test
+    fun `returns warehouses from optimal path in journey`() = runTest {
+        // Given
+        val data = createJourneyData()
+
+        stubSuccessfulJourney(data)
+
+        // When
+        val result = useCase(data.logisticsPackage.id)
+
+        // Then
+        assertThat(result.getOrThrow()!!.warehouses)
+            .containsExactly(
+                data.warehouseA,
+                data.warehouseB,
+                data.warehouseC
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun `returns routes connecting warehouses in journey`() = runTest {
+        // Given
+        val data = createJourneyData()
+
+        stubSuccessfulJourney(data)
+
+        // When
+        val result = useCase(data.logisticsPackage.id)
+
+        // Then
+        assertThat(result.getOrThrow()!!.routes)
+            .containsExactly(
+                data.routeAB,
+                data.routeBC
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun `calculates total distance of journey routes`() = runTest {
+        // Given
+        val data = createJourneyData()
+
+        stubSuccessfulJourney(data)
+
+        // When
+        val result = useCase(data.logisticsPackage.id)
+
+        // Then
+        assertThat(result.getOrThrow()!!.totalDistanceKm)
+            .isEqualTo(30.0)
+    }
+
+    @Test
+    fun `calculates total delay of journey routes`() = runTest {
+        // Given
+        val data = createJourneyData()
+
+        stubSuccessfulJourney(data)
+
+        // When
+        val result = useCase(data.logisticsPackage.id)
+
+        // Then
+        assertThat(result.getOrThrow()!!.totalTypicalDelayMin)
+            .isEqualTo(15)
+    }
+
+    @Test
+    fun `returns null when package does not exist`() = runTest {
+        // Given
+        coEvery {
+            packageRepository.findById("PKG-000001")
+        } returns Result.success(null)
+
+        // When
+        val result = useCase("PKG-000001")
+
+        // Then
+        assertThat(result.getOrNull()).isNull()
+    }
+
+    @Test
+    fun `does not find path when package does not exist`() = runTest {
+        // Given
+        coEvery {
+            packageRepository.findById("PKG-000001")
+        } returns Result.success(null)
+
+        // When
+        useCase("PKG-000001")
+
+        // Then
+        coVerify(exactly = 0) {
+            findOptimalPathUseCase(any(), any())
+        }
+    }
+
+    @Test
+    fun `returns failure when package repository fails`() = runTest {
+        // Given
+        val exception = RuntimeException(
+            "Package repository failed"
+        )
+
+        coEvery {
+            packageRepository.findById("PKG-000001")
+        } returns Result.failure(exception)
+
+        // When
+        val result = useCase("PKG-000001")
+
+        // Then
+        assertThat(result.exceptionOrNull())
+            .isSameInstanceAs(exception)
+    }
+
+    @Test
+    fun `returns failure when optimal path calculation fails`() = runTest {
+        // Given
+        val data = createJourneyData()
+
+        val exception = RuntimeException(
+            "Optimal path calculation failed"
+        )
+
+        coEvery {
+            packageRepository.findById(
+                data.logisticsPackage.id
+            )
+        } returns Result.success(data.logisticsPackage)
+
+        coEvery {
+            findOptimalPathUseCase(
+                startWarehouseId = data.warehouseA.id,
+                destinationWarehouseId = data.warehouseC.id
+            )
+        } returns Result.failure(exception)
+
+        // When
+        val result = useCase(data.logisticsPackage.id)
+
+        // Then
+        assertThat(result.exceptionOrNull())
+            .isSameInstanceAs(exception)
+    }
+
+    private fun stubSuccessfulJourney(
+        data: JourneyTestData
+    ) {
+        coEvery {
+            packageRepository.findById(
+                data.logisticsPackage.id
+            )
+        } returns Result.success(data.logisticsPackage)
+
+        coEvery {
+            findOptimalPathUseCase(
+                startWarehouseId = data.warehouseA.id,
+                destinationWarehouseId = data.warehouseC.id
+            )
+        } returns Result.success(
+            listOf(
+                data.warehouseA,
+                data.warehouseB,
+                data.warehouseC
+            )
+        )
+    }
+
+    private fun createJourneyData(): JourneyTestData {
+
         val warehouseA = createWarehouse("WH-000001")
         val warehouseB = createWarehouse("WH-000002")
         val warehouseC = createWarehouse("WH-000003")
@@ -55,109 +258,19 @@ class GetPackageJourneyUseCaseTest {
             destination = warehouseC
         )
 
-        coEvery {
-            packageRepository.findById("PKG-000001")
-        } returns Result.success(logisticsPackage)
-
-        coEvery {
-            findOptimalPathUseCase(
-                startWarehouseId = warehouseA.id,
-                destinationWarehouseId = warehouseC.id
-            )
-        } returns Result.success(
-            listOf(warehouseA, warehouseB, warehouseC)
+        return JourneyTestData(
+            warehouseA = warehouseA,
+            warehouseB = warehouseB,
+            warehouseC = warehouseC,
+            routeAB = routeAB,
+            routeBC = routeBC,
+            logisticsPackage = logisticsPackage
         )
-
-        // When
-        val result = useCase("PKG-000001")
-
-        // Then
-        assertThat(result.isSuccess).isTrue()
-
-        val journey = result.getOrNull()
-
-        assertThat(journey).isNotNull()
-        assertThat(journey!!.packageId).isEqualTo("PKG-000001")
-
-        assertThat(journey.originWarehouse).isEqualTo(warehouseA)
-        assertThat(journey.destinationWarehouse).isEqualTo(warehouseC)
-
-        assertThat(journey.warehouses)
-            .containsExactly(
-                warehouseA, warehouseB, warehouseC)
-            .inOrder()
-
-        assertThat(journey.routes)
-            .containsExactly(
-                routeAB, routeBC)
-            .inOrder()
-
-        assertThat(journey.totalDistanceKm).isEqualTo(30.0)
-        assertThat(journey.totalTypicalDelayMin).isEqualTo(15)
-
-        coVerify(exactly = 1) {
-            packageRepository.findById("PKG-000001")
-        }
-
-        coVerify(exactly = 1) {
-            findOptimalPathUseCase(
-                startWarehouseId = warehouseA.id,
-                destinationWarehouseId = warehouseC.id
-            )
-        }
     }
 
-    @Test
-    fun `returns success with null when package does not exist`() = runTest {
-        // Given
-        coEvery {
-            packageRepository.findById("PKG-000001")
-        } returns Result.success(null)
-
-        // When
-        val result = useCase("PKG-000001")
-
-        // Then
-        assertThat(result.isSuccess).isTrue()
-        assertThat(result.getOrNull()).isNull()
-
-        coVerify(exactly = 1) {
-            packageRepository.findById("PKG-000001")
-        }
-
-        coVerify(exactly = 0) {
-            findOptimalPathUseCase(any(), any())
-        }
-    }
-
-    @Test
-    fun `returns failure when package repository fails`() = runTest {
-        // Given
-        val exception = Exception("Repository error")
-
-        coEvery {
-            packageRepository.findById("PKG-000001")
-        } returns Result.failure(exception)
-
-        // When
-        val result = useCase("PKG-000001")
-
-        // Then
-        assertThat(result.isFailure).isTrue()
-
-        assertThat(result.exceptionOrNull())
-            .isEqualTo(exception)
-
-        coVerify(exactly = 1) {
-            packageRepository.findById("PKG-000001")
-        }
-
-        coVerify(exactly = 0) {
-            findOptimalPathUseCase(any(), any())
-        }
-    }
-
-    private fun createWarehouse(id: String): Warehouse {
+    private fun createWarehouse(
+        id: String
+    ): Warehouse {
         return Warehouse(
             id = id,
             name = "Test Warehouse",
@@ -196,4 +309,13 @@ class GetPackageJourneyUseCaseTest {
             typicalDelayMin = delayMin
         )
     }
+
+    private data class JourneyTestData(
+        val warehouseA: Warehouse,
+        val warehouseB: Warehouse,
+        val warehouseC: Warehouse,
+        val routeAB: Route,
+        val routeBC: Route,
+        val logisticsPackage: Package
+    )
 }
