@@ -65,4 +65,39 @@ class KnapsackCargoOptimizerTest {
         // Then
         assertThat(result).containsExactly(logisticsPackage)
     }
+
+    @Test
+    fun `does not select packages whose total weight exceeds capacity`() {
+        // Given
+        val firstPackage = Package(
+            id = "PKG-000001",
+            weightByKg = 6.0,
+            priority = "URGENT",
+            originWarehouse = originWarehouse,
+            destinationWarehouse = destinationWarehouse
+        )
+
+        val secondPackage = Package(
+            id = "PKG-000002",
+            weightByKg = 5.0,
+            priority = "STANDARD",
+            originWarehouse = originWarehouse,
+            destinationWarehouse = destinationWarehouse
+        )
+
+        val packages = listOf(
+            firstPackage,
+            secondPackage
+        )
+        val capacityKg = 10.0
+
+        // When
+        val result = optimizer.optimize(
+            packages = packages,
+            capacityKg = capacityKg
+        )
+
+        // Then
+        assertThat(result.sumOf { it.weightByKg }).isAtMost(capacityKg)
+    }
 }
