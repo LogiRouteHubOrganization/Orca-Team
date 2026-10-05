@@ -27,7 +27,7 @@ class KnapsackCargoOptimizerTest {
     )
 
     @Test
-    fun `returns empty list when packages are empty`() {
+    fun `should return empty list when packages are empty`() {
         // Given
         val packages = emptyList<Package>()
         val capacityKg = 10.0
@@ -43,14 +43,12 @@ class KnapsackCargoOptimizerTest {
     }
 
     @Test
-    fun `selects one package when its weight is within capacity`() {
+    fun `should select one package when its weight is within capacity`() {
         // Given
-        val logisticsPackage = Package(
+        val logisticsPackage = createPackage(
             id = "PKG-000001",
             weightByKg = 5.0,
-            priority = "URGENT",
-            originWarehouse = originWarehouse,
-            destinationWarehouse = destinationWarehouse
+            priority = "URGENT"
         )
 
         val packages = listOf(logisticsPackage)
@@ -67,22 +65,18 @@ class KnapsackCargoOptimizerTest {
     }
 
     @Test
-    fun `does not select packages whose total weight exceeds capacity`() {
+    fun `should not select packages whose total weight exceeds capacity`() {
         // Given
-        val firstPackage = Package(
+        val firstPackage = createPackage(
             id = "PKG-000001",
             weightByKg = 6.0,
-            priority = "URGENT",
-            originWarehouse = originWarehouse,
-            destinationWarehouse = destinationWarehouse
+            priority = "URGENT"
         )
 
-        val secondPackage = Package(
+        val secondPackage = createPackage(
             id = "PKG-000002",
             weightByKg = 5.0,
-            priority = "STANDARD",
-            originWarehouse = originWarehouse,
-            destinationWarehouse = destinationWarehouse
+            priority = "STANDARD"
         )
 
         val packages = listOf(
@@ -102,14 +96,12 @@ class KnapsackCargoOptimizerTest {
     }
 
     @Test
-    fun `does not select package when its weight exceeds capacity`() {
+    fun `should not select package when its weight exceeds capacity`() {
         // Given
-        val logisticsPackage = Package(
+        val logisticsPackage = createPackage(
             id = "PKG-000003",
             weightByKg = 15.0,
-            priority = "URGENT",
-            originWarehouse = originWarehouse,
-            destinationWarehouse = destinationWarehouse
+            priority = "URGENT"
         )
 
         val packages = listOf(logisticsPackage)
@@ -126,14 +118,12 @@ class KnapsackCargoOptimizerTest {
     }
 
     @Test
-    fun `selects package when its weight equals capacity`() {
+    fun `should select package when its weight equals capacity`() {
         // Given
-        val logisticsPackage = Package(
+        val logisticsPackage = createPackage(
             id = "PKG-000004",
             weightByKg = 10.0,
-            priority = "STANDARD",
-            originWarehouse = originWarehouse,
-            destinationWarehouse = destinationWarehouse
+            priority = "STANDARD"
         )
 
         val packages = listOf(logisticsPackage)
@@ -150,14 +140,12 @@ class KnapsackCargoOptimizerTest {
     }
 
     @Test
-    fun `returns empty list when capacity is zero`() {
+    fun `should return empty list when capacity is zero`() {
         // Given
-        val logisticsPackage = Package(
+        val logisticsPackage = createPackage(
             id = "PKG-000005",
             weightByKg = 5.0,
-            priority = "LOW",
-            originWarehouse = originWarehouse,
-            destinationWarehouse = destinationWarehouse
+            priority = "URGENT"
         )
 
         val packages = listOf(logisticsPackage)
@@ -174,33 +162,31 @@ class KnapsackCargoOptimizerTest {
     }
 
     @Test
-    fun `selects optimal package combination to maximize total priority within capacity`() {
+    fun `should select optimal package combination to maximize total priority within capacity`() {
         // Given
-        val firstPackage = Package(
+        val firstPackage = createPackage(
             id = "PKG-000006",
             weightByKg = 6.0,
-            priority = "STANDARD",
-            originWarehouse = originWarehouse,
-            destinationWarehouse = destinationWarehouse
+            priority = "STANDARD"
         )
 
-        val secondPackage = Package(
+        val secondPackage = createPackage(
             id = "PKG-000007",
             weightByKg = 5.0,
-            priority = "URGENT",
-            originWarehouse = originWarehouse,
-            destinationWarehouse = destinationWarehouse
+            priority = "URGENT"
         )
 
-        val thirdPackage = Package(
+        val thirdPackage = createPackage(
             id = "PKG-000008",
             weightByKg = 5.0,
-            priority = "URGENT",
-            originWarehouse = originWarehouse,
-            destinationWarehouse = destinationWarehouse
+            priority = "URGENT"
         )
 
-        val packages = listOf(firstPackage, secondPackage, thirdPackage)
+        val packages = listOf(
+            firstPackage,
+            secondPackage,
+            thirdPackage
+        )
 
         val capacityKg = 10.0
 
@@ -216,5 +202,99 @@ class KnapsackCargoOptimizerTest {
             thirdPackage
         )
     }
-}
 
+    @Test
+    fun `should return the exact packages selected by optimal solution`() {
+        // Given
+        val firstPackage = createPackage(
+            id = "PKG-000009",
+            weightByKg = 6.0,
+            priority = "STANDARD"
+        )
+
+        val secondPackage = createPackage(
+            id = "PKG-000010",
+            weightByKg = 5.0,
+            priority = "URGENT"
+        )
+
+        val thirdPackage = createPackage(
+            id = "PKG-000011",
+            weightByKg = 5.0,
+            priority = "URGENT"
+        )
+
+        val packages = listOf(
+            firstPackage,
+            secondPackage,
+            thirdPackage
+        )
+
+        val capacityKg = 10.0
+
+        // When
+        val result = optimizer.optimize(
+            packages = packages,
+            capacityKg = capacityKg
+        )
+
+        // Then
+        assertThat(result).containsExactly(
+            secondPackage,
+            thirdPackage
+        )
+    }
+
+    @Test
+    fun `should return empty list when all packages exceed capacity`() {
+        // Given
+        val firstPackage = createPackage(
+            id = "PKG-000012",
+            weightByKg = 15.0,
+            priority = "URGENT"
+        )
+
+        val secondPackage = createPackage(
+            id = "PKG-000013",
+            weightByKg = 20.0,
+            priority = "STANDARD"
+        )
+
+        val thirdPackage = createPackage(
+            id = "PKG-000014",
+            weightByKg = 12.0,
+            priority = "LOW"
+        )
+
+        val packages = listOf(
+            firstPackage,
+            secondPackage,
+            thirdPackage
+        )
+
+        val capacityKg = 10.0
+
+        // When
+        val result = optimizer.optimize(
+            packages = packages,
+            capacityKg = capacityKg
+        )
+
+        // Then
+        assertThat(result).isEmpty()
+    }
+
+    private fun createPackage(
+        id: String,
+        weightByKg: Double,
+        priority: String
+    ): Package {
+        return Package(
+            id = id,
+            weightByKg = weightByKg,
+            priority = priority,
+            originWarehouse = originWarehouse,
+            destinationWarehouse = destinationWarehouse
+        )
+    }
+}
