@@ -45,10 +45,13 @@ fun VehicleDetailCard(
                 color = Border,
                 shape = RoundedCornerShape(12.dp)
             )
-            .padding(16.dp)
+            .padding(16.dp) ,
+        verticalArrangement = Arrangement.SpaceBetween
+
     ){
         Row(
-            modifier = Modifier.fillMaxWidth(),
+              modifier = Modifier
+                  .fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -72,7 +75,10 @@ fun VehicleDetailCard(
 
             ) {
                 BasicText(
-                    text = vehicle.currentWarehouse.name
+                    text = vehicle.currentWarehouse.name,
+                    style = TextStyle(
+                        color = CyberSprout
+                    )
                 )
             }
         }

@@ -21,7 +21,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import edu.logiroute.logiroute.fakeData.SampleData
 import edu.logiroute.logiroute.theme.JetBlack
 import edu.logiroute.logiroute.theme.borderColor
-import edu.logiroute.logiroute.theme.textPrimary
+import edu.logiroute.logiroute.theme.TextPrimary
 import edu.logiroute.logiroute.theme.Scorpion
 
 private fun priorityWeight(priority: String): Int {
@@ -57,12 +57,12 @@ fun WarehouseSummaryCard(
         ){
             Text(
                 text = "Queue Package = (${warehouse.cargoQueue.size})",
-                color = textPrimary
+                color = TextPrimary
 
             )
             Text(
                 text="stationed Vehicles = (${warehouse.stationedVehicles.size})",
-                color = textPrimary
+                color = TextPrimary
             )
         }
 
