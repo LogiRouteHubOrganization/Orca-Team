@@ -14,8 +14,7 @@ import org.junit.jupiter.api.Test
 class CheckWarehouseConnectivityUseCaseTest {
 
     private val warehouseRepository = mockk<WarehouseRepository>()
-    private val findFewestHopsRouteUseCase =
-        mockk<FindFewestHopsRouteUseCase>()
+    private val findFewestHopsRouteUseCase = mockk<FindFewestHopsRouteUseCase>()
 
     private val useCase = CheckWarehouseConnectivityUseCase(
         warehouseRepository = warehouseRepository,
@@ -38,198 +37,175 @@ class CheckWarehouseConnectivityUseCaseTest {
         longitude = 34.5
     )
 
+
     @Test
-    fun `should return true when warehouses are connected`() = runTest {
-        // Given
-        val warehousePath = listOf(
-            startWarehouse,
-            destinationWarehouse
-        )
+    fun `should return success result when warehouses are connected`() = runTest {
+        stubConnectedWarehouses()
 
-        coEvery {
-            warehouseRepository.findById("WH-000001")
-        } returns Result.success(startWarehouse)
+        val result = useCase("WH-000001", "WH-000002")
 
-        coEvery {
-            warehouseRepository.findById("WH-000002")
-        } returns Result.success(destinationWarehouse)
-
-        coEvery {
-            findFewestHopsRouteUseCase(
-                startWarehouseId = "WH-000001",
-                destinationWarehouseId = "WH-000002"
-            )
-        } returns Result.success(warehousePath)
-
-        // When
-        val result = useCase(
-            startWarehouseId = "WH-000001",
-            destinationWarehouseId = "WH-000002"
-        )
-
-        // Then
         assertThat(result.isSuccess).isTrue()
+    }
+
+    @Test
+    fun `should return true value when warehouses are connected`() = runTest {
+        stubConnectedWarehouses()
+
+        val result = useCase("WH-000001", "WH-000002")
+
         assertThat(result.getOrNull()).isTrue()
+    }
+
+    @Test
+    fun `should invoke fewest hops route use case when warehouses exist`() = runTest {
+        stubConnectedWarehouses()
+
+        useCase("WH-000001", "WH-000002")
 
         coVerify(exactly = 1) {
-            findFewestHopsRouteUseCase(
-                startWarehouseId = "WH-000001",
-                destinationWarehouseId = "WH-000002"
-            )
+            findFewestHopsRouteUseCase("WH-000001", "WH-000002")
         }
     }
 
     @Test
-    fun `should return false when warehouses are not connected`() = runTest {
-        // Given
-        coEvery {
-            warehouseRepository.findById("WH-000001")
-        } returns Result.success(startWarehouse)
+    fun `should return success result when warehouses are not connected`() = runTest {
+        stubDisconnectedWarehouses()
 
-        coEvery {
-            warehouseRepository.findById("WH-000002")
-        } returns Result.success(destinationWarehouse)
+        val result = useCase("WH-000001", "WH-000002")
 
-        coEvery {
-            findFewestHopsRouteUseCase(
-                startWarehouseId = "WH-000001",
-                destinationWarehouseId = "WH-000002"
-            )
-        } returns Result.success(emptyList())
-
-        // When
-        val result = useCase(
-            startWarehouseId = "WH-000001",
-            destinationWarehouseId = "WH-000002"
-        )
-
-        // Then
         assertThat(result.isSuccess).isTrue()
-        assertThat(result.getOrNull()).isFalse()
-
-        coVerify(exactly = 1) {
-            findFewestHopsRouteUseCase(
-                startWarehouseId = "WH-000001",
-                destinationWarehouseId = "WH-000002"
-            )
-        }
     }
 
     @Test
-    fun `should return false when start warehouse does not exist`() = runTest {
-        // Given
-        coEvery {
-            warehouseRepository.findById("WH-000001")
-        } returns Result.success(null)
+    fun `should return false value when warehouses are not connected`() = runTest {
+        stubDisconnectedWarehouses()
 
-        // When
-        val result = useCase(
-            startWarehouseId = "WH-000001",
-            destinationWarehouseId = "WH-000002"
-        )
+        val result = useCase("WH-000001", "WH-000002")
 
-        // Then
-        assertThat(result.isSuccess).isTrue()
         assertThat(result.getOrNull()).isFalse()
+    }
 
-        coVerify(exactly = 0) {
-            warehouseRepository.findById("WH-000002")
-        }
 
-        coVerify(exactly = 0) {
-            findFewestHopsRouteUseCase(any(), any())
-        }
+    @Test
+    fun `should return false value when start warehouse does not exist`() = runTest {
+        coEvery { warehouseRepository.findById("WH-000001") } returns Result.success(null)
+
+        val result = useCase("WH-000001", "WH-000002")
+
+        assertThat(result.getOrNull()).isFalse()
     }
 
     @Test
-    fun `should return false when destination warehouse does not exist`() = runTest {
-        // Given
-        coEvery {
-            warehouseRepository.findById("WH-000001")
-        } returns Result.success(startWarehouse)
+    fun `should skip destination lookup when start warehouse does not exist`() = runTest {
+        coEvery { warehouseRepository.findById("WH-000001") } returns Result.success(null)
 
-        coEvery {
-            warehouseRepository.findById("WH-000002")
-        } returns Result.success(null)
+        useCase("WH-000001", "WH-000002")
 
-        // When
-        val result = useCase(
-            startWarehouseId = "WH-000001",
-            destinationWarehouseId = "WH-000002"
-        )
-
-        // Then
-        assertThat(result.isSuccess).isTrue()
-        assertThat(result.getOrNull()).isFalse()
-
-        coVerify(exactly = 0) {
-            findFewestHopsRouteUseCase(any(), any())
-        }
+        coVerify(exactly = 0) { warehouseRepository.findById("WH-000002") }
     }
 
     @Test
-    fun `should return failure when warehouse repository fails`() = runTest {
-        // Given
+    fun `should skip route calculation when start warehouse does not exist`() = runTest {
+        coEvery { warehouseRepository.findById("WH-000001") } returns Result.success(null)
+
+        useCase("WH-000001", "WH-000002")
+
+        coVerify(exactly = 0) { findFewestHopsRouteUseCase(any(), any()) }
+    }
+
+
+    @Test
+    fun `should return false value when destination warehouse does not exist`() = runTest {
+        stubMissingDestinationWarehouse()
+
+        val result = useCase("WH-000001", "WH-000002")
+
+        assertThat(result.getOrNull()).isFalse()
+    }
+
+    @Test
+    fun `should skip route calculation when destination warehouse does not exist`() = runTest {
+        stubMissingDestinationWarehouse()
+
+        useCase("WH-000001", "WH-000002")
+
+        coVerify(exactly = 0) { findFewestHopsRouteUseCase(any(), any()) }
+    }
+
+
+    @Test
+    fun `should return failure result when warehouse repository fails`() = runTest {
         val exception = RuntimeException("Repository error")
+        coEvery { warehouseRepository.findById("WH-000001") } returns Result.failure(exception)
 
-        coEvery {
-            warehouseRepository.findById("WH-000001")
-        } returns Result.failure(exception)
+        val result = useCase("WH-000001", "WH-000002")
 
-        // When
-        val result = useCase(
-            startWarehouseId = "WH-000001",
-            destinationWarehouseId = "WH-000002"
-        )
-
-        // Then
         assertThat(result.isFailure).isTrue()
-        assertThat(result.exceptionOrNull()).isEqualTo(exception)
-
-        coVerify(exactly = 0) {
-            warehouseRepository.findById("WH-000002")
-        }
-
-        coVerify(exactly = 0) {
-            findFewestHopsRouteUseCase(any(), any())
-        }
     }
 
     @Test
-    fun `should return failure when fewest hops route use case fails`() = runTest {
-        // Given
-        val exception = RuntimeException("Routing error")
+    fun `should propagate exact exception when warehouse repository fails`() = runTest {
+        val exception = RuntimeException("Repository error")
+        coEvery { warehouseRepository.findById("WH-000001") } returns Result.failure(exception)
 
-        coEvery {
-            warehouseRepository.findById("WH-000001")
-        } returns Result.success(startWarehouse)
+        val result = useCase("WH-000001", "WH-000002")
 
-        coEvery {
-            warehouseRepository.findById("WH-000002")
-        } returns Result.success(destinationWarehouse)
-
-        coEvery {
-            findFewestHopsRouteUseCase(
-                startWarehouseId = "WH-000001",
-                destinationWarehouseId = "WH-000002"
-            )
-        } returns Result.failure(exception)
-
-        // When
-        val result = useCase(
-            startWarehouseId = "WH-000001",
-            destinationWarehouseId = "WH-000002"
-        )
-
-        // Then
-        assertThat(result.isFailure).isTrue()
         assertThat(result.exceptionOrNull()).isEqualTo(exception)
+    }
 
-        coVerify(exactly = 1) {
-            findFewestHopsRouteUseCase(
-                startWarehouseId = "WH-000001",
-                destinationWarehouseId = "WH-000002"
-            )
-        }
+    @Test
+    fun `should skip route calculation when warehouse repository fails`() = runTest {
+        val exception = RuntimeException("Repository error")
+        coEvery { warehouseRepository.findById("WH-000001") } returns Result.failure(exception)
+
+        useCase("WH-000001", "WH-000002")
+
+        coVerify(exactly = 0) { findFewestHopsRouteUseCase(any(), any()) }
+    }
+
+
+    @Test
+    fun `should return failure result when route calculation fails`() = runTest {
+        val exception = RuntimeException("Routing error")
+        stubRouteCalculationFailure(exception)
+
+        val result = useCase("WH-000001", "WH-000002")
+
+        assertThat(result.isFailure).isTrue()
+    }
+
+    @Test
+    fun `should propagate exact exception when route calculation fails`() = runTest {
+        val exception = RuntimeException("Routing error")
+        stubRouteCalculationFailure(exception)
+
+        val result = useCase("WH-000001", "WH-000002")
+
+        assertThat(result.exceptionOrNull()).isEqualTo(exception)
+    }
+
+
+    private fun stubConnectedWarehouses() {
+        val warehousePath = listOf(startWarehouse, destinationWarehouse)
+        coEvery { warehouseRepository.findById("WH-000001") } returns Result.success(startWarehouse)
+        coEvery { warehouseRepository.findById("WH-000002") } returns Result.success(destinationWarehouse)
+        coEvery { findFewestHopsRouteUseCase("WH-000001", "WH-000002") } returns Result.success(warehousePath)
+    }
+
+    private fun stubDisconnectedWarehouses() {
+        coEvery { warehouseRepository.findById("WH-000001") } returns Result.success(startWarehouse)
+        coEvery { warehouseRepository.findById("WH-000002") } returns Result.success(destinationWarehouse)
+        coEvery { findFewestHopsRouteUseCase("WH-000001", "WH-000002") } returns Result.success(emptyList())
+    }
+
+    private fun stubMissingDestinationWarehouse() {
+        coEvery { warehouseRepository.findById("WH-000001") } returns Result.success(startWarehouse)
+        coEvery { warehouseRepository.findById("WH-000002") } returns Result.success(null)
+    }
+
+    private fun stubRouteCalculationFailure(exception: Exception) {
+        coEvery { warehouseRepository.findById("WH-000001") } returns Result.success(startWarehouse)
+        coEvery { warehouseRepository.findById("WH-000002") } returns Result.success(destinationWarehouse)
+        coEvery { findFewestHopsRouteUseCase("WH-000001", "WH-000002") } returns Result.failure(exception)
     }
 }

@@ -1,4 +1,3 @@
-
 package mainTest.domainTest.usecaseTest
 
 import com.google.common.truth.Truth.assertThat
@@ -21,123 +20,101 @@ class FindOptimalPathUseCaseTest {
     )
 
     private val startWarehouse = Warehouse(
-        id = "WH-000001",
-        name = "Start Warehouse",
-        regionalZone = "North",
-        latitude = 31.9,
-        longitude = 35.2
+        id = "WH-000001", name = "Start Warehouse", regionalZone = "North", latitude = 31.9, longitude = 35.2
     )
 
     private val destinationWarehouse = Warehouse(
-        id = "WH-000002",
-        name = "Destination Warehouse",
-        regionalZone = "South",
-        latitude = 31.5,
-        longitude = 34.5
+        id = "WH-000002", name = "Destination Warehouse", regionalZone = "South", latitude = 31.5, longitude = 34.5
     )
 
+
     @Test
-    fun `should return shortest path when both warehouses exist`() = runTest {
-        // Given
-        val route = Route(
-            id = "RT-000001",
-            originWarehouse = startWarehouse,
-            destinationWarehouse = destinationWarehouse,
-            distanceKm = 10.0,
-            typicalDelayMin = 5
-        )
+    fun `should return success result when both warehouses exist`() = runTest {
+        stubSuccessfulPathResolution()
 
-        startWarehouse.addRoute(route)
+        val result = useCase("WH-000001", "WH-000002")
 
-        coEvery {
-            warehouseRepository.findById("WH-000001")
-        } returns Result.success(startWarehouse)
-
-        coEvery {
-            warehouseRepository.findById("WH-000002")
-        } returns Result.success(destinationWarehouse)
-
-        coEvery {
-            warehouseRepository.findAll()
-        } returns Result.success(
-            listOf(startWarehouse, destinationWarehouse)
-        )
-
-        // When
-        val result = useCase(
-            startWarehouseId = "WH-000001",
-            destinationWarehouseId = "WH-000002"
-        )
-
-        // Then
         assertThat(result.isSuccess).isTrue()
+    }
+
+    @Test
+    fun `should return correct shortest path list when both warehouses exist`() = runTest {
+        stubSuccessfulPathResolution()
+
+        val result = useCase("WH-000001", "WH-000002")
+
         assertThat(result.getOrNull()).isEqualTo(
             listOf(startWarehouse, destinationWarehouse)
         )
     }
 
+
     @Test
     fun `should return empty list when start warehouse does not exist`() = runTest {
-        // Given
-        coEvery {
-            warehouseRepository.findById("WH-000001")
-        } returns Result.success(null)
+        coEvery { warehouseRepository.findById("WH-000001") } returns Result.success(null)
 
-        // When
-        val result = useCase(
-            startWarehouseId = "WH-000001",
-            destinationWarehouseId = "WH-000002"
-        )
+        val result = useCase("WH-000001", "WH-000002")
 
-        // Then
-        assertThat(result.isSuccess).isTrue()
         assertThat(result.getOrNull()).isEmpty()
+    }
+
+    @Test
+    fun `should skip finding destination warehouse when start warehouse does not exist`() = runTest {
+        coEvery { warehouseRepository.findById("WH-000001") } returns Result.success(null)
+
+        useCase("WH-000001", "WH-000002")
 
         coVerify(exactly = 0) {
             warehouseRepository.findById("WH-000002")
         }
+    }
+
+
+    @Test
+    fun `should return success result when destination warehouse does not exist`() = runTest {
+        stubMissingDestinationWarehouse()
+
+        val result = useCase("WH-000001", "WH-000002")
+
+        assertThat(result.isSuccess).isTrue()
     }
 
     @Test
     fun `should return empty list when destination warehouse does not exist`() = runTest {
-        // Given
-        coEvery {
-            warehouseRepository.findById("WH-000001")
-        } returns Result.success(startWarehouse)
+        stubMissingDestinationWarehouse()
 
-        coEvery {
-            warehouseRepository.findById("WH-000002")
-        } returns Result.success(null)
+        val result = useCase("WH-000001", "WH-000002")
 
-        // When
-        val result = useCase(
-            startWarehouseId = "WH-000001",
-            destinationWarehouseId = "WH-000002"
-        )
-
-        // Then
-        assertThat(result.isSuccess).isTrue()
         assertThat(result.getOrNull()).isEmpty()
     }
 
+
     @Test
-    fun `should return failure when warehouse repository fails`() = runTest {
-        // Given
+    fun `should return failure result when findById for start warehouse fails`() = runTest {
         val exception = RuntimeException("Repository error")
+        coEvery { warehouseRepository.findById("WH-000001") } returns Result.failure(exception)
 
-        coEvery {
-            warehouseRepository.findById("WH-000001")
-        } returns Result.failure(exception)
+        val result = useCase("WH-000001", "WH-000002")
 
-        // When
-        val result = useCase(
-            startWarehouseId = "WH-000001",
-            destinationWarehouseId = "WH-000002"
-        )
-
-        // Then
         assertThat(result.isFailure).isTrue()
+    }
+
+    @Test
+    fun `should propagate exact exception when findById for start warehouse fails`() = runTest {
+        val exception = RuntimeException("Repository error")
+        coEvery { warehouseRepository.findById("WH-000001") } returns Result.failure(exception)
+
+        val result = useCase("WH-000001", "WH-000002")
+
         assertThat(result.exceptionOrNull()).isEqualTo(exception)
+    }
+
+    @Test
+    fun `should skip finding destination warehouse when start warehouse fetch fails`() = runTest {
+        val exception = RuntimeException("Repository error")
+        coEvery { warehouseRepository.findById("WH-000001") } returns Result.failure(exception)
+
+        useCase("WH-000001", "WH-000002")
 
         coVerify(exactly = 0) {
             warehouseRepository.findById("WH-000002")
@@ -145,8 +122,28 @@ class FindOptimalPathUseCaseTest {
     }
 
     @Test
+    fun `should return failure result when findAll warehouses fails`() = runTest {
+        val exception = RuntimeException("Failed to load warehouses")
+        stubFindAllFailure(exception)
+
+        val result = useCase("WH-000001", "WH-000002")
+
+        assertThat(result.isFailure).isTrue()
+    }
+
+    @Test
+    fun `should propagate exact exception when findAll warehouses fails`() = runTest {
+        val exception = RuntimeException("Failed to load warehouses")
+        stubFindAllFailure(exception)
+
+        val result = useCase("WH-000001", "WH-000002")
+
+        assertThat(result.exceptionOrNull()).isEqualTo(exception)
+    }
+
+
+    @Test
     fun `should choose shorter path when multiple paths exist`() = runTest {
-        // Given
         val intermediateWarehouse = Warehouse(
             id = "WH-000003",
             name = "Intermediate Warehouse",
@@ -183,202 +180,97 @@ class FindOptimalPathUseCaseTest {
         startWarehouse.addRoute(firstRoute)
         intermediateWarehouse.addRoute(secondRoute)
 
-        coEvery {
-            warehouseRepository.findById("WH-000001")
-        } returns Result.success(startWarehouse)
-
-        coEvery {
-            warehouseRepository.findById("WH-000002")
-        } returns Result.success(destinationWarehouse)
-
-        coEvery {
-            warehouseRepository.findAll()
-        } returns Result.success(
-            listOf(
-                startWarehouse,
-                intermediateWarehouse,
-                destinationWarehouse
-            )
+        coEvery { warehouseRepository.findById("WH-000001") } returns Result.success(startWarehouse)
+        coEvery { warehouseRepository.findById("WH-000002") } returns Result.success(destinationWarehouse)
+        coEvery { warehouseRepository.findAll() } returns Result.success(
+            listOf(startWarehouse, intermediateWarehouse, destinationWarehouse)
         )
 
-        // When
-        val result = useCase(
-            startWarehouseId = "WH-000001",
-            destinationWarehouseId = "WH-000002"
-        )
+        val result = useCase("WH-000001", "WH-000002")
 
-        // Then
         assertThat(result.getOrNull()).isEqualTo(
-            listOf(
-                startWarehouse,
-                intermediateWarehouse,
-                destinationWarehouse
-            )
+            listOf(startWarehouse, intermediateWarehouse, destinationWarehouse)
         )
     }
 
     @Test
     fun `should return path containing all warehouses in correct order`() = runTest {
-        // Given
         val secondWarehouse = Warehouse(
-            id = "WH-000003",
-            name = "Second Warehouse",
-            regionalZone = "Central",
-            latitude = 31.7,
-            longitude = 35.0
+            id = "WH-000003", name = "Second Warehouse", regionalZone = "Central", latitude = 31.7, longitude = 35.0
         )
 
         val thirdWarehouse = Warehouse(
-            id = "WH-000004",
-            name = "Third Warehouse",
-            regionalZone = "West",
-            latitude = 31.6,
-            longitude = 34.8
+            id = "WH-000004", name = "Third Warehouse", regionalZone = "West", latitude = 31.6, longitude = 34.8
         )
 
-        val firstRoute = Route(
-            id = "RT-000001",
-            originWarehouse = startWarehouse,
-            destinationWarehouse = secondWarehouse,
-            distanceKm = 5.0,
-            typicalDelayMin = 3
-        )
-
-        val secondRoute = Route(
-            id = "RT-000002",
-            originWarehouse = secondWarehouse,
-            destinationWarehouse = thirdWarehouse,
-            distanceKm = 7.0,
-            typicalDelayMin = 4
-        )
-
-        val thirdRoute = Route(
-            id = "RT-000003",
-            originWarehouse = thirdWarehouse,
-            destinationWarehouse = destinationWarehouse,
-            distanceKm = 8.0,
-            typicalDelayMin = 5
-        )
+        val firstRoute = Route("RT-000001", startWarehouse, secondWarehouse, 5.0, 3)
+        val secondRoute = Route("RT-000002", secondWarehouse, thirdWarehouse, 7.0, 4)
+        val thirdRoute = Route("RT-000003", thirdWarehouse, destinationWarehouse, 8.0, 5)
 
         startWarehouse.addRoute(firstRoute)
         secondWarehouse.addRoute(secondRoute)
         thirdWarehouse.addRoute(thirdRoute)
 
-        coEvery {
-            warehouseRepository.findById("WH-000001")
-        } returns Result.success(startWarehouse)
-
-        coEvery {
-            warehouseRepository.findById("WH-000002")
-        } returns Result.success(destinationWarehouse)
-
-        coEvery {
-            warehouseRepository.findAll()
-        } returns Result.success(
-            listOf(
-                startWarehouse,
-                secondWarehouse,
-                thirdWarehouse,
-                destinationWarehouse
-            )
+        coEvery { warehouseRepository.findById("WH-000001") } returns Result.success(startWarehouse)
+        coEvery { warehouseRepository.findById("WH-000002") } returns Result.success(destinationWarehouse)
+        coEvery { warehouseRepository.findAll() } returns Result.success(
+            listOf(startWarehouse, secondWarehouse, thirdWarehouse, destinationWarehouse)
         )
 
-        // When
-        val result = useCase(
-            startWarehouseId = "WH-000001",
-            destinationWarehouseId = "WH-000002"
-        )
+        val result = useCase("WH-000001", "WH-000002")
 
-        // Then
         assertThat(result.getOrNull()).containsExactly(
-            startWarehouse,
-            secondWarehouse,
-            thirdWarehouse,
-            destinationWarehouse
+            startWarehouse, secondWarehouse, thirdWarehouse, destinationWarehouse
         ).inOrder()
     }
 
     @Test
     fun `should return empty list when destination is unreachable`() = runTest {
-        // Given
-        coEvery {
-            warehouseRepository.findById("WH-000001")
-        } returns Result.success(startWarehouse)
-
-        coEvery {
-            warehouseRepository.findById("WH-000002")
-        } returns Result.success(destinationWarehouse)
-
-        coEvery {
-            warehouseRepository.findAll()
-        } returns Result.success(
+        coEvery { warehouseRepository.findById("WH-000001") } returns Result.success(startWarehouse)
+        coEvery { warehouseRepository.findById("WH-000002") } returns Result.success(destinationWarehouse)
+        coEvery { warehouseRepository.findAll() } returns Result.success(
             listOf(startWarehouse, destinationWarehouse)
         )
 
-        // When
-        val result = useCase(
-            startWarehouseId = "WH-000001",
-            destinationWarehouseId = "WH-000002"
-        )
+        val result = useCase("WH-000001", "WH-000002")
 
-        // Then
-        assertThat(result.isSuccess).isTrue()
         assertThat(result.getOrNull()).isEmpty()
     }
 
     @Test
-    fun `should return start warehouse when start and destination are the same`() = runTest {
-        // Given
-        coEvery {
-            warehouseRepository.findById("WH-000001")
-        } returns Result.success(startWarehouse)
+    fun `should return start warehouse when start and destination are identical`() = runTest {
+        coEvery { warehouseRepository.findById("WH-000001") } returns Result.success(startWarehouse)
+        coEvery { warehouseRepository.findAll() } returns Result.success(listOf(startWarehouse))
 
-        coEvery {
-            warehouseRepository.findById("WH-000001")
-        } returns Result.success(startWarehouse)
+        val result = useCase("WH-000001", "WH-000001")
 
-        coEvery {
-            warehouseRepository.findAll()
-        } returns Result.success(listOf(startWarehouse))
-
-        // When
-        val result = useCase(
-            startWarehouseId = "WH-000001",
-            destinationWarehouseId = "WH-000001"
-        )
-
-        // Then
-        assertThat(result.isSuccess).isTrue()
-        assertThat(result.getOrNull()).isEqualTo(
-            listOf(startWarehouse)
-        )
+        assertThat(result.getOrNull()).isEqualTo(listOf(startWarehouse))
     }
 
-    @Test
-    fun `should return failure when findAll warehouses fails`() = runTest {
-        // Given
-        val exception = RuntimeException("Failed to load warehouses")
 
-        coEvery {
-            warehouseRepository.findById("WH-000001")
-        } returns Result.success(startWarehouse)
-
-        coEvery {
-            warehouseRepository.findById("WH-000002")
-        } returns Result.success(destinationWarehouse)
-
-        coEvery {
-            warehouseRepository.findAll()
-        } returns Result.failure(exception)
-
-        // When
-        val result = useCase(
-            startWarehouseId = "WH-000001",
-            destinationWarehouseId = "WH-000002"
+    private fun stubSuccessfulPathResolution() {
+        val route = Route(
+            id = "RT-000001",
+            originWarehouse = startWarehouse,
+            destinationWarehouse = destinationWarehouse,
+            distanceKm = 10.0,
+            typicalDelayMin = 5
         )
+        startWarehouse.addRoute(route)
 
-        // Then
-        assertThat(result.isFailure).isTrue()
-        assertThat(result.exceptionOrNull()).isEqualTo(exception)
+        coEvery { warehouseRepository.findById("WH-000001") } returns Result.success(startWarehouse)
+        coEvery { warehouseRepository.findById("WH-000002") } returns Result.success(destinationWarehouse)
+        coEvery { warehouseRepository.findAll() } returns Result.success(listOf(startWarehouse, destinationWarehouse))
+    }
+
+    private fun stubMissingDestinationWarehouse() {
+        coEvery { warehouseRepository.findById("WH-000001") } returns Result.success(startWarehouse)
+        coEvery { warehouseRepository.findById("WH-000002") } returns Result.success(null)
+    }
+
+    private fun stubFindAllFailure(exception: Exception) {
+        coEvery { warehouseRepository.findById("WH-000001") } returns Result.success(startWarehouse)
+        coEvery { warehouseRepository.findById("WH-000002") } returns Result.success(destinationWarehouse)
+        coEvery { warehouseRepository.findAll() } returns Result.failure(exception)
     }
 }

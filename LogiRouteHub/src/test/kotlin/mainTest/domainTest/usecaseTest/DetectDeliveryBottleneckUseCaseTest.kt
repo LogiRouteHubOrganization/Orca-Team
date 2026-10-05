@@ -1,6 +1,6 @@
 package mainTest.domainTest.usecaseTest
 
-import com.google.common.truth.Truth
+import com.google.common.truth.Truth.assertThat
 import domain.model.Package
 import domain.model.Vehicle
 import domain.model.Warehouse
@@ -11,15 +11,141 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 class DetectDeliveryBottleneckUseCaseTest {
 
-    @Test
-    fun `returns potential bottlenecks when cargo weight exceeds vehicle capacity`() = runTest {
-        // Given
-        val warehouseRepository = mockk<WarehouseRepository>()
+    private val warehouseRepository = mockk<WarehouseRepository>()
+    private lateinit var useCase: DetectPotentialDeliveryBottleneckUseCase
 
+    @BeforeEach
+    fun setUp() {
+        useCase = DetectPotentialDeliveryBottleneckUseCase(warehouseRepository)
+    }
+
+    @Test
+    fun `should return success result when bottleneck detection executes`() = runTest {
+        stubRepositoryWithOverloadedWarehouse()
+
+        val result = useCase()
+
+        assertThat(result.isSuccess).isTrue()
+    }
+
+    @Test
+    fun `should detect correct number of bottleneck warehouses`() = runTest {
+        stubRepositoryWithOverloadedWarehouse()
+
+        val result = useCase()
+
+        assertThat(result.getOrNull()).hasSize(1)
+    }
+
+    @Test
+    fun `should identify correct warehouse ID with bottleneck`() = runTest {
+        stubRepositoryWithOverloadedWarehouse()
+
+        val bottleneck = useCase().getOrNull()?.firstOrNull()
+
+        assertThat(bottleneck?.warehouse?.id).isEqualTo("WH-001")
+    }
+
+    @Test
+    fun `should calculate correct total cargo weight for bottleneck warehouse`() = runTest {
+        stubRepositoryWithOverloadedWarehouse()
+
+        val bottleneck = useCase().getOrNull()?.firstOrNull()
+
+        assertThat(bottleneck?.totalCargoWeightKg).isEqualTo(1000.0)
+    }
+
+    @Test
+    fun `should calculate correct total vehicle capacity for bottleneck warehouse`() = runTest {
+        stubRepositoryWithOverloadedWarehouse()
+
+        val bottleneck = useCase().getOrNull()?.firstOrNull()
+
+        assertThat(bottleneck?.totalVehicleCapacityKg).isEqualTo(600.0)
+    }
+
+    @Test
+    fun `should calculate correct capacity gap for bottleneck warehouse`() = runTest {
+        stubRepositoryWithOverloadedWarehouse()
+
+        val bottleneck = useCase().getOrNull()?.firstOrNull()
+
+        assertThat(bottleneck?.capacityGapKg).isEqualTo(400.0)
+    }
+
+    @Test
+    fun `should query all warehouses from repository when detecting overloaded warehouse`() = runTest {
+        stubRepositoryWithOverloadedWarehouse()
+
+        useCase()
+
+        coVerify(exactly = 1) { warehouseRepository.findAll() }
+    }
+
+    @Test
+    fun `should return success result when all warehouses have sufficient vehicle capacity`() = runTest {
+        stubRepositoryWithNormalWarehouse()
+
+        val result = useCase()
+
+        assertThat(result.isSuccess).isTrue()
+    }
+
+    @Test
+    fun `should return empty list when all warehouses have sufficient vehicle capacity`() = runTest {
+        stubRepositoryWithNormalWarehouse()
+
+        val result = useCase()
+
+        assertThat(result.getOrNull()).isEmpty()
+    }
+
+    @Test
+    fun `should query all warehouses from repository when capacity is sufficient`() = runTest {
+        stubRepositoryWithNormalWarehouse()
+
+        useCase()
+
+        coVerify(exactly = 1) { warehouseRepository.findAll() }
+    }
+
+    @Test
+    fun `should return failure result when warehouse repository fails`() = runTest {
+        val exception = RuntimeException("Database error")
+        coEvery { warehouseRepository.findAll() } returns Result.failure(exception)
+
+        val result = useCase()
+
+        assertThat(result.isFailure).isTrue()
+    }
+
+    @Test
+    fun `should propagate exact exception when warehouse repository fails`() = runTest {
+        val exception = RuntimeException("Database error")
+        coEvery { warehouseRepository.findAll() } returns Result.failure(exception)
+
+        val result = useCase()
+
+        assertThat(result.exceptionOrNull()).isEqualTo(exception)
+    }
+
+    @Test
+    fun `should query all warehouses from repository even when repository fails`() = runTest {
+        val exception = RuntimeException("Database error")
+        coEvery { warehouseRepository.findAll() } returns Result.failure(exception)
+
+        useCase()
+
+        coVerify(exactly = 1) { warehouseRepository.findAll() }
+    }
+
+
+    private fun stubRepositoryWithOverloadedWarehouse() {
         val overloadedWarehouse = createWarehouse(
             id = "WH-001",
             cargoList = listOf(createPackage(weight = 400.0), createPackage(weight = 600.0)),
@@ -32,78 +158,17 @@ class DetectDeliveryBottleneckUseCaseTest {
             vehicleList = listOf(createVehicle(capacity = 500.0))
         )
 
-        coEvery {
-            warehouseRepository.findAll()
-        } returns Result.success(listOf(overloadedWarehouse, normalWarehouse))
-
-        val useCase = DetectPotentialDeliveryBottleneckUseCase(warehouseRepository)
-
-
-        val result = useCase()
-
-
-        Truth.assertThat(result.isSuccess).isTrue()
-
-        val bottlenecks = result.getOrNull()
-        Truth.assertThat(bottlenecks).isNotNull()
-        Truth.assertThat(bottlenecks).hasSize(1)
-
-        val bottleneck = bottlenecks!![0]
-        Truth.assertThat(bottleneck.warehouse.id).isEqualTo("WH-001")
-        Truth.assertThat(bottleneck.totalCargoWeightKg).isEqualTo(1000.0)
-        Truth.assertThat(bottleneck.totalVehicleCapacityKg).isEqualTo(600.0)
-        Truth.assertThat(bottleneck.capacityGapKg).isEqualTo(400.0)
-
-        coVerify(exactly = 1) { warehouseRepository.findAll() }
+        coEvery { warehouseRepository.findAll() } returns Result.success(listOf(overloadedWarehouse, normalWarehouse))
     }
 
-    @Test
-    fun `returns empty list when all warehouses have sufficient vehicle capacity`() = runTest {
-
-        val warehouseRepository = mockk<WarehouseRepository>()
-
+    private fun stubRepositoryWithNormalWarehouse() {
         val normalWarehouse = createWarehouse(
             id = "WH-001",
             cargoList = listOf(createPackage(weight = 300.0)),
             vehicleList = listOf(createVehicle(capacity = 500.0))
         )
 
-        coEvery {
-            warehouseRepository.findAll()
-        } returns Result.success(listOf(normalWarehouse))
-
-        val useCase = DetectPotentialDeliveryBottleneckUseCase(warehouseRepository)
-
-
-        val result = useCase()
-
-
-        Truth.assertThat(result.isSuccess).isTrue()
-        Truth.assertThat(result.getOrNull()).isEmpty()
-
-        coVerify(exactly = 1) { warehouseRepository.findAll() }
-    }
-
-    @Test
-    fun `returns failure when warehouse repository fails`() = runTest {
-
-        val warehouseRepository = mockk<WarehouseRepository>()
-        val exception = RuntimeException("Database error")
-
-        coEvery {
-            warehouseRepository.findAll()
-        } returns Result.failure(exception)
-
-        val useCase = DetectPotentialDeliveryBottleneckUseCase(warehouseRepository)
-
-
-        val result = useCase()
-
-
-        Truth.assertThat(result.isFailure).isTrue()
-        Truth.assertThat(result.exceptionOrNull()).isEqualTo(exception)
-
-        coVerify(exactly = 1) { warehouseRepository.findAll() }
+        coEvery { warehouseRepository.findAll() } returns Result.success(listOf(normalWarehouse))
     }
 
     private fun createWarehouse(
