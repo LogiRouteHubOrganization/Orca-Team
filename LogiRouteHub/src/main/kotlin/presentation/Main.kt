@@ -11,6 +11,7 @@ import domain.repository.WarehouseRepository
 import domain.usecase.AnalyzePackageDestinationDemandUseCase
 import domain.usecase.FindFewestHopsRouteUseCase
 import domain.usecase.FindOptimalPathUseCase
+import domain.model.Package
 import domain.model.request.DispatchVehicleRequest
 import domain.usecase.DispatchVehicleUseCase
 import kotlinx.coroutines.runBlocking
@@ -281,27 +282,15 @@ class Main(
     }
 
     private suspend fun dispatchVehicle() {
-
         println("\n=== Knapsack Cargo Dispatch ===")
-
-        val packages = packageRepository
-            .findAll()
-            .getOrThrow()
+        val packages = packageRepository.findAll().getOrThrow()
 
         if (packages.isEmpty()) {
             println("No packages available for dispatch.")
             return
         }
-
-        val warehouseId = packages
-            .first()
-            .originWarehouse
-            .id
-
-        val vehicle = vehicleRepository
-            .findAll()
-            .getOrThrow()
-            .firstOrNull()
+        val warehouseId = packages.first().originWarehouse.id
+        val vehicle = vehicleRepository.findAll().getOrThrow().firstOrNull()
 
         if (vehicle == null) {
             println("No vehicle available for dispatch.")
@@ -319,17 +308,19 @@ class Main(
             )
         )
 
+        printDispatchResult(result)
+    }
+
+    private fun printDispatchResult(
+        result: Result<List<Package>>
+    ) {
         result
             .onSuccess { dispatchedPackages ->
-
                 if (dispatchedPackages.isEmpty()) {
                     println("No packages were selected for dispatch.")
                     return@onSuccess
                 }
-
-                println(
-                    "Knapsack selected ${dispatchedPackages.size} package(s):"
-                )
+                println("Knapsack selected ${dispatchedPackages.size} package(s):")
 
                 dispatchedPackages.forEach { logisticsPackage ->
                     println(
@@ -340,13 +331,10 @@ class Main(
                     )
                 }
 
-                println(
-                    "Successfully dispatched through BaseDispatchProcessor pipeline."
-                )
-            }
-            .onFailure {
+                println("Successfully dispatched through BaseDispatchProcessor pipeline.")
+            }.onFailure {
                 println("Dispatch failed: ${it.message}")
             }
     }
-
 }
+
