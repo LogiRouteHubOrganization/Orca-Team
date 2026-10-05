@@ -20,5 +20,5 @@ object PackageSampleData {
         destinationWarehouse = WarehouseSampleData.warehouse2
     )
 
-    val all = listOf(package1, package2)
+    val AllPackage = listOf(package1, package2)
 }

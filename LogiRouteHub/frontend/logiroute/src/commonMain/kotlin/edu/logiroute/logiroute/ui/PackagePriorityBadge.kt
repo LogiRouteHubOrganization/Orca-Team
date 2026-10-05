@@ -87,7 +87,7 @@ fun  PackagePriorityBadgepreview() {
         verticalArrangement = Arrangement.spacedBy(8.dp)
     )
     {
-        PackageSampleData.all.forEach { pkg ->
+        PackageSampleData.AllPackage.forEach { pkg ->
             PackagePriorityBadge(packageItem = pkg)
         }
 
