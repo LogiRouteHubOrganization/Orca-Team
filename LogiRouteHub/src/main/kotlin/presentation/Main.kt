@@ -11,6 +11,8 @@ import domain.repository.WarehouseRepository
 import domain.usecase.AnalyzePackageDestinationDemandUseCase
 import domain.usecase.FindFewestHopsRouteUseCase
 import domain.usecase.FindOptimalPathUseCase
+import domain.model.request.DispatchVehicleRequest
+import domain.usecase.DispatchVehicleUseCase
 import kotlinx.coroutines.runBlocking
 import org.koin.core.Koin
 import org.koin.core.context.startKoin
@@ -48,6 +50,8 @@ class Main(
     private val analyzePackageDestinationDemandUseCase =
         koin.get<AnalyzePackageDestinationDemandUseCase>()
 
+    private val dispatchVehicleUseCase =
+        koin.get<DispatchVehicleUseCase>()
 
     suspend fun run() {
         refreshData()
@@ -195,11 +199,19 @@ class Main(
 
         val testPackage = packages.first()
 
-        demoOptimalPath(testPackage.originWarehouse.id, testPackage.destinationWarehouse.id)
+        demoOptimalPath(
+            testPackage.originWarehouse.id,
+            testPackage.destinationWarehouse.id
+        )
 
-        demoFewestHops(testPackage.originWarehouse.id, testPackage.destinationWarehouse.id)
+        demoFewestHops(
+            testPackage.originWarehouse.id,
+            testPackage.destinationWarehouse.id
+        )
 
         demoDestinationDemand()
+
+        dispatchVehicle()
     }
 
 
@@ -267,4 +279,74 @@ class Main(
             println("No package demand found.")
         }
     }
+
+    private suspend fun dispatchVehicle() {
+
+        println("\n=== Knapsack Cargo Dispatch ===")
+
+        val packages = packageRepository
+            .findAll()
+            .getOrThrow()
+
+        if (packages.isEmpty()) {
+            println("No packages available for dispatch.")
+            return
+        }
+
+        val warehouseId = packages
+            .first()
+            .originWarehouse
+            .id
+
+        val vehicle = vehicleRepository
+            .findAll()
+            .getOrThrow()
+            .firstOrNull()
+
+        if (vehicle == null) {
+            println("No vehicle available for dispatch.")
+            return
+        }
+
+        println("Warehouse: $warehouseId")
+        println("Vehicle: ${vehicle.id}")
+        println("Vehicle capacity: ${vehicle.maxCapacityKg} kg")
+
+        val result = dispatchVehicleUseCase(
+            DispatchVehicleRequest(
+                vehicleId = vehicle.id,
+                warehouseId = warehouseId
+            )
+        )
+
+        result
+            .onSuccess { dispatchedPackages ->
+
+                if (dispatchedPackages.isEmpty()) {
+                    println("No packages were selected for dispatch.")
+                    return@onSuccess
+                }
+
+                println(
+                    "Knapsack selected ${dispatchedPackages.size} package(s):"
+                )
+
+                dispatchedPackages.forEach { logisticsPackage ->
+                    println(
+                        "Package ${logisticsPackage.id} | " +
+                                "Weight: ${logisticsPackage.weightByKg} kg | " +
+                                "Priority: ${logisticsPackage.priority} | " +
+                                "State: ${logisticsPackage.state::class.simpleName}"
+                    )
+                }
+
+                println(
+                    "Successfully dispatched through BaseDispatchProcessor pipeline."
+                )
+            }
+            .onFailure {
+                println("Dispatch failed: ${it.message}")
+            }
+    }
+
 }
