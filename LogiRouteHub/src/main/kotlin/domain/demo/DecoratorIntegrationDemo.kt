@@ -36,7 +36,12 @@ fun demonstrateDecoratorIntegration(
 
     val decoratedRate = calculatePricingUseCase(
         pricingRequest
-    )
+    ).getOrElse { exception ->
+        println(
+            "Decorator pricing demo failed: ${exception.message}"
+        )
+        return
+    }
 
     printDecoratorDemoResult(
         warehouseId = warehouse.id,

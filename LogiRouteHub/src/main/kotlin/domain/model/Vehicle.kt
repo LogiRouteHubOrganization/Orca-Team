@@ -1,5 +1,6 @@
 package domain.model
 import domain.exception.EntityValidationException
+import domain.exception.VehicleCapacityExceededException
 import domain.validator.ResultValidator
 import domain.validator.vehicle.CreateVehicleValidator
 
@@ -28,6 +29,16 @@ data class Vehicle(
         get() = packages
 
     fun addPackage(logisticsPackage: Package) {
+        val currentLoad = calculateTotalLoadedWeightKg()
+        val newLoad = currentLoad + logisticsPackage.weightByKg
+
+        if (newLoad > maxCapacityKg) {
+            throw VehicleCapacityExceededException(
+                "Vehicle $id does not have enough capacity " +
+                        "for package ${logisticsPackage.id}."
+            )
+        }
+
         packages.add(logisticsPackage)
     }
 
@@ -41,4 +52,5 @@ data class Vehicle(
     }
 
 }
+
 

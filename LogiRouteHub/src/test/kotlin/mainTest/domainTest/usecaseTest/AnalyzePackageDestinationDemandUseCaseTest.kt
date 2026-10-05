@@ -62,6 +62,32 @@ class AnalyzePackageDestinationDemandUseCaseTest {
         // Then
         assertThat(result).isEqualTo(destinationWarehouse)
     }
+    @Test
+    fun `returns first destination when warehouses have equal demand`() {
+        // Given
+        val originWarehouse = createWarehouse("WH-000001")
+        val warehouseB = createWarehouse("WH-000002")
+        val warehouseC = createWarehouse("WH-000003")
+
+        val packages = listOf(
+            createPackage(
+                id = "PKG-000001",
+                origin = originWarehouse,
+                destination = warehouseB
+            ),
+            createPackage(
+                id = "PKG-000002",
+                origin = originWarehouse,
+                destination = warehouseC
+            )
+        )
+
+        // When
+        val result = useCase(packages)
+
+        // Then
+        assertThat(result).isEqualTo(warehouseB)
+    }
 
     @Test
     fun `returns null when package list is empty`() {

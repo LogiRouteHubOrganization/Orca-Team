@@ -16,7 +16,8 @@ import org.junit.jupiter.api.Test
 
 class CalculatePricingUseCaseTest {
 
-    private val packageDecoratorComposer = mockk<PackageDecoratorComposer>()
+    private val packageDecoratorComposer =
+        mockk<PackageDecoratorComposer>()
 
     private val useCase = CalculatePricingUseCase(
         packageDecoratorComposer = packageDecoratorComposer
@@ -33,7 +34,174 @@ class CalculatePricingUseCaseTest {
 
         val expectedPrice = 250.0
 
-        val request = CalculatePricingRequest(
+        val request = createRequest(
+            logisticsPackage = logisticsPackage,
+            selectedRoute = selectedRoute,
+            assignedVehicle = assignedVehicle,
+            dispatchStrategy = dispatchStrategy
+        )
+
+        every {
+            packageDecoratorComposer.applyOptionalDecorators(
+                packageComponent = logisticsPackage,
+                isFragile = true,
+                requiresColdChain = false,
+                needsExpressInsurance = true
+            )
+        } returns decoratedPackage
+
+        every {
+            decoratedPackage.calculateTransitRate(
+                selectedRoute = selectedRoute,
+                assignedVehicle = assignedVehicle,
+                dispatchStrategy = dispatchStrategy
+            )
+        } returns expectedPrice
+
+        // When
+        val result = useCase(request)
+
+        // Then
+        assertThat(result.getOrNull())
+            .isEqualTo(expectedPrice)
+    }
+
+    @Test
+    fun `passes decorator options from request to composer`() {
+        // Given
+        val logisticsPackage = mockk<Package>()
+        val selectedRoute = mockk<Route>()
+        val assignedVehicle = mockk<Vehicle>()
+        val dispatchStrategy = mockk<DispatchStrategy>()
+        val decoratedPackage = mockk<PackageComponent>()
+
+        val request = createRequest(
+            logisticsPackage = logisticsPackage,
+            selectedRoute = selectedRoute,
+            assignedVehicle = assignedVehicle,
+            dispatchStrategy = dispatchStrategy
+        )
+
+        every {
+            packageDecoratorComposer.applyOptionalDecorators(
+                packageComponent = logisticsPackage,
+                isFragile = true,
+                requiresColdChain = false,
+                needsExpressInsurance = true
+            )
+        } returns decoratedPackage
+
+        every {
+            decoratedPackage.calculateTransitRate(
+                selectedRoute = selectedRoute,
+                assignedVehicle = assignedVehicle,
+                dispatchStrategy = dispatchStrategy
+            )
+        } returns 250.0
+
+        // When
+        useCase(request)
+
+        // Then
+        verify(exactly = 1) {
+            packageDecoratorComposer.applyOptionalDecorators(
+                packageComponent = logisticsPackage,
+                isFragile = true,
+                requiresColdChain = false,
+                needsExpressInsurance = true
+            )
+        }
+    }
+
+    @Test
+    fun `returns failure when decorator composition fails`() {
+        // Given
+        val logisticsPackage = mockk<Package>()
+        val selectedRoute = mockk<Route>()
+        val assignedVehicle = mockk<Vehicle>()
+        val dispatchStrategy = mockk<DispatchStrategy>()
+
+        val exception = RuntimeException(
+            "Decorator composition failed"
+        )
+
+        val request = createRequest(
+            logisticsPackage = logisticsPackage,
+            selectedRoute = selectedRoute,
+            assignedVehicle = assignedVehicle,
+            dispatchStrategy = dispatchStrategy
+        )
+
+        every {
+            packageDecoratorComposer.applyOptionalDecorators(
+                packageComponent = logisticsPackage,
+                isFragile = true,
+                requiresColdChain = false,
+                needsExpressInsurance = true
+            )
+        } throws exception
+
+        // When
+        val result = useCase(request)
+
+        // Then
+        assertThat(result.exceptionOrNull())
+            .isEqualTo(exception)
+    }
+
+    @Test
+    fun `returns failure when price calculation fails`() {
+        // Given
+        val logisticsPackage = mockk<Package>()
+        val selectedRoute = mockk<Route>()
+        val assignedVehicle = mockk<Vehicle>()
+        val dispatchStrategy = mockk<DispatchStrategy>()
+        val decoratedPackage = mockk<PackageComponent>()
+
+        val exception = RuntimeException(
+            "Price calculation failed"
+        )
+
+        val request = createRequest(
+            logisticsPackage = logisticsPackage,
+            selectedRoute = selectedRoute,
+            assignedVehicle = assignedVehicle,
+            dispatchStrategy = dispatchStrategy
+        )
+
+        every {
+            packageDecoratorComposer.applyOptionalDecorators(
+                packageComponent = logisticsPackage,
+                isFragile = true,
+                requiresColdChain = false,
+                needsExpressInsurance = true
+            )
+        } returns decoratedPackage
+
+        every {
+            decoratedPackage.calculateTransitRate(
+                selectedRoute = selectedRoute,
+                assignedVehicle = assignedVehicle,
+                dispatchStrategy = dispatchStrategy
+            )
+        } throws exception
+
+        // When
+        val result = useCase(request)
+
+        // Then
+        assertThat(result.exceptionOrNull())
+            .isEqualTo(exception)
+    }
+
+    private fun createRequest(
+        logisticsPackage: Package,
+        selectedRoute: Route,
+        assignedVehicle: Vehicle,
+        dispatchStrategy: DispatchStrategy
+    ): CalculatePricingRequest {
+
+        return CalculatePricingRequest(
             logisticsPackage = logisticsPackage,
             selectedRoute = selectedRoute,
             assignedVehicle = assignedVehicle,
@@ -42,105 +210,5 @@ class CalculatePricingUseCaseTest {
             requiresColdChain = false,
             needsExpressInsurance = true
         )
-
-        every {
-            packageDecoratorComposer.applyOptionalDecorators(
-                packageComponent = logisticsPackage,
-                isFragile = true,
-                requiresColdChain = false,
-                needsExpressInsurance = true
-            )
-        } returns decoratedPackage
-
-        every {
-            decoratedPackage.calculateTransitRate(
-                selectedRoute = selectedRoute,
-                assignedVehicle = assignedVehicle,
-                dispatchStrategy = dispatchStrategy
-            )
-        } returns expectedPrice
-
-        // When
-        val result = useCase(request)
-
-        // Then
-        assertThat(result).isEqualTo(expectedPrice)
-        verify(exactly = 1) {
-            packageDecoratorComposer.applyOptionalDecorators(
-                packageComponent = logisticsPackage,
-                isFragile = true,
-                requiresColdChain = false,
-                needsExpressInsurance = true
-            )
-        }
-        verify(exactly = 1) {
-            decoratedPackage.calculateTransitRate(
-                selectedRoute = selectedRoute,
-                assignedVehicle = assignedVehicle,
-                dispatchStrategy = dispatchStrategy
-            )
-        }
-    }
-
-    @Test
-    fun `passes disabled optional decorators correctly`() {
-        // Given
-        val logisticsPackage = mockk<Package>()
-        val selectedRoute = mockk<Route>()
-        val assignedVehicle = mockk<Vehicle>()
-        val dispatchStrategy = mockk<DispatchStrategy>()
-        val decoratedPackage = mockk<PackageComponent>()
-
-        val expectedPrice = 100.0
-
-        val request = CalculatePricingRequest(
-            logisticsPackage = logisticsPackage,
-            selectedRoute = selectedRoute,
-            assignedVehicle = assignedVehicle,
-            dispatchStrategy = dispatchStrategy,
-            isFragile = false,
-            requiresColdChain = false,
-            needsExpressInsurance = false
-        )
-
-        every {
-            packageDecoratorComposer.applyOptionalDecorators(
-                packageComponent = logisticsPackage,
-                isFragile = false,
-                requiresColdChain = false,
-                needsExpressInsurance = false
-            )
-        } returns decoratedPackage
-
-        every {
-            decoratedPackage.calculateTransitRate(
-                selectedRoute = selectedRoute,
-                assignedVehicle = assignedVehicle,
-                dispatchStrategy = dispatchStrategy
-            )
-        } returns expectedPrice
-
-        // When
-        val result = useCase(request)
-
-        // Then
-        assertThat(result).isEqualTo(expectedPrice)
-
-        verify(exactly = 1) {
-            packageDecoratorComposer.applyOptionalDecorators(
-                packageComponent = logisticsPackage,
-                isFragile = false,
-                requiresColdChain = false,
-                needsExpressInsurance = false
-            )
-        }
-
-        verify(exactly = 1) {
-            decoratedPackage.calculateTransitRate(
-                selectedRoute = selectedRoute,
-                assignedVehicle = assignedVehicle,
-                dispatchStrategy = dispatchStrategy
-            )
-        }
     }
 }

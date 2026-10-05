@@ -68,7 +68,6 @@ val useCaseModule = module {
     factory {
         AssignPackageToCargoQueueUseCase(
             sortCargoQueue = get(),
-            warehouseRepository = get()
         )
     }
 

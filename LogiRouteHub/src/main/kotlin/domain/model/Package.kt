@@ -1,10 +1,12 @@
 package domain.model
 
+import domain.exception.EntityValidationException
 import domain.pricing.DispatchStrategy
 import domain.pricing.decorator.PackageComponent
-import domain.validator.logisticspackage.CreatePackageValidator
-import domain.exception.EntityValidationException
+import domain.state.CreatedState
+import domain.state.ShipmentState
 import domain.validator.ResultValidator
+import domain.validator.logisticspackage.CreatePackageValidator
 
 data class Package(
     val id: String,
@@ -13,6 +15,8 @@ data class Package(
     val originWarehouse: Warehouse,
     val destinationWarehouse: Warehouse
 ) : PackageComponent {
+
+    var state: ShipmentState = CreatedState()
 
     init {
         val validationResult = CreatePackageValidator().invoke(
@@ -33,7 +37,6 @@ data class Package(
         assignedVehicle: Vehicle,
         dispatchStrategy: DispatchStrategy
     ): Double {
-
         return dispatchStrategy.calculateTransitCost(
             logisticsPackage = this,
             selectedRoute = selectedRoute,
