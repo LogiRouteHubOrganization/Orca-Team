@@ -1,4 +1,4 @@
-package domain.demo
+package presentation.demo
 
 import domain.model.Warehouse
 import domain.model.request.CalculatePricingRequest

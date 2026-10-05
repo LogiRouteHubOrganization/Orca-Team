@@ -1,4 +1,4 @@
-package domain.demo
+package presentation.demo
 
 import domain.model.Package
 import domain.model.Route

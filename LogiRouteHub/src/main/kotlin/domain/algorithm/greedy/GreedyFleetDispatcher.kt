@@ -1,4 +1,4 @@
-package domain.algorithm.dispatcher
+package domain.algorithm.greedy
 
 import domain.model.Vehicle
 
