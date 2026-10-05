@@ -13,7 +13,7 @@ import androidx.compose.ui.unit.dp
 import  androidx.compose.foundation.layout.Arrangement
 import androidx.compose.ui.graphics.Color
 import edu.logiroute.logiroute.ui.WarehouseComponentPreviews
-import edu.logiroute.logiroute.ui.VehicleDetailCard
+import edu.logiroute.logiroute.preview.*
 
 @Composable
 @Preview
@@ -28,8 +28,16 @@ fun App() {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            WarehouseComponentPreviews()
+//            WarehouseComponentPreviews()
+            SafeLoadState()
+            HeavyLoadWarningState()
+            OverLoadedAlertState()
+            ShortLocalTransit()
+            LongCrossCountryTransit()
+
         }
+
+
 
     }
         }

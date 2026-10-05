@@ -6,7 +6,7 @@ object WarehouseSampleData {
 
     val warehouse1 = Warehouse(
         id = "WH-000047",
-        name = "Hub-000047",
+        name = "Rafah Cross-Dock Facility",
         regionalZone = "CENTRAL",
         latitude = 43.44,
         longitude = -100.65
@@ -14,7 +14,7 @@ object WarehouseSampleData {
 
     val warehouse2 = Warehouse(
         id = "WH-000067",
-        name = "Hub-000067",
+        name = "Khan Younis Logistics Terminal",
         regionalZone = "NORTH",
         latitude = 48.72,
         longitude = -114.37
@@ -22,11 +22,11 @@ object WarehouseSampleData {
 
     val warehouse3 = Warehouse(
         id = "WH-000056",
-        name = "Hub-000056",
+        name = "North District Fulfillment Hub",
         regionalZone = "SOUTH",
         latitude = 39.38,
         longitude = -91.06
     )
 
-    val all = listOf(warehouse1, warehouse2, warehouse3)
+    val AllWarehouse = listOf(warehouse1, warehouse2, warehouse3)
 }

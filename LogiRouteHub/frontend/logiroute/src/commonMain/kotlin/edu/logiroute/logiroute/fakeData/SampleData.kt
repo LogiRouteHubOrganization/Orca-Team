@@ -13,6 +13,6 @@ object SampleData {
             addPackage(PackageSampleData.package2)
             addVehicle(VehicleSampleData.vehicle2)
         }
-        WarehouseSampleData.all
+        WarehouseSampleData.AllWarehouse
     }
 }
