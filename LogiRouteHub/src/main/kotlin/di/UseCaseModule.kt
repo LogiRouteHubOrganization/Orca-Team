@@ -2,6 +2,7 @@
 package di
 
 import domain.algorithm.dispatcher.VehicleCoverageMapper
+import domain.algorithm.knapsack.KnapsackCargoOptimizer
 import domain.model.request.PackagePriorityLevels
 import domain.model.request.RouteRiskConfig
 import domain.pricing.decorator.PackageDecoratorComposer
@@ -183,7 +184,12 @@ val useCaseModule = module {
         )
     }
 
-    // Vehicle
+// Knapsack
+    single<KnapsackCargoOptimizer> {
+        KnapsackCargoOptimizer()
+    }
+
+// Vehicle
     factory {
         FindStationedVehiclesByCapacityUseCase(
             warehouseRepository = get()
@@ -193,7 +199,8 @@ val useCaseModule = module {
     factory {
         DispatchVehicleUseCase(
             vehicleRepository = get(),
-            warehouseRepository = get()
+            warehouseRepository = get(),
+            knapsackCargoOptimizer = get()
         )
     }
 
@@ -204,7 +211,6 @@ val useCaseModule = module {
             updateVehicleValidator = get()
         )
     }
-
     factory {
         RecommendVehicleByCapacityAndCostUseCase(
             findStationedVehiclesByCapacityUseCase = get()

@@ -1,5 +1,6 @@
 package domain.usecase
 
+import domain.algorithm.knapsack.KnapsackCargoOptimizer
 import domain.dispatch.ExpressDispatchProcessor
 import domain.dispatch.StandardDispatchProcessor
 import domain.model.Package
@@ -9,7 +10,8 @@ import domain.repository.WarehouseRepository
 
 class DispatchVehicleUseCase(
     private val vehicleRepository: VehicleRepository,
-    private val warehouseRepository: WarehouseRepository
+    private val warehouseRepository: WarehouseRepository,
+    private val knapsackCargoOptimizer: KnapsackCargoOptimizer
 ) {
 
     suspend operator fun invoke(
@@ -30,23 +32,18 @@ class DispatchVehicleUseCase(
             vehicle.maxCapacityKg -
                     vehicle.calculateTotalLoadedWeightKg()
 
-        val packagesToDispatch = warehouse.cargoQueue.fold(
-            emptyList<Package>() to availableCapacity
-        ) { (selectedPackages, remainingCapacity), logisticsPackage ->
+        // Select the optimal cargo using the Knapsack algorithm
+        val packagesToDispatch = knapsackCargoOptimizer.optimize(
+            packages = warehouse.cargoQueue,
+            capacityKg = availableCapacity
+        )
 
-            if (logisticsPackage.weightByKg <= remainingCapacity) {
-                (selectedPackages + logisticsPackage) to
-                        (remainingCapacity - logisticsPackage.weightByKg)
-            } else {
-                selectedPackages to remainingCapacity
-            }
-
-        }.first
-
+        // Dispatch selected packages through the dispatch pipeline
         packagesToDispatch.forEach { logisticsPackage ->
 
             val dispatchProcessor = when (logisticsPackage.priority) {
                 "URGENT" -> ExpressDispatchProcessor()
+
                 "STANDARD", "LOW" -> StandardDispatchProcessor()
 
                 else -> throw IllegalArgumentException(
@@ -54,10 +51,14 @@ class DispatchVehicleUseCase(
                 )
             }
 
+            println("Before dispatch: ${logisticsPackage.state::class.simpleName}")
+
             dispatchProcessor.processDispatch(
                 logisticsPackage,
                 vehicle
             )
+
+            println("After dispatch: ${logisticsPackage.state::class.simpleName}")
 
             warehouse.removePackage(logisticsPackage)
         }
