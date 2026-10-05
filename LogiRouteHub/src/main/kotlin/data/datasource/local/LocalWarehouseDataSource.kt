@@ -1,8 +1,8 @@
-package data.datasource
+package data.datasource.local
 
 import data.dataholder.WarehouseRaw
 
-interface WarehouseDataSource {
+interface LocalWarehouseDataSource {
 
     fun loadWarehouses(): List<WarehouseRaw>
 

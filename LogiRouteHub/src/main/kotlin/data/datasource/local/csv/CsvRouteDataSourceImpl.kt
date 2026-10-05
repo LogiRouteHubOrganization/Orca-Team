@@ -1,17 +1,17 @@
 package data.datasource.csv
 
 import data.dataholder.RouteRaw
-import data.datasource.RouteDataSource
+import data.datasource.local.LocalRouteDataSource
 import data.exception.local.LocalDataException
 import data.parser.RouteParser
 import data.validation.LocalDataSourceValidator
 import java.io.File
 
-class CsvRouteDataSource(
+class CsvRouteDataSourceImpl(
     private val routeFile: File,
     private val routeParser: RouteParser,
     private val localDataSourceValidator: LocalDataSourceValidator
-) : RouteDataSource {
+) : LocalRouteDataSource {
 
     private val headerLineCount = 1
     private val csvHeader =

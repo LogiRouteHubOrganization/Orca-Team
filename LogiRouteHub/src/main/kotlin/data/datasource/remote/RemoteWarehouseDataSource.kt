@@ -1,10 +1,10 @@
-package data.remote.datasource
+package data.datasource.remote
 
 import data.remote.dto.response.WarehouseDto
 import data.remote.dto.request.WarehouseCreateRequestDto
 import data.remote.dto.request.WarehouseUpdateRequestDto
 
-interface WarehouseRemoteDataSource {
+interface RemoteWarehouseDataSource {
 
     suspend fun getAllWarehouses(): List<WarehouseDto>
 

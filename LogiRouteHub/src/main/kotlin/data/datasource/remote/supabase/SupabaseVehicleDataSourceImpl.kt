@@ -1,39 +1,36 @@
-package data.remote.datasource.supabase
+package data.datasource.remote.supabase
 
-
-import data.remote.datasource.WarehouseRemoteDataSource
-import data.remote.dto.response.WarehouseDto
-import data.remote.dto.request.WarehouseCreateRequestDto
-import data.remote.dto.request.WarehouseUpdateRequestDto
+import data.datasource.remote.RemoteVehicleDataSource
+import data.remote.dto.response.VehicleDto
+import data.remote.dto.request.VehicleCreateRequestDto
+import data.remote.dto.request.VehicleUpdateRequestDto
 import data.remote.utils.safeApiCall
 import data.remote.retry.RetryableRemoteDatasource
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
 
-class WarehouseRemoteDataSourceImpl(
+class SupabaseVehicleDataSourceImpl(
     private val client: SupabaseClient,
     private val retryTemplate: RetryableRemoteDatasource
-) : WarehouseRemoteDataSource {
-    private val tableName = "warehouses"
+) : RemoteVehicleDataSource {
+    private val tableName = "vehicles"
 
-    override suspend fun getAllWarehouses(): List<WarehouseDto> {
+    override suspend fun getAllVehicles(): List<VehicleDto> {
         val result = retryTemplate.execute(
-            operationName = "GetAllWarehouses"
+            operationName = "GetAllVehicles"
         ) {
             safeApiCall {
                 client.from(tableName).select()
-                    .decodeList<WarehouseDto>()
+                    .decodeList<VehicleDto>()
             }
         }
 
         return result.getOrThrow()
     }
 
-    override suspend fun getWarehouseById(
-        id: String
-    ): WarehouseDto? {
+    override suspend fun getVehicleById(id: String): VehicleDto? {
         val result = retryTemplate.execute(
-            operationName = "GetWarehouseById"
+            operationName = "GetVehicleById"
         ) {
             safeApiCall {
                 client.from(tableName).select {
@@ -41,58 +38,58 @@ class WarehouseRemoteDataSourceImpl(
                             eq("id", id)
                         }
                     }
-                    .decodeSingleOrNull<WarehouseDto>()
+                    .decodeSingleOrNull<VehicleDto>()
             }
         }
 
         return result.getOrThrow()
     }
 
-    override suspend fun createWarehouse(
-        warehouseRequest: WarehouseCreateRequestDto
-    ): WarehouseDto {
+    override suspend fun createVehicle(
+        vehicleRequest: VehicleCreateRequestDto
+    ): VehicleDto {
         val result = retryTemplate.execute(
-            operationName = "CreateWarehouse"
+            operationName = "CreateVehicle"
         ) {
             safeApiCall {
-                client.from(tableName).insert(warehouseRequest) {
+                client.from(tableName).insert(vehicleRequest) {
                         select()
                     }
-                    .decodeSingle<WarehouseDto>()
+                    .decodeSingle<VehicleDto>()
             }
         }
 
         return result.getOrThrow()
     }
 
-    override suspend fun updateWarehouse(
+    override suspend fun updateVehicle(
         id: String,
-        warehouseRequest: WarehouseUpdateRequestDto
-    ): WarehouseDto {
+        vehicleRequest: VehicleUpdateRequestDto
+    ): VehicleDto {
         val result = retryTemplate.execute(
-            operationName = "UpdateWarehouse"
+            operationName = "UpdateVehicle"
         ) {
             safeApiCall {
-                client.from(tableName).update(warehouseRequest) {
+                client.from(tableName).update(vehicleRequest) {
                         filter {
                             eq("id", id)
                         }
                         select()
                     }
-                    .decodeSingle<WarehouseDto>()
+                    .decodeSingle<VehicleDto>()
             }
         }
 
         return result.getOrThrow()
     }
 
-    override suspend fun deleteWarehouse(id: String) {
+    override suspend fun deleteVehicle(id: String) {
         val result = retryTemplate.execute(
-            operationName = "DeleteWarehouse"
+            operationName = "DeleteVehicle"
         ) {
             safeApiCall {
                 client.from(tableName).delete {
-                        filter {
+                    filter {
                             eq("id", id)
                         }
                     }

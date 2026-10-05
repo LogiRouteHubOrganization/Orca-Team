@@ -1,11 +1,11 @@
 package data.repository
 
-import data.datasource.RouteDataSource
+import data.datasource.local.LocalRouteDataSource
 import data.exception.local.LocalDataException
 import data.exception.local.toDomainException
 import data.exception.remote.toDomainException
 import data.mapper.RouteMapper
-import data.remote.datasource.RouteRemoteDataSource
+import data.datasource.remote.RemoteRouteDataSource
 import data.remote.mapper.toCreateDto
 import data.remote.mapper.toRaw
 import data.remote.mapper.toUpdateDto
@@ -16,8 +16,8 @@ import domain.repository.RouteRepository
 import domain.repository.WarehouseRepository
 
 class RouteRepositoryImpl(
-    private val routeDataSource: RouteDataSource,
-    private val routeRemoteDataSource: RouteRemoteDataSource,
+    private val routeDataSource: LocalRouteDataSource,
+    private val routeRemoteDataSource: RemoteRouteDataSource,
     private val routeMapper: RouteMapper,
     private val warehouseRepository: WarehouseRepository
 ) : RouteRepository {

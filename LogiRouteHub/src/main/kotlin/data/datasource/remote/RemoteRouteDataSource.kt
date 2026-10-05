@@ -1,10 +1,10 @@
-package data.remote.datasource
+package data.datasource.remote
 
 import data.remote.dto.response.RouteDto
 import data.remote.dto.request.RouteCreateRequestDto
 import data.remote.dto.request.RouteUpdateRequestDto
 
-interface RouteRemoteDataSource {
+interface RemoteRouteDataSource {
 
     suspend fun getAllRoutes(): List<RouteDto>
 

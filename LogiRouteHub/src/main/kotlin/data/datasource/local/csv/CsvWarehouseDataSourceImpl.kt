@@ -1,17 +1,17 @@
 package data.datasource.csv
 
 import data.dataholder.WarehouseRaw
-import data.datasource.WarehouseDataSource
+import data.datasource.local.LocalWarehouseDataSource
 import data.exception.local.LocalDataException
 import data.parser.WarehouseParser
 import data.validation.LocalDataSourceValidator
 import java.io.File
 
-class CsvWarehouseDataSource(
+class CsvWarehouseDataSourceImpl(
     private val warehouseFile: File,
     private val warehouseParser: WarehouseParser,
     private val localDataSourceValidator: LocalDataSourceValidator
-) : WarehouseDataSource {
+) : LocalWarehouseDataSource {
 
     private val headerLineCount = 1
 

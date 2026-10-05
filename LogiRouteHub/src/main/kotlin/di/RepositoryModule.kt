@@ -1,13 +1,13 @@
 package di
 
-import data.datasource.PackageDataSource
-import data.datasource.RouteDataSource
-import data.datasource.VehicleDataSource
-import data.datasource.WarehouseDataSource
-import data.datasource.csv.CsvPackageDataSource
-import data.datasource.csv.CsvRouteDataSource
-import data.datasource.csv.CsvVehicleDataSource
-import data.datasource.csv.CsvWarehouseDataSource
+import data.datasource.local.LocalPackageDataSource
+import data.datasource.local.LocalRouteDataSource
+import data.datasource.local.LocalVehicleDataSource
+import data.datasource.local.LocalWarehouseDataSource
+import data.datasource.csv.CsvPackageDataSourceImpl
+import data.datasource.csv.CsvRouteDataSourceImpl
+import data.datasource.csv.CsvVehicleDataSourceImpl
+import data.datasource.csv.CsvWarehouseDataSourceImpl
 
 import data.mapper.PackageMapper
 import data.mapper.RouteMapper
@@ -19,14 +19,14 @@ import data.parser.PackageParser
 import data.parser.RouteParser
 import data.parser.WarehouseParser
 
-import data.remote.datasource.PackageRemoteDataSource
-import data.remote.datasource.RouteRemoteDataSource
-import data.remote.datasource.VehicleRemoteDataSource
-import data.remote.datasource.WarehouseRemoteDataSource
-import data.remote.datasource.supabase.PackageRemoteDataSourceImpl
-import data.remote.datasource.supabase.RouteRemoteDataSourceImpl
-import data.remote.datasource.supabase.VehicleRemoteDataSourceImpl
-import data.remote.datasource.supabase.WarehouseRemoteDataSourceImpl
+import data.datasource.remote.RemotePackageDataSource
+import data.datasource.remote.RemoteRouteDataSource
+import data.datasource.remote.RemoteVehicleDataSource
+import data.datasource.remote.RemoteWarehouseDataSource
+import data.datasource.remote.supabase.SupabasePackageDataSourceImpl
+import data.datasource.remote.supabase.SupabaseRouteDataSourceImpl
+import data.datasource.remote.supabase.SupabaseVehicleDataSourceImpl
+import data.datasource.remote.supabase.SupabaseWarehouseDataSourceImpl
 
 import data.repository.PackageRepositoryImpl
 import data.repository.RouteRepositoryImpl
@@ -102,32 +102,32 @@ val repositoryModule = module {
 
 
     // Local Data Sources
-    single<WarehouseDataSource> {
-        CsvWarehouseDataSource(
+    single<LocalWarehouseDataSource> {
+        CsvWarehouseDataSourceImpl(
             warehouseFile = File(WAREHOUSES_FILE_PATH),
             warehouseParser = get(),
             localDataSourceValidator = get()
         )
     }
 
-    single<PackageDataSource> {
-        CsvPackageDataSource(
+    single<LocalPackageDataSource> {
+        CsvPackageDataSourceImpl(
             packageFile = File(PACKAGES_FILE_PATH),
             packageParser = get(),
             localDataSourceValidator = get()
         )
     }
 
-    single<VehicleDataSource> {
-        CsvVehicleDataSource(
+    single<LocalVehicleDataSource> {
+        CsvVehicleDataSourceImpl(
             vehicleFile = File(FLEET_FILE_PATH),
             fleetParser = get(),
             localDataSourceValidator = get()
         )
     }
 
-    single<RouteDataSource> {
-        CsvRouteDataSource(
+    single<LocalRouteDataSource> {
+        CsvRouteDataSourceImpl(
             routeFile = File(ROUTES_FILE_PATH),
             routeParser = get(),
             localDataSourceValidator = get()
@@ -136,29 +136,29 @@ val repositoryModule = module {
 
 
     // Remote Data Sources
-    single<WarehouseRemoteDataSource> {
-        WarehouseRemoteDataSourceImpl(
+    single<RemoteWarehouseDataSource> {
+        SupabaseWarehouseDataSourceImpl(
             client = get(),
             retryTemplate = get()
         )
     }
 
-    single<PackageRemoteDataSource> {
-        PackageRemoteDataSourceImpl(
+    single<RemotePackageDataSource> {
+        SupabasePackageDataSourceImpl(
             client = get(),
             retryTemplate = get()
         )
     }
 
-    single<VehicleRemoteDataSource> {
-        VehicleRemoteDataSourceImpl(
+    single<RemoteVehicleDataSource> {
+        SupabaseVehicleDataSourceImpl(
             client = get(),
             retryTemplate = get()
         )
     }
 
-    single<RouteRemoteDataSource> {
-        RouteRemoteDataSourceImpl(
+    single<RemoteRouteDataSource> {
+        SupabaseRouteDataSourceImpl(
             client = get(),
             retryTemplate = get()
         )

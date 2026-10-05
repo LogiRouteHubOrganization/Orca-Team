@@ -1,17 +1,17 @@
 package data.datasource.csv
 
 import data.dataholder.LogisticsPackageRaw
-import data.datasource.PackageDataSource
+import data.datasource.local.LocalPackageDataSource
 import data.exception.local.LocalDataException
 import data.parser.PackageParser
 import data.validation.LocalDataSourceValidator
 import java.io.File
 
-class CsvPackageDataSource(
+class CsvPackageDataSourceImpl(
     private val packageFile: File,
     private val packageParser: PackageParser,
     private val localDataSourceValidator: LocalDataSourceValidator
-) : PackageDataSource {
+) : LocalPackageDataSource {
 
     private val headerLineCount = 1
 
