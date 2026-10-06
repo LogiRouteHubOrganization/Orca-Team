@@ -2,46 +2,26 @@ package domain.dispatch
 
 import domain.model.Package
 import domain.model.Vehicle
-import domain.state.ShipmentState
 
 abstract class BaseDispatchProcessor {
-
-    fun processDispatch(
-        logisticsPackage: Package,
-        vehicle: Vehicle
-    ) {
-        validateCargo(logisticsPackage, vehicle)
-        reserveVehicleCapacity(logisticsPackage, vehicle)
-        updateShipmentState(logisticsPackage)
-        notifyDispatchStatus(logisticsPackage, vehicle)
+    fun processDispatch(pkg: Package, vehicle: Vehicle): Boolean {
+        if (!validateCargo(pkg, vehicle)) {
+            return false
+        }
+        if (!reserveVehicleCapacity(pkg, vehicle)) {
+            return false
+        }
+        updateShipmentState(pkg)
+        notifyDispatchStatus(pkg, vehicle)
+        return true
     }
 
-    protected abstract fun validateCargo(
-        logisticsPackage: Package,
-        vehicle: Vehicle
-    )
+    protected abstract fun validateCargo(pkg: Package, vehicle: Vehicle): Boolean
 
-    protected abstract fun reserveVehicleCapacity(
-        logisticsPackage: Package,
-        vehicle: Vehicle
-    )
+    protected abstract fun reserveVehicleCapacity(pkg: Package, vehicle: Vehicle): Boolean
 
-    protected open fun updateShipmentState(
-        logisticsPackage: Package
-    ) {
-        val currentState = logisticsPackage.state as ShipmentState
+    protected abstract fun updateShipmentState(pkg: Package)
 
-        logisticsPackage.state =
-            currentState
-                .assignToVehicle()
-                .markAsInTransit()
-    }
-
-
-    protected open fun notifyDispatchStatus(
-        logisticsPackage: Package,
-        vehicle: Vehicle
-    ) {
+    protected open fun notifyDispatchStatus(pkg: Package, vehicle: Vehicle) {
     }
 }
-
