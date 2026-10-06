@@ -1,10 +1,10 @@
-package data.remote.datasource
+package data.datasource.remote
 
 import data.remote.dto.response.PackageDto
 import data.remote.dto.request.PackageCreateRequestDto
 import data.remote.dto.request.PackageUpdateRequestDto
 
-interface PackageRemoteDataSource {
+interface RemotePackageDataSource {
 
     suspend fun getAllPackages(): List<PackageDto>
 

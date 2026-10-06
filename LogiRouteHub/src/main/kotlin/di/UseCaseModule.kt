@@ -1,7 +1,7 @@
 
 package di
 
-import domain.algorithm.dispatcher.VehicleCoverageMapper
+import domain.algorithm.greedy.VehicleCoverageMapper
 import domain.algorithm.knapsack.KnapsackCargoOptimizer
 import domain.model.request.PackagePriorityLevels
 import domain.model.request.RouteRiskConfig

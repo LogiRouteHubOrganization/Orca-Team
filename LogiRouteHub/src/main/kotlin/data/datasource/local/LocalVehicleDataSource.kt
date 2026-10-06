@@ -1,8 +1,8 @@
-package data.datasource
+package data.datasource.local
 
 import data.dataholder.FleetRaw
 
-interface VehicleDataSource {
+interface LocalVehicleDataSource {
 
     fun loadVehicles(): List<FleetRaw>
 

@@ -1,8 +1,8 @@
-package data.datasource
+package data.datasource.local
 
 import data.dataholder.LogisticsPackageRaw
 
-interface PackageDataSource {
+interface LocalPackageDataSource {
 
     fun loadPackages(): List<LogisticsPackageRaw>
 

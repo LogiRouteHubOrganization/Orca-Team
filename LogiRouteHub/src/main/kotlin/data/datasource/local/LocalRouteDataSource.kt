@@ -1,8 +1,8 @@
-package data.datasource
+package data.datasource.local
 
 import data.dataholder.RouteRaw
 
-interface RouteDataSource {
+interface LocalRouteDataSource {
 
     fun loadRoutes(): List<RouteRaw>
 

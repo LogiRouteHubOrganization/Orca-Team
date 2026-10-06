@@ -1,17 +1,17 @@
 package data.datasource.csv
 
 import data.dataholder.FleetRaw
-import data.datasource.VehicleDataSource
+import data.datasource.local.LocalVehicleDataSource
 import data.exception.local.LocalDataException
 import data.parser.FleetParser
 import data.validation.LocalDataSourceValidator
 import java.io.File
 
-class CsvVehicleDataSource(
+class CsvVehicleDataSourceImpl(
     private val vehicleFile: File,
     private val fleetParser: FleetParser,
     private val localDataSourceValidator: LocalDataSourceValidator
-) : VehicleDataSource {
+) : LocalVehicleDataSource {
 
     private val headerLineCount = 1
 
