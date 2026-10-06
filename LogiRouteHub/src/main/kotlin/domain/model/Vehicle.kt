@@ -8,16 +8,17 @@ data class Vehicle(
     val id: String,
     val maxCapacityKg: Double,
     val costPerKm: Double,
-    var currentWarehouse: Warehouse
+    var currentWarehouse: Warehouse,
+    val maxVolumeM3: Double? = null
 ) {
     init {
         val validationResult = CreateVehicleValidator().invoke(
             id = id,
             maxCapacityKg = maxCapacityKg,
             costPerKm = costPerKm,
-            currentWarehouse = currentWarehouse
+            currentWarehouse = currentWarehouse,
+            maxVolumeM3 = maxVolumeM3
         )
-
         if (validationResult is ResultValidator.Invalid) {
             throw EntityValidationException(validationResult.errors)
         }
