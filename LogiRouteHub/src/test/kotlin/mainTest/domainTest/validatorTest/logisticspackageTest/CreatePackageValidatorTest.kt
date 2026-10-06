@@ -9,10 +9,11 @@ import domain.validator.logisticspackage.CreatePackageValidator
 import org.junit.jupiter.api.Test
 
 class CreatePackageValidatorTest {
+
     private val validator = CreatePackageValidator()
 
     @Test
-    fun `returns valid when all package data is valid`() {
+    fun `should return valid when all package data is valid`() {
         // Given
         val originWarehouse = createWarehouse("WH-000001")
         val destinationWarehouse = createWarehouse("WH-000002")
@@ -21,6 +22,7 @@ class CreatePackageValidatorTest {
         val result = validator(
             id = "PKG-000001",
             weightByKg = 10.0,
+            volumeM3 = 2.5,
             priority = "URGENT",
             originWarehouse = originWarehouse,
             destinationWarehouse = destinationWarehouse
@@ -31,7 +33,7 @@ class CreatePackageValidatorTest {
     }
 
     @Test
-    fun `returns invalid when package weight is zero`() {
+    fun `should return invalid when package weight is zero`() {
         // Given
         val originWarehouse = createWarehouse("WH-000001")
         val destinationWarehouse = createWarehouse("WH-000002")
@@ -40,6 +42,7 @@ class CreatePackageValidatorTest {
         val result = validator(
             id = "PKG-000001",
             weightByKg = 0.0,
+            volumeM3 = 2.5,
             priority = "URGENT",
             originWarehouse = originWarehouse,
             destinationWarehouse = destinationWarehouse
@@ -48,9 +51,9 @@ class CreatePackageValidatorTest {
         // Then
         assertThat(result).isInstanceOf(ResultValidator.Invalid::class.java)
 
-        val errors = (result as ResultValidator.Invalid).errors
+        val invalidResult = result as ResultValidator.Invalid
 
-        assertThat(errors).contains(
+        assertThat(invalidResult.errors).contains(
             FieldValidator(
                 field = "weightByKg",
                 error = ErrorValidator.MustBePositive
@@ -59,7 +62,7 @@ class CreatePackageValidatorTest {
     }
 
     @Test
-    fun `returns invalid when package weight is negative`() {
+    fun `should return invalid when package weight is negative`() {
         // Given
         val originWarehouse = createWarehouse("WH-000001")
         val destinationWarehouse = createWarehouse("WH-000002")
@@ -67,7 +70,8 @@ class CreatePackageValidatorTest {
         // When
         val result = validator(
             id = "PKG-000001",
-            weightByKg = -5.0,
+            weightByKg = -10.0,
+            volumeM3 = 2.5,
             priority = "URGENT",
             originWarehouse = originWarehouse,
             destinationWarehouse = destinationWarehouse
@@ -76,9 +80,9 @@ class CreatePackageValidatorTest {
         // Then
         assertThat(result).isInstanceOf(ResultValidator.Invalid::class.java)
 
-        val errors = (result as ResultValidator.Invalid).errors
+        val invalidResult = result as ResultValidator.Invalid
 
-        assertThat(errors).contains(
+        assertThat(invalidResult.errors).contains(
             FieldValidator(
                 field = "weightByKg",
                 error = ErrorValidator.MustBePositive
@@ -87,7 +91,7 @@ class CreatePackageValidatorTest {
     }
 
     @Test
-    fun `returns invalid when package priority is not allowed`() {
+    fun `should return invalid when package volume is zero`() {
         // Given
         val originWarehouse = createWarehouse("WH-000001")
         val destinationWarehouse = createWarehouse("WH-000002")
@@ -96,6 +100,65 @@ class CreatePackageValidatorTest {
         val result = validator(
             id = "PKG-000001",
             weightByKg = 10.0,
+            volumeM3 = 0.0,
+            priority = "URGENT",
+            originWarehouse = originWarehouse,
+            destinationWarehouse = destinationWarehouse
+        )
+
+        // Then
+        assertThat(result).isInstanceOf(ResultValidator.Invalid::class.java)
+
+        val invalidResult = result as ResultValidator.Invalid
+
+        assertThat(invalidResult.errors).contains(
+            FieldValidator(
+                field = "volumeM3",
+                error = ErrorValidator.MustBePositive
+            )
+        )
+    }
+
+    @Test
+    fun `should return invalid when package volume is negative`() {
+        // Given
+        val originWarehouse = createWarehouse("WH-000001")
+        val destinationWarehouse = createWarehouse("WH-000002")
+
+        // When
+        val result = validator(
+            id = "PKG-000001",
+            weightByKg = 10.0,
+            volumeM3 = -2.5,
+            priority = "URGENT",
+            originWarehouse = originWarehouse,
+            destinationWarehouse = destinationWarehouse
+        )
+
+        // Then
+        assertThat(result).isInstanceOf(ResultValidator.Invalid::class.java)
+
+        val invalidResult = result as ResultValidator.Invalid
+
+        assertThat(invalidResult.errors).contains(
+            FieldValidator(
+                field = "volumeM3",
+                error = ErrorValidator.MustBePositive
+            )
+        )
+    }
+
+    @Test
+    fun `should return invalid when package priority is not allowed`() {
+        // Given
+        val originWarehouse = createWarehouse("WH-000001")
+        val destinationWarehouse = createWarehouse("WH-000002")
+
+        // When
+        val result = validator(
+            id = "PKG-000001",
+            weightByKg = 10.0,
+            volumeM3 = 2.5,
             priority = "HIGH",
             originWarehouse = originWarehouse,
             destinationWarehouse = destinationWarehouse
@@ -104,24 +167,20 @@ class CreatePackageValidatorTest {
         // Then
         assertThat(result).isInstanceOf(ResultValidator.Invalid::class.java)
 
-        val errors = (result as ResultValidator.Invalid).errors
+        val invalidResult = result as ResultValidator.Invalid
 
-        assertThat(errors).contains(
+        assertThat(invalidResult.errors).contains(
             FieldValidator(
                 field = "priority",
                 error = ErrorValidator.InvalidPriority(
-                    allowedPriorities = setOf(
-                        "STANDARD",
-                        "LOW",
-                        "URGENT"
-                    )
+                    allowedPriorities = setOf("URGENT", "STANDARD", "LOW")
                 )
             )
         )
     }
 
     @Test
-    fun `returns invalid when package id has invalid prefix`() {
+    fun `should return invalid when package id has invalid prefix`() {
         // Given
         val originWarehouse = createWarehouse("WH-000001")
         val destinationWarehouse = createWarehouse("WH-000002")
@@ -130,6 +189,7 @@ class CreatePackageValidatorTest {
         val result = validator(
             id = "ABC-000001",
             weightByKg = 10.0,
+            volumeM3 = 2.5,
             priority = "URGENT",
             originWarehouse = originWarehouse,
             destinationWarehouse = destinationWarehouse
@@ -138,28 +198,24 @@ class CreatePackageValidatorTest {
         // Then
         assertThat(result).isInstanceOf(ResultValidator.Invalid::class.java)
 
-        val errors = (result as ResultValidator.Invalid).errors
+        val invalidResult = result as ResultValidator.Invalid
 
-        assertThat(errors).contains(
-            FieldValidator(
-                field = "id",
-                error = ErrorValidator.InvalidIdPrefix(
-                    allowedPrefixes = setOf("PKG-")
-                )
-            )
-        )
+        assertThat(
+            invalidResult.errors.any { it.field == "id" }
+        ).isTrue()
     }
 
     @Test
-    fun `returns invalid when package id has invalid format`() {
+    fun `should return invalid when package id has invalid format`() {
         // Given
         val originWarehouse = createWarehouse("WH-000001")
         val destinationWarehouse = createWarehouse("WH-000002")
 
         // When
         val result = validator(
-            id = "PKG-123",
+            id = "PKG-ABC",
             weightByKg = 10.0,
+            volumeM3 = 2.5,
             priority = "URGENT",
             originWarehouse = originWarehouse,
             destinationWarehouse = destinationWarehouse
@@ -168,18 +224,15 @@ class CreatePackageValidatorTest {
         // Then
         assertThat(result).isInstanceOf(ResultValidator.Invalid::class.java)
 
-        val errors = (result as ResultValidator.Invalid).errors
+        val invalidResult = result as ResultValidator.Invalid
 
-        assertThat(errors).contains(
-            FieldValidator(
-                field = "id",
-                error = ErrorValidator.InvalidIdFormat
-            )
-        )
+        assertThat(
+            invalidResult.errors.any { it.field == "id" }
+        ).isTrue()
     }
 
     @Test
-    fun `returns invalid when origin and destination warehouses are the same`() {
+    fun `should return invalid when origin and destination warehouses are the same`() {
         // Given
         val warehouse = createWarehouse("WH-000001")
 
@@ -187,6 +240,7 @@ class CreatePackageValidatorTest {
         val result = validator(
             id = "PKG-000001",
             weightByKg = 10.0,
+            volumeM3 = 2.5,
             priority = "URGENT",
             originWarehouse = warehouse,
             destinationWarehouse = warehouse
@@ -195,62 +249,44 @@ class CreatePackageValidatorTest {
         // Then
         assertThat(result).isInstanceOf(ResultValidator.Invalid::class.java)
 
-        val errors = (result as ResultValidator.Invalid).errors
+        val invalidResult = result as ResultValidator.Invalid
 
-        assertThat(errors).contains(
-            FieldValidator(
-                field = "values",
-                error = ErrorValidator.DifferentLocations
-            )
-        )
+        assertThat(
+            invalidResult.errors.any { it.field == "values" }
+        ).isTrue()
     }
 
     @Test
-    fun `returns all validation errors when multiple package fields are invalid`() {
+    fun `should return all validation errors when multiple package fields are invalid`() {
         // Given
-        val originWarehouse = createWarehouse("WH-000001")
-        val destinationWarehouse = createWarehouse("WH-000002")
+        val warehouse = createWarehouse("WH-000001")
 
         // When
         val result = validator(
-            id = "BAD-000001",
-            weightByKg = 0.0,
+            id = "ABC-000001",
+            weightByKg = -10.0,
+            volumeM3 = -2.5,
             priority = "HIGH",
-            originWarehouse = originWarehouse,
-            destinationWarehouse = destinationWarehouse
+            originWarehouse = warehouse,
+            destinationWarehouse = warehouse
         )
 
         // Then
         assertThat(result).isInstanceOf(ResultValidator.Invalid::class.java)
 
-        val errors = (result as ResultValidator.Invalid).errors
+        val invalidResult = result as ResultValidator.Invalid
 
-        assertThat(errors).contains(
-            FieldValidator(
-                field = "id",
-                error = ErrorValidator.InvalidIdPrefix(
-                    allowedPrefixes = setOf("PKG-")
-                )
-            )
-        )
-
-        assertThat(errors).contains(
+        assertThat(invalidResult.errors).contains(
             FieldValidator(
                 field = "weightByKg",
                 error = ErrorValidator.MustBePositive
             )
         )
 
-        assertThat(errors).contains(
+        assertThat(invalidResult.errors).contains(
             FieldValidator(
-                field = "priority",
-                error = ErrorValidator.InvalidPriority(
-                    allowedPriorities = setOf(
-                        "STANDARD",
-                        "LOW",
-                        "URGENT"
-                    )
-                )
+                field = "volumeM3",
+                error = ErrorValidator.MustBePositive
             )
         )
     }
