@@ -34,6 +34,22 @@ data class Package(
         }
     }
 
+    fun assignToVehicle() {
+        state = state.assignToVehicle()
+    }
+
+    fun markAsInTransit() {
+        state = state.markAsInTransit()
+    }
+
+    fun markAsDelivered() {
+        state = state.markAsDelivered()
+    }
+
+    fun deliveryFailed() {
+        state = state.deliveryFailed()
+    }
+
     override fun calculateTransitRate(
         selectedRoute: Route,
         assignedVehicle: Vehicle,

@@ -32,6 +32,13 @@ class ExpressDispatchProcessor : BaseDispatchProcessor() {
         vehicle.addPackage(logisticsPackage)
     }
 
+    override fun updateShipmentState(
+        logisticsPackage: Package
+    ) {
+        logisticsPackage.assignToVehicle()
+        logisticsPackage.markAsInTransit()
+    }
+
     override fun notifyDispatchStatus(
         logisticsPackage: Package,
         vehicle: Vehicle
