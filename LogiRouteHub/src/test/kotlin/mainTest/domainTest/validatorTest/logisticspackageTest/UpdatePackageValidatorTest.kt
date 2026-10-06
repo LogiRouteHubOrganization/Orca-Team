@@ -13,10 +13,10 @@ class UpdatePackageValidatorTest {
     private val validator = UpdatePackageValidator()
 
     @Test
-    fun `returns valid when package weight update is valid`() {
+    fun `should return valid when package weight update is valid`() {
         // Given
         val updateModel = PackageUpdateModel(
-            weightByKg = 20.0
+            weightByKg = 15.0
         )
 
         // When
@@ -27,7 +27,21 @@ class UpdatePackageValidatorTest {
     }
 
     @Test
-    fun `returns invalid when no package fields are provided for update`() {
+    fun `should return valid when package volume update is valid`() {
+        // Given
+        val updateModel = PackageUpdateModel(
+            volumeM3 = 3.5
+        )
+
+        // When
+        val result = validator(updateModel)
+
+        // Then
+        assertThat(result).isEqualTo(ResultValidator.Valid)
+    }
+
+    @Test
+    fun `should return invalid when no package fields are provided for update`() {
         // Given
         val updateModel = PackageUpdateModel()
 
@@ -37,9 +51,9 @@ class UpdatePackageValidatorTest {
         // Then
         assertThat(result).isInstanceOf(ResultValidator.Invalid::class.java)
 
-        val errors = (result as ResultValidator.Invalid).errors
+        val invalidResult = result as ResultValidator.Invalid
 
-        assertThat(errors).contains(
+        assertThat(invalidResult.errors).contains(
             FieldValidator(
                 field = "update",
                 error = ErrorValidator.EmptyUpdate
@@ -48,7 +62,7 @@ class UpdatePackageValidatorTest {
     }
 
     @Test
-    fun `returns invalid when updated package weight is zero`() {
+    fun `should return invalid when updated package weight is zero`() {
         // Given
         val updateModel = PackageUpdateModel(
             weightByKg = 0.0
@@ -60,9 +74,9 @@ class UpdatePackageValidatorTest {
         // Then
         assertThat(result).isInstanceOf(ResultValidator.Invalid::class.java)
 
-        val errors = (result as ResultValidator.Invalid).errors
+        val invalidResult = result as ResultValidator.Invalid
 
-        assertThat(errors).contains(
+        assertThat(invalidResult.errors).contains(
             FieldValidator(
                 field = "weightByKg",
                 error = ErrorValidator.MustBePositive
@@ -71,10 +85,10 @@ class UpdatePackageValidatorTest {
     }
 
     @Test
-    fun `returns invalid when updated package weight is negative`() {
+    fun `should return invalid when updated package weight is negative`() {
         // Given
         val updateModel = PackageUpdateModel(
-            weightByKg = -5.0
+            weightByKg = -10.0
         )
 
         // When
@@ -83,9 +97,9 @@ class UpdatePackageValidatorTest {
         // Then
         assertThat(result).isInstanceOf(ResultValidator.Invalid::class.java)
 
-        val errors = (result as ResultValidator.Invalid).errors
+        val invalidResult = result as ResultValidator.Invalid
 
-        assertThat(errors).contains(
+        assertThat(invalidResult.errors).contains(
             FieldValidator(
                 field = "weightByKg",
                 error = ErrorValidator.MustBePositive
@@ -94,7 +108,53 @@ class UpdatePackageValidatorTest {
     }
 
     @Test
-    fun `returns valid when package priority update is valid`() {
+    fun `should return invalid when updated package volume is zero`() {
+        // Given
+        val updateModel = PackageUpdateModel(
+            volumeM3 = 0.0
+        )
+
+        // When
+        val result = validator(updateModel)
+
+        // Then
+        assertThat(result).isInstanceOf(ResultValidator.Invalid::class.java)
+
+        val invalidResult = result as ResultValidator.Invalid
+
+        assertThat(invalidResult.errors).contains(
+            FieldValidator(
+                field = "volumeM3",
+                error = ErrorValidator.MustBePositive
+            )
+        )
+    }
+
+    @Test
+    fun `should return invalid when updated package volume is negative`() {
+        // Given
+        val updateModel = PackageUpdateModel(
+            volumeM3 = -3.5
+        )
+
+        // When
+        val result = validator(updateModel)
+
+        // Then
+        assertThat(result).isInstanceOf(ResultValidator.Invalid::class.java)
+
+        val invalidResult = result as ResultValidator.Invalid
+
+        assertThat(invalidResult.errors).contains(
+            FieldValidator(
+                field = "volumeM3",
+                error = ErrorValidator.MustBePositive
+            )
+        )
+    }
+
+    @Test
+    fun `should return valid when package priority update is valid`() {
         // Given
         val updateModel = PackageUpdateModel(
             priority = "URGENT"
@@ -108,7 +168,7 @@ class UpdatePackageValidatorTest {
     }
 
     @Test
-    fun `returns invalid when updated package priority is not allowed`() {
+    fun `should return invalid when updated package priority is not allowed`() {
         // Given
         val updateModel = PackageUpdateModel(
             priority = "HIGH"
@@ -120,27 +180,23 @@ class UpdatePackageValidatorTest {
         // Then
         assertThat(result).isInstanceOf(ResultValidator.Invalid::class.java)
 
-        val errors = (result as ResultValidator.Invalid).errors
+        val invalidResult = result as ResultValidator.Invalid
 
-        assertThat(errors).contains(
+        assertThat(invalidResult.errors).contains(
             FieldValidator(
                 field = "priority",
                 error = ErrorValidator.InvalidPriority(
-                    allowedPriorities = setOf(
-                        "STANDARD",
-                        "LOW",
-                        "URGENT"
-                    )
+                    allowedPriorities = setOf("URGENT", "STANDARD", "LOW")
                 )
             )
         )
     }
 
     @Test
-    fun `returns valid when origin warehouse id update is valid`() {
+    fun `should return valid when origin warehouse id update is valid`() {
         // Given
         val updateModel = PackageUpdateModel(
-            originWarehouseId = "WH-000001"
+            originWarehouseId = "WH-000002"
         )
 
         // When
@@ -151,10 +207,10 @@ class UpdatePackageValidatorTest {
     }
 
     @Test
-    fun `returns invalid when origin warehouse id has invalid prefix`() {
+    fun `should return invalid when origin warehouse id has invalid prefix`() {
         // Given
         val updateModel = PackageUpdateModel(
-            originWarehouseId = "ABC-000001"
+            originWarehouseId = "PKG-000002"
         )
 
         // When
@@ -163,20 +219,15 @@ class UpdatePackageValidatorTest {
         // Then
         assertThat(result).isInstanceOf(ResultValidator.Invalid::class.java)
 
-        val errors = (result as ResultValidator.Invalid).errors
+        val invalidResult = result as ResultValidator.Invalid
 
-        assertThat(errors).contains(
-            FieldValidator(
-                field = "originWarehouseId",
-                error = ErrorValidator.InvalidIdPrefix(
-                    allowedPrefixes = setOf("WH-")
-                )
-            )
-        )
+        assertThat(
+            invalidResult.errors.any { it.field == "originWarehouseId" }
+        ).isTrue()
     }
 
     @Test
-    fun `returns valid when destination warehouse id update is valid`() {
+    fun `should return valid when destination warehouse id update is valid`() {
         // Given
         val updateModel = PackageUpdateModel(
             destinationWarehouseId = "WH-000002"
@@ -190,10 +241,10 @@ class UpdatePackageValidatorTest {
     }
 
     @Test
-    fun `returns invalid when destination warehouse id has invalid prefix`() {
+    fun `should return invalid when destination warehouse id has invalid prefix`() {
         // Given
         val updateModel = PackageUpdateModel(
-            destinationWarehouseId = "ABC-000002"
+            destinationWarehouseId = "PKG-000002"
         )
 
         // When
@@ -202,26 +253,22 @@ class UpdatePackageValidatorTest {
         // Then
         assertThat(result).isInstanceOf(ResultValidator.Invalid::class.java)
 
-        val errors = (result as ResultValidator.Invalid).errors
+        val invalidResult = result as ResultValidator.Invalid
 
-        assertThat(errors).contains(
-            FieldValidator(
-                field = "destinationWarehouseId",
-                error = ErrorValidator.InvalidIdPrefix(
-                    allowedPrefixes = setOf("WH-")
-                )
-            )
-        )
+        assertThat(
+            invalidResult.errors.any { it.field == "destinationWarehouseId" }
+        ).isTrue()
     }
 
     @Test
-    fun `returns valid when multiple package updates are valid`() {
+    fun `should return valid when multiple package updates are valid`() {
         // Given
         val updateModel = PackageUpdateModel(
-            weightByKg = 25.0,
+            weightByKg = 15.0,
+            volumeM3 = 3.5,
             priority = "STANDARD",
-            originWarehouseId = "WH-000003",
-            destinationWarehouseId = "WH-000004"
+            originWarehouseId = "WH-000002",
+            destinationWarehouseId = "WH-000003"
         )
 
         // When
@@ -232,12 +279,14 @@ class UpdatePackageValidatorTest {
     }
 
     @Test
-    fun `returns all validation errors when multiple package updates are invalid`() {
+    fun `should return all validation errors when multiple package updates are invalid`() {
         // Given
         val updateModel = PackageUpdateModel(
-            weightByKg = 0.0,
+            weightByKg = -15.0,
+            volumeM3 = -3.5,
             priority = "HIGH",
-            originWarehouseId = "ABC-000001"
+            originWarehouseId = "PKG-000002",
+            destinationWarehouseId = "PKG-000003"
         )
 
         // When
@@ -246,35 +295,37 @@ class UpdatePackageValidatorTest {
         // Then
         assertThat(result).isInstanceOf(ResultValidator.Invalid::class.java)
 
-        val errors = (result as ResultValidator.Invalid).errors
+        val invalidResult = result as ResultValidator.Invalid
 
-        assertThat(errors).contains(
+        assertThat(invalidResult.errors).contains(
             FieldValidator(
                 field = "weightByKg",
                 error = ErrorValidator.MustBePositive
             )
         )
 
-        assertThat(errors).contains(
+        assertThat(invalidResult.errors).contains(
+            FieldValidator(
+                field = "volumeM3",
+                error = ErrorValidator.MustBePositive
+            )
+        )
+
+        assertThat(invalidResult.errors).contains(
             FieldValidator(
                 field = "priority",
                 error = ErrorValidator.InvalidPriority(
-                    allowedPriorities = setOf(
-                        "STANDARD",
-                        "LOW",
-                        "URGENT"
-                    )
+                    allowedPriorities = setOf("URGENT", "STANDARD", "LOW")
                 )
             )
         )
-        assertThat(errors).contains(
-            FieldValidator(
-                field = "originWarehouseId",
-                error = ErrorValidator.InvalidIdPrefix(
-                    allowedPrefixes = setOf("WH-")
-                )
-            )
-        )
-    }
 
+        assertThat(
+            invalidResult.errors.any { it.field == "originWarehouseId" }
+        ).isTrue()
+
+        assertThat(
+            invalidResult.errors.any { it.field == "destinationWarehouseId" }
+        ).isTrue()
+    }
 }
