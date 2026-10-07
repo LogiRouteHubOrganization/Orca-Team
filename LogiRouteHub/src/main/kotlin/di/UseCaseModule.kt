@@ -2,7 +2,6 @@
 package di
 
 import domain.algorithm.greedy.VehicleCoverageMapper
-import domain.algorithm.knapsack.KnapsackCargoOptimizer
 import domain.model.request.PackagePriorityLevels
 import domain.model.request.RouteRiskConfig
 import domain.pricing.decorator.PackageDecoratorComposer
@@ -48,6 +47,8 @@ import domain.usecase.crud.warehouse.CreateWarehouseUseCase
 import domain.usecase.crud.warehouse.DeleteWarehouseUseCase
 import domain.usecase.crud.warehouse.GetWarehouseByIdUseCase
 import domain.usecase.crud.warehouse.UpdateWarehouseUseCase
+import domain.usecase.OptimizeCargoByWeightUseCase
+import domain.usecase.OptimizeCargoByWeightAndVolumeUseCase
 import org.koin.dsl.module
 
 val useCaseModule = module {
@@ -184,9 +185,13 @@ val useCaseModule = module {
         )
     }
 
-// Knapsack
-    single<KnapsackCargoOptimizer> {
-        KnapsackCargoOptimizer()
+// Cargo Optimization - Template Method
+    factory {
+        OptimizeCargoByWeightUseCase()
+    }
+
+    factory {
+        OptimizeCargoByWeightAndVolumeUseCase()
     }
 
 // Vehicle
@@ -200,7 +205,7 @@ val useCaseModule = module {
         DispatchVehicleUseCase(
             vehicleRepository = get(),
             warehouseRepository = get(),
-            knapsackCargoOptimizer = get()
+            optimizeCargoByWeightUseCase = get()
         )
     }
 
