@@ -72,7 +72,7 @@ fun RouteDetailCard(
 
             )
         }
-        Spacer(modifier = Modifier.height(12.dp))//الحين هين اللي صار انو بدي اعمل مساحة بين الرو الاثنين اللي عندي او بما تسمى سباكر هي  اني اعمل مسافة فاصلة بين الرو الاول و بين الرو الثاني وبارتفاع 12 بجيث يكون مريح للعين
+        Spacer(modifier = Modifier.height(12.dp))
         Row(
             modifier=Modifier
                 .fillMaxWidth(),
