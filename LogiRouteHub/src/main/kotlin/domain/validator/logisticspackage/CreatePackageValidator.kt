@@ -14,38 +14,39 @@ class CreatePackageValidator {
         weightByKg: Double,
         priority: String,
         originWarehouse: Warehouse,
-        destinationWarehouse: Warehouse
+        destinationWarehouse: Warehouse,
+        volumeM3: Double? = null
     ): ResultValidator {
 
-        val results: List<ResultValidator> = listOf(
-
+        val results: List<ResultValidator> = listOfNotNull(
             IdValidator(
                 field = "id",
                 allowedPrefixes = setOf("PKG-")
             ).validate(id),
 
-
             PositiveNumberValidator(
                 field = "weightByKg"
             ).validate(weightByKg),
 
+            volumeM3?.let {
+                PositiveNumberValidator(
+                    field = "volumeM3"
+                ).validate(it)
+            },
 
             PriorityValidator(
                 field = "priority"
             ).validate(priority),
-
 
             IdValidator(
                 field = "originWarehouseId",
                 allowedPrefixes = setOf("WH-")
             ).validate(originWarehouse.id),
 
-
             IdValidator(
                 field = "destinationWarehouseId",
                 allowedPrefixes = setOf("WH-")
             ).validate(destinationWarehouse.id),
-
 
             DifferentLocationsValidator<String>().validate(
                 Pair(originWarehouse.id, destinationWarehouse.id)

@@ -1,11 +1,11 @@
 package data.repository
 
-import data.datasource.VehicleDataSource
+import data.datasource.local.LocalVehicleDataSource
 import data.exception.local.LocalDataException
 import data.exception.local.toDomainException
 import data.exception.remote.toDomainException
 import data.mapper.VehicleMapper
-import data.remote.datasource.VehicleRemoteDataSource
+import data.datasource.remote.RemoteVehicleDataSource
 import data.remote.mapper.toCreateDto
 import data.remote.mapper.toRaw
 import data.remote.mapper.toUpdateDto
@@ -16,8 +16,8 @@ import domain.repository.VehicleRepository
 import domain.repository.WarehouseRepository
 
 class VehicleRepositoryImpl(
-    private val vehicleDataSource: VehicleDataSource,
-    private val vehicleRemoteDataSource: VehicleRemoteDataSource,
+    private val vehicleDataSource: LocalVehicleDataSource,
+    private val vehicleRemoteDataSource: RemoteVehicleDataSource,
     private val vehicleMapper: VehicleMapper,
     private val warehouseRepository: WarehouseRepository
 ) : VehicleRepository {

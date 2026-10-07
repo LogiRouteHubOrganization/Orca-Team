@@ -1,182 +1,104 @@
 package mainTest.domainTest.usecaseTest
 
-import com.google.common.truth.Truth
+import com.google.common.truth.Truth.assertThat
 import domain.model.Package
 import domain.model.Vehicle
 import domain.usecase.ValidateVehicleCapacityUseCase
 import io.mockk.every
 import io.mockk.mockk
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 class ValidateVehicleCapacityUseCaseTest {
 
+    private lateinit var validateVehicleCapacityUseCase: ValidateVehicleCapacityUseCase
+    private lateinit var vehicle: Vehicle
+
+    @BeforeEach
+    fun setUp() {
+        validateVehicleCapacityUseCase = ValidateVehicleCapacityUseCase()
+        vehicle = mockk()
+    }
+
+
     @Test
     fun `should return true when total weight fits within vehicle capacity`() {
+        stubVehicleCapacity(currentLoadKg = 20.0, maxCapacityKg = 100.0)
+        val packages = listOf(createMockPackage(30.0), createMockPackage(40.0))
 
-        // Given
-        val validateVehicleCapacityUseCase =
-            ValidateVehicleCapacityUseCase()
+        val result = validateVehicleCapacityUseCase(vehicle = vehicle, packages = packages)
 
-        val vehicle = mockk<Vehicle>()
-        val package1 = mockk<Package>()
-        val package2 = mockk<Package>()
-
-        every { vehicle.calculateTotalLoadedWeightKg()
-        } returns 20.0
-
-        every { vehicle.maxCapacityKg } returns 100.0
-
-        every { package1.weightByKg } returns 30.0
-
-        every { package2.weightByKg } returns 40.0
-
-        // When
-        val result = validateVehicleCapacityUseCase(
-            vehicle = vehicle,
-            packages = listOf(package1, package2)
-        )
-
-        // Then
-        Truth.assertThat(result).isTrue()
+        assertThat(result).isTrue()
     }
 
     @Test
     fun `should return true when total weight exactly equals vehicle capacity`() {
+        stubVehicleCapacity(currentLoadKg = 20.0, maxCapacityKg = 100.0)
+        val packages = listOf(createMockPackage(80.0))
 
-        // Given
-        val validateVehicleCapacityUseCase =
-            ValidateVehicleCapacityUseCase()
+        val result = validateVehicleCapacityUseCase(vehicle = vehicle, packages = packages)
 
-        val vehicle = mockk<Vehicle>()
-        val package1 = mockk<Package>()
-
-        every { vehicle.calculateTotalLoadedWeightKg()
-        } returns 20.0
-
-        every { vehicle.maxCapacityKg } returns 100.0
-
-        every { package1.weightByKg } returns 80.0
-
-        // When
-        val result = validateVehicleCapacityUseCase(
-            vehicle = vehicle,
-            packages = listOf(package1)
-        )
-
-        // Then
-        Truth.assertThat(result).isTrue()
-    }
-
-    @Test
-    fun `should return false when total weight exceeds vehicle capacity`() {
-
-        // Given
-        val validateVehicleCapacityUseCase =
-            ValidateVehicleCapacityUseCase()
-
-        val vehicle = mockk<Vehicle>()
-        val package1 = mockk<Package>()
-
-        every { vehicle.calculateTotalLoadedWeightKg()
-        } returns 20.0
-
-        every { vehicle.maxCapacityKg } returns 100.0
-
-        every { package1.weightByKg } returns 81.0
-
-        // When
-        val result = validateVehicleCapacityUseCase(
-            vehicle = vehicle,
-            packages = listOf(package1)
-        )
-
-        // Then
-        Truth.assertThat(result).isFalse()
-    }
-
-    @Test
-    fun `should return true when there are no packages and current load is within capacity`() {
-
-        // Given
-        val validateVehicleCapacityUseCase =
-            ValidateVehicleCapacityUseCase()
-
-        val vehicle = mockk<Vehicle>()
-
-        every { vehicle.calculateTotalLoadedWeightKg()
-        } returns 60.0
-
-        every { vehicle.maxCapacityKg } returns 100.0
-
-        // When
-        val result = validateVehicleCapacityUseCase(
-            vehicle = vehicle,
-            packages = emptyList()
-        )
-        // Then
-        Truth.assertThat(result).isTrue()
+        assertThat(result).isTrue()
     }
 
     @Test
     fun `should return true when vehicle is empty and packages fit within capacity`() {
+        stubVehicleCapacity(currentLoadKg = 0.0, maxCapacityKg = 100.0)
+        val packages = listOf(createMockPackage(30.0), createMockPackage(40.0))
 
-        // Given
-        val validateVehicleCapacityUseCase =
-            ValidateVehicleCapacityUseCase()
+        val result = validateVehicleCapacityUseCase(vehicle = vehicle, packages = packages)
 
-        val vehicle = mockk<Vehicle>()
-        val package1 = mockk<Package>()
-        val package2 = mockk<Package>()
+        assertThat(result).isTrue()
+    }
 
-        every { vehicle.calculateTotalLoadedWeightKg()
-        } returns 0.0
+    @Test
+    fun `should return true when there are no packages and current load is within capacity`() {
+        stubVehicleCapacity(currentLoadKg = 60.0, maxCapacityKg = 100.0)
 
-        every { vehicle.maxCapacityKg } returns 100.0
+        val result = validateVehicleCapacityUseCase(vehicle = vehicle, packages = emptyList())
 
-        every { package1.weightByKg } returns 30.0
+        assertThat(result).isTrue()
+    }
 
-        every { package2.weightByKg } returns 40.0
+    @Test
+    fun `should return false when total weight exceeds vehicle capacity by minimal unit`() {
+        stubVehicleCapacity(currentLoadKg = 20.0, maxCapacityKg = 100.0)
+        val packages = listOf(createMockPackage(81.0))
 
-        // When
-        val result = validateVehicleCapacityUseCase(
-            vehicle = vehicle,
-            packages = listOf(package1, package2)
-        )
+        val result = validateVehicleCapacityUseCase(vehicle = vehicle, packages = packages)
 
-        // Then
-        Truth.assertThat(result).isTrue()
+        assertThat(result).isFalse()
     }
 
     @Test
     fun `should return false when combined package weight exceeds vehicle capacity`() {
+        stubVehicleCapacity(currentLoadKg = 20.0, maxCapacityKg = 100.0)
+        val packages = listOf(createMockPackage(30.0), createMockPackage(40.0), createMockPackage(31.0))
 
-        // Given
-        val validateVehicleCapacityUseCase =
-            ValidateVehicleCapacityUseCase()
+        val result = validateVehicleCapacityUseCase(vehicle = vehicle, packages = packages)
 
-        val vehicle = mockk<Vehicle>()
+        assertThat(result).isFalse()
+    }
 
-        val package1 = mockk<Package>()
-        val package2 = mockk<Package>()
-        val package3 = mockk<Package>()
+    @Test
+    fun `should return false when vehicle current load is already at maximum capacity`() {
+        stubVehicleCapacity(currentLoadKg = 100.0, maxCapacityKg = 100.0)
+        val packages = listOf(createMockPackage(1.0))
 
-        every { vehicle.calculateTotalLoadedWeightKg()
-        } returns 20.0
+        val result = validateVehicleCapacityUseCase(vehicle = vehicle, packages = packages)
 
-        every { vehicle.maxCapacityKg } returns 100.0
+        assertThat(result).isFalse()
+    }
 
-        every { package1.weightByKg } returns 30.0
 
-        every { package2.weightByKg } returns 40.0
+    private fun stubVehicleCapacity(currentLoadKg: Double, maxCapacityKg: Double) {
+        every { vehicle.calculateTotalLoadedWeightKg() } returns currentLoadKg
+        every { vehicle.maxCapacityKg } returns maxCapacityKg
+    }
 
-        every { package3.weightByKg } returns 20.0
-
-        // When
-        val result = validateVehicleCapacityUseCase(
-            vehicle = vehicle,
-            packages = listOf(package1, package2, package3))
-
-        // Then
-        Truth.assertThat(result).isFalse()
+    private fun createMockPackage(weightByKg: Double): Package {
+        val mockPackage = mockk<Package>()
+        every { mockPackage.weightByKg } returns weightByKg
+        return mockPackage
     }
 }

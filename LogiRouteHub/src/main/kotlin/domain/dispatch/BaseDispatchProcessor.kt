@@ -2,7 +2,6 @@ package domain.dispatch
 
 import domain.model.Package
 import domain.model.Vehicle
-import domain.state.ShipmentState
 
 abstract class BaseDispatchProcessor {
 
@@ -26,17 +25,9 @@ abstract class BaseDispatchProcessor {
         vehicle: Vehicle
     )
 
-    protected open fun updateShipmentState(
+    protected abstract fun updateShipmentState(
         logisticsPackage: Package
-    ) {
-        val currentState = logisticsPackage.state as ShipmentState
-
-        logisticsPackage.state =
-            currentState
-                .assignToVehicle()
-                .markAsInTransit()
-    }
-
+    )
 
     protected open fun notifyDispatchStatus(
         logisticsPackage: Package,
@@ -44,4 +35,3 @@ abstract class BaseDispatchProcessor {
     ) {
     }
 }
-

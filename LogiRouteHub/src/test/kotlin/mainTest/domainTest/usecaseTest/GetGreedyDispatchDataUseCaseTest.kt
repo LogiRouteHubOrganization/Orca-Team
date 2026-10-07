@@ -1,8 +1,8 @@
 package mainTest.domainTest.usecaseTest
 
 import com.google.common.truth.Truth
-import domain.algorithm.dispatcher.VehicleCoverage
-import domain.algorithm.dispatcher.VehicleCoverageMapper
+import domain.algorithm.greedy.VehicleCoverage
+import domain.algorithm.greedy.VehicleCoverageMapper
 import domain.model.Route
 import domain.model.Vehicle
 import domain.repository.RouteRepository

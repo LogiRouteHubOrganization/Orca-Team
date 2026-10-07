@@ -1,11 +1,11 @@
 package data.repository
 
-import data.datasource.PackageDataSource
+import data.datasource.local.LocalPackageDataSource
 import data.exception.local.LocalDataException
 import data.exception.local.toDomainException
 import data.exception.remote.toDomainException
 import data.mapper.PackageMapper
-import data.remote.datasource.PackageRemoteDataSource
+import data.datasource.remote.RemotePackageDataSource
 import data.remote.mapper.toCreateDto
 import data.remote.mapper.toRaw
 import data.remote.mapper.toUpdateDto
@@ -16,8 +16,8 @@ import domain.repository.WarehouseRepository
 import domain.model.updateinput.PackageUpdateModel
 
 class PackageRepositoryImpl(
-    private val packageDataSource: PackageDataSource,
-    private val packageRemoteDataSource: PackageRemoteDataSource,
+    private val packageDataSource: LocalPackageDataSource,
+    private val packageRemoteDataSource: RemotePackageDataSource,
     private val packageMapper: PackageMapper,
     private val warehouseRepository: WarehouseRepository
 ) : PackageRepository {

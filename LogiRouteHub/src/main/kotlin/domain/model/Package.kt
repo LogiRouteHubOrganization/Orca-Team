@@ -13,7 +13,8 @@ data class Package(
     val weightByKg: Double,
     val priority: String,
     val originWarehouse: Warehouse,
-    val destinationWarehouse: Warehouse
+    val destinationWarehouse: Warehouse,
+    val volumeM3: Double? = null
 ) : PackageComponent {
 
     var state: ShipmentState = CreatedState()
@@ -24,12 +25,29 @@ data class Package(
             weightByKg = weightByKg,
             priority = priority,
             originWarehouse = originWarehouse,
-            destinationWarehouse = destinationWarehouse
+            destinationWarehouse = destinationWarehouse,
+            volumeM3 = volumeM3
         )
 
         if (validationResult is ResultValidator.Invalid) {
             throw EntityValidationException(validationResult.errors)
         }
+    }
+
+    fun assignToVehicle() {
+        state = state.assignToVehicle()
+    }
+
+    fun markAsInTransit() {
+        state = state.markAsInTransit()
+    }
+
+    fun markAsDelivered() {
+        state = state.markAsDelivered()
+    }
+
+    fun deliveryFailed() {
+        state = state.deliveryFailed()
     }
 
     override fun calculateTransitRate(

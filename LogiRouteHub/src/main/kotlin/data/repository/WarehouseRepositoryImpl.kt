@@ -1,11 +1,11 @@
 package data.repository
 
-import data.datasource.WarehouseDataSource
+import data.datasource.local.LocalWarehouseDataSource
 import data.exception.local.LocalDataException
 import data.exception.local.toDomainException
 import data.exception.remote.toDomainException
 import data.mapper.WarehouseMapper
-import data.remote.datasource.WarehouseRemoteDataSource
+import data.datasource.remote.RemoteWarehouseDataSource
 import data.remote.mapper.toCreateDto
 import data.remote.mapper.toRaw
 import data.remote.mapper.toUpdateDto
@@ -15,8 +15,8 @@ import domain.model.updateinput.WarehouseUpdateModel
 import domain.repository.WarehouseRepository
 
 class WarehouseRepositoryImpl(
-    private val warehouseDataSource: WarehouseDataSource,
-    private val warehouseRemoteDataSource: WarehouseRemoteDataSource,
+    private val warehouseDataSource: LocalWarehouseDataSource,
+    private val warehouseRemoteDataSource: RemoteWarehouseDataSource,
     private val warehouseMapper: WarehouseMapper
 ) : WarehouseRepository {
     private val warehouses = mutableListOf<Warehouse>()
