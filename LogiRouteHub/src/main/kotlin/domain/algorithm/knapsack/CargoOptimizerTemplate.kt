@@ -10,7 +10,7 @@ abstract class CargoOptimizerTemplate {
         capacityVolumeM3: Double? = null
     ): List<Package> {
 
-        if (packages.isEmpty()) {
+        if (packages.isEmpty() || capacityKg<= 0.0) {
             return emptyList()
         }
 
