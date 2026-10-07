@@ -19,6 +19,11 @@ class OptimizeCargoByWeightUseCase : CargoOptimizerTemplate() {
         capacityKg: Double,
         capacityVolumeM3: Double?
     ): List<Package> {
-        return emptyList()
+
+        val capacity = scale(capacityKg)
+
+        return packages.filter {
+            scale(it.weightByKg) <= capacity
+        }
     }
 }
