@@ -14,6 +14,8 @@ import domain.usecase.FindOptimalPathUseCase
 import domain.model.Package
 import domain.model.request.DispatchVehicleRequest
 import domain.usecase.DispatchVehicleUseCase
+import domain.algorithm.knapsack.KnapsackCargoOptimizer
+import domain.algorithm.knapsack.TwoDimensionalKnapsackCargoOptimizer
 import kotlinx.coroutines.runBlocking
 import org.koin.core.Koin
 import org.koin.core.context.startKoin
@@ -48,11 +50,13 @@ class Main(
 
     private val findFewestHopsRouteUseCase = koin.get<FindFewestHopsRouteUseCase>()
 
-    private val analyzePackageDestinationDemandUseCase =
-        koin.get<AnalyzePackageDestinationDemandUseCase>()
+    private val analyzePackageDestinationDemandUseCase = koin.get<AnalyzePackageDestinationDemandUseCase>()
 
-    private val dispatchVehicleUseCase =
-        koin.get<DispatchVehicleUseCase>()
+    private val dispatchVehicleUseCase = koin.get<DispatchVehicleUseCase>()
+
+    private val weightOnlyOptimizer = KnapsackCargoOptimizer()
+
+    private val twoDimensionalOptimizer = TwoDimensionalKnapsackCargoOptimizer()
 
     suspend fun run() {
         refreshData()
@@ -212,6 +216,9 @@ class Main(
 
         demoDestinationDemand()
 
+        demoCargoOptimizationComparison()
+
+
         dispatchVehicle()
     }
 
@@ -279,6 +286,115 @@ class Main(
         } else {
             println("No package demand found.")
         }
+    }
+
+    private suspend fun demoCargoOptimizationComparison() {
+        println("\n=== Cargo Optimization Comparison ===")
+
+        val demoPackages = createDemoPackages() ?: return
+
+        val weightCapacityKg = 10.0
+        val volumeCapacityM3 = 10.0
+
+        printOptimizationCapacities(
+            weightCapacityKg = weightCapacityKg,
+            volumeCapacityM3 = volumeCapacityM3
+        )
+
+        compareOptimizers(
+            packages = demoPackages,
+            weightCapacityKg = weightCapacityKg,
+            volumeCapacityM3 = volumeCapacityM3
+        )
+    }
+
+    private suspend fun createDemoPackages(): List<Package>? {
+        val warehouses = warehouseRepository.findAll().getOrThrow()
+
+        if (warehouses.size < 2) {
+            println("Not enough warehouses available for cargo optimization demo.")
+            return null
+        }
+        val originWarehouse = warehouses[0]
+        val destinationWarehouse = warehouses[1]
+
+        return listOf(
+            Package(id = "PKG-900001", weightByKg = 4.0, priority = "URGENT",
+                originWarehouse = originWarehouse, destinationWarehouse = destinationWarehouse, volumeM3 = 8.0),
+            Package(id = "PKG-900002", weightByKg = 6.0, priority = "URGENT",
+                originWarehouse = originWarehouse, destinationWarehouse = destinationWarehouse, volumeM3 = 5.0),
+            Package(id = "PKG-900003", weightByKg = 6.0, priority = "STANDARD",
+                originWarehouse = originWarehouse, destinationWarehouse = destinationWarehouse, volumeM3 = 2.0)
+        )
+    }
+
+    private fun printOptimizationCapacities(
+        weightCapacityKg: Double,
+        volumeCapacityM3: Double
+    ) {
+        println("Weight capacity: $weightCapacityKg kg")
+        println("Volume capacity: $volumeCapacityM3 m³")
+    }
+
+    private fun compareOptimizers(
+        packages: List<Package>,
+        weightCapacityKg: Double,
+        volumeCapacityM3: Double
+    ) {
+        val weightOnlySelection = weightOnlyOptimizer.optimize(
+            packages = packages,
+            capacityKg = weightCapacityKg
+        )
+
+        val twoDimensionalSelection = twoDimensionalOptimizer.optimize(
+            packages = packages,
+            capacityKg = weightCapacityKg,
+            capacityVolumeM3 = volumeCapacityM3
+        )
+
+        printOptimizationResult(
+            title = "Weight-Only Optimization",
+            packages = weightOnlySelection
+        )
+
+        printOptimizationResult(
+            title = "Weight + Volume Optimization",
+            packages = twoDimensionalSelection
+        )
+    }
+
+
+    private fun printOptimizationResult(
+        title: String,
+        packages: List<Package>
+    ) {
+        println("\n--- $title ---")
+
+        if (packages.isEmpty()) {
+            println("No packages selected.")
+            return
+        }
+
+        packages.forEach { logisticsPackage ->
+            println(
+                "Package ${logisticsPackage.id} | " +
+                        "Weight: ${logisticsPackage.weightByKg} kg | " +
+                        "Volume: ${logisticsPackage.volumeM3} m³ | " +
+                        "Priority: ${logisticsPackage.priority}"
+            )
+        }
+
+        val totalWeight = packages.sumOf {
+            it.weightByKg
+        }
+
+        val totalVolume = packages.sumOf {
+            it.volumeM3 ?: 0.0
+        }
+
+        println("Selected packages: ${packages.size}")
+        println("Total weight: $totalWeight kg")
+        println("Total volume: $totalVolume m³")
     }
 
     private suspend fun dispatchVehicle() {
