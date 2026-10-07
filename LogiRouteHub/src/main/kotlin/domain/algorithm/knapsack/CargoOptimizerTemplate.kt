@@ -1,10 +1,15 @@
 package domain.algorithm.knapsack
 
 import domain.model.Package
+import domain.model.request.PackagePriorityLevels
+import kotlin.math.roundToInt
 
 abstract class CargoOptimizerTemplate {
 
+    private val priorityLevels = PackagePriorityLevels()
+
     protected companion object {
+        const val SCALE_FACTOR = 100
         const val ZERO_CAPACITY = 0.0
     }
 
@@ -35,7 +40,8 @@ abstract class CargoOptimizerTemplate {
         capacityKg: Double,
         capacityVolumeM3: Double?
     ): Boolean {
-        return packages.isNotEmpty() && capacityKg > ZERO_CAPACITY
+        return packages.isNotEmpty() &&
+                capacityKg > ZERO_CAPACITY
     }
 
     protected abstract fun performOptimization(
@@ -43,4 +49,17 @@ abstract class CargoOptimizerTemplate {
         capacityKg: Double,
         capacityVolumeM3: Double?
     ): List<Package>
+
+    protected fun scale(value: Double): Int {
+        return (value * SCALE_FACTOR).roundToInt()
+    }
+
+    protected fun getPriority(priority: String): Int {
+        return when (priority.uppercase()) {
+            "URGENT" -> priorityLevels.urgent
+            "STANDARD" -> priorityLevels.standard
+            "LOW" -> priorityLevels.low
+            else -> priorityLevels.unknown
+        }
+    }
 }
