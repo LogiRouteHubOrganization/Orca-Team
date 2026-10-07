@@ -106,6 +106,33 @@ class OptimizeCargoByWeightUseCaseTest {
             standardPackage
         ).inOrder()
     }
+    @Test
+    fun shouldSelectPackagesThatExactlyFillWeightCapacity() {
+        val firstPackage = mockPackage(
+            weight = 6.0,
+            priority = "URGENT"
+        )
+
+        val secondPackage = mockPackage(
+            weight = 4.0,
+            priority = "STANDARD"
+        )
+
+        val useCase = OptimizeCargoByWeightUseCase()
+
+        val result = useCase(
+            packages = listOf(
+                firstPackage,
+                secondPackage
+            ),
+            capacityKg = 10.0
+        )
+
+        assertThat(result).containsExactly(
+            firstPackage,
+            secondPackage
+        ).inOrder()
+    }
 
     private fun mockPackage(
         weight: Double,
