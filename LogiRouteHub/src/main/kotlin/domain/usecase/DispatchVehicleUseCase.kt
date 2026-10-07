@@ -1,6 +1,5 @@
 package domain.usecase
 
-import domain.algorithm.knapsack.KnapsackCargoOptimizer
 import domain.dispatch.ExpressDispatchProcessor
 import domain.dispatch.StandardDispatchProcessor
 import domain.model.Package
@@ -11,7 +10,7 @@ import domain.repository.WarehouseRepository
 class DispatchVehicleUseCase(
     private val vehicleRepository: VehicleRepository,
     private val warehouseRepository: WarehouseRepository,
-    private val knapsackCargoOptimizer: KnapsackCargoOptimizer
+    private val optimizeCargoByWeightUseCase: OptimizeCargoByWeightUseCase
 ) {
 
     suspend operator fun invoke(
@@ -33,7 +32,7 @@ class DispatchVehicleUseCase(
                     vehicle.calculateTotalLoadedWeightKg()
 
         // Select the optimal cargo using the Knapsack algorithm
-        val packagesToDispatch = knapsackCargoOptimizer.optimize(
+        val packagesToDispatch = optimizeCargoByWeightUseCase.optimize(
             packages = warehouse.cargoQueue,
             capacityKg = availableCapacity
         )
