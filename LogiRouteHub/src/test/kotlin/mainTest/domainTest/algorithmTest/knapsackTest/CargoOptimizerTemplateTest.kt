@@ -55,6 +55,21 @@ class CargoOptimizerTemplateTest {
         // Then
         assertTrue(optimizer.wasOptimizationPerformed)
     }
+@Test
+    fun `should not perform optimization when weight capacity is negative`() {
+        // Given
+        val optimizer = TestCargoOptimizer()
+        val packages = listOf(mockk<Package>())
+
+        // When
+        optimizer.optimize(
+            packages = packages,
+            capacityKg = -10.0
+        )
+
+        // Then
+        assertFalse(optimizer.wasOptimizationPerformed)
+    }
 
     private class TestCargoOptimizer : CargoOptimizerTemplate() {
 
