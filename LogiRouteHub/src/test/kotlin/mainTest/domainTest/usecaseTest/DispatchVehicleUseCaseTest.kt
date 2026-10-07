@@ -1,7 +1,6 @@
 package mainTest.domainTest.usecaseTest
 
 import com.google.common.truth.Truth.assertThat
-import domain.algorithm.knapsack.KnapsackCargoOptimizer
 import domain.model.Package
 import domain.model.Vehicle
 import domain.model.Warehouse
@@ -10,6 +9,7 @@ import domain.repository.VehicleRepository
 import domain.repository.WarehouseRepository
 import domain.state.CreatedState
 import domain.usecase.DispatchVehicleUseCase
+import domain.usecase.OptimizeCargoByWeightUseCase
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -25,7 +25,8 @@ class DispatchVehicleUseCaseTest {
 
     private val vehicleRepository = mockk<VehicleRepository>()
     private val warehouseRepository = mockk<WarehouseRepository>()
-    private val knapsackCargoOptimizer = mockk<KnapsackCargoOptimizer>()
+
+    private val optimizeCargoByWeightUseCase = OptimizeCargoByWeightUseCase()
 
     private lateinit var dispatchVehicleUseCase: DispatchVehicleUseCase
 
@@ -33,8 +34,8 @@ class DispatchVehicleUseCaseTest {
     fun setUp() {
         dispatchVehicleUseCase = DispatchVehicleUseCase(
             vehicleRepository = vehicleRepository,
-            warehouseRepository = warehouseRepository ,
-            knapsackCargoOptimizer = knapsackCargoOptimizer
+            warehouseRepository = warehouseRepository,
+            optimizeCargoByWeightUseCase = optimizeCargoByWeightUseCase
         )
     }
 
@@ -268,12 +269,13 @@ class DispatchVehicleUseCaseTest {
         weight: Double,
         priority: String
     ): Package {
-        val logisticsPackage = mockk<Package>()
+        val logisticsPackage = mockk<Package>(relaxed = true)
+
         every { logisticsPackage.id } returns id
         every { logisticsPackage.weightByKg } returns weight
         every { logisticsPackage.priority } returns priority
         every { logisticsPackage.state } returns CreatedState()
-        every { logisticsPackage.state = any() } just Runs
+
         return logisticsPackage
     }
 

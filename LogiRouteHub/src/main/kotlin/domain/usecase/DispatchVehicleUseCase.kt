@@ -21,6 +21,14 @@ class DispatchVehicleUseCase(
 
         val warehouse = warehouseRepository.findById(input.warehouseId).getOrThrow() ?: return@runCatching emptyList()
 
+        val supportedPriorities = setOf("URGENT", "STANDARD", "LOW")
+
+        warehouse.cargoQueue.forEach { logisticsPackage ->
+            require(logisticsPackage.priority in supportedPriorities) {
+                "Unsupported package priority: ${logisticsPackage.priority}"
+            }
+        }
+
         val availableCapacity = vehicle.maxCapacityKg - vehicle.calculateTotalLoadedWeightKg()
 
         // Select the optimal cargo using the Knapsack algorithm
