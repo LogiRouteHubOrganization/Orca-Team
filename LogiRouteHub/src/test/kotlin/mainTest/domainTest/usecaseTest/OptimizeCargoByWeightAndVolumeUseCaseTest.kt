@@ -79,6 +79,63 @@ class OptimizeCargoByWeightAndVolumeUseCaseTest {
         assertThat(result).isEmpty()
     }
 
+    @Test
+    fun shouldNotSelectPackageWhenItExceedsWeightCapacity() {
+        val packageItem = mockPackage(
+            weight = 15.0,
+            volume = 2.0,
+            priority = "URGENT"
+        )
+
+        val useCase = OptimizeCargoByWeightAndVolumeUseCase()
+
+        val result = useCase(
+            packages = listOf(packageItem),
+            capacityKg = 10.0,
+            capacityVolumeM3 = 5.0
+        )
+
+        assertThat(result).isEmpty()
+    }
+
+    @Test
+    fun shouldSelectCombinationWithMaximumTotalPriorityUnderBothConstraints() {
+        val urgentPackage = mockPackage(
+            weight = 6.0,
+            volume = 3.0,
+            priority = "URGENT"
+        )
+
+        val standardPackage = mockPackage(
+            weight = 4.0,
+            volume = 2.0,
+            priority = "STANDARD"
+        )
+
+        val lowPackage = mockPackage(
+            weight = 10.0,
+            volume = 5.0,
+            priority = "LOW"
+        )
+
+        val useCase = OptimizeCargoByWeightAndVolumeUseCase()
+
+        val result = useCase(
+            packages = listOf(
+                urgentPackage,
+                standardPackage,
+                lowPackage
+            ),
+            capacityKg = 10.0,
+            capacityVolumeM3 = 5.0
+        )
+
+        assertThat(result).containsExactly(
+            urgentPackage,
+            standardPackage
+        ).inOrder()
+    }
+
     private fun mockPackage(
         weight: Double,
         volume: Double,
