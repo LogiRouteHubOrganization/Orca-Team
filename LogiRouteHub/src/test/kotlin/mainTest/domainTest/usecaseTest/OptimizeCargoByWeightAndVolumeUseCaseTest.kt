@@ -136,6 +136,75 @@ class OptimizeCargoByWeightAndVolumeUseCaseTest {
         ).inOrder()
     }
 
+    @Test
+    fun shouldRespectVolumeWhenWeightAloneWouldAllowCombination() {
+        val bulkyPackage = mockPackage(
+            weight = 10.0,
+            volume = 4.0,
+            priority = "URGENT"
+        )
+
+        val densePackage = mockPackage(
+            weight = 40.0,
+            volume = 2.0,
+            priority = "STANDARD"
+        )
+
+        val smallPackage = mockPackage(
+            weight = 5.0,
+            volume = 1.0,
+            priority = "STANDARD"
+        )
+
+        val useCase = OptimizeCargoByWeightAndVolumeUseCase()
+
+        val result = useCase(
+            packages = listOf(
+                bulkyPackage,
+                densePackage,
+                smallPackage
+            ),
+            capacityKg = 50.0,
+            capacityVolumeM3 = 5.0
+        )
+
+        assertThat(result).containsExactly(
+            bulkyPackage,
+            smallPackage
+        ).inOrder()
+    }
+
+    @Test
+    fun shouldSelectPackagesThatExactlyFillBothCapacities() {
+        val firstPackage = mockPackage(
+            weight = 6.0,
+            volume = 3.0,
+            priority = "URGENT"
+        )
+
+        val secondPackage = mockPackage(
+            weight = 4.0,
+            volume = 2.0,
+            priority = "STANDARD"
+        )
+
+        val useCase = OptimizeCargoByWeightAndVolumeUseCase()
+
+        val result = useCase(
+            packages = listOf(
+                firstPackage,
+                secondPackage
+            ),
+            capacityKg = 10.0,
+            capacityVolumeM3 = 5.0
+        )
+
+        assertThat(result).containsExactly(
+            firstPackage,
+            secondPackage
+        ).inOrder()
+    }
+
     private fun mockPackage(
         weight: Double,
         volume: Double,
