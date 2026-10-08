@@ -37,23 +37,77 @@ class OptimizeCargoByWeightAndVolumeUseCase : CargoOptimizerTemplate() {
         capacityVolumeM3: Double?
     ): List<Package> {
 
-        val weightCapacity = scale(capacityKg)
-        val volumeCapacity = scale(capacityVolumeM3!!)
+        if (capacityVolumeM3 == null) {
+            return emptyList()
+        }
 
-        val weights = packages.map {
+        val weightCapacity = scale(capacityKg)
+        val volumeCapacity = scale(capacityVolumeM3)
+
+        val weights = getScaledWeights(packages)
+        val volumes = getScaledVolumes(packages)
+
+        val dp = createDpTable(
+            packageCount = packages.size,
+            weightCapacity = weightCapacity,
+            volumeCapacity = volumeCapacity
+        )
+
+        fillDpTable(
+            packages = packages,
+            weights = weights,
+            volumes = volumes,
+            dp = dp,
+            weightCapacity = weightCapacity,
+            volumeCapacity = volumeCapacity
+        )
+
+        return backtrack(
+            packages = packages,
+            weights = weights,
+            volumes = volumes,
+            dp = dp,
+            weightCapacity = weightCapacity,
+            volumeCapacity = volumeCapacity
+        )
+    }
+
+    private fun getScaledWeights(
+        packages: List<Package>
+    ): List<Int> {
+        return packages.map {
             scale(it.weightByKg)
         }
+    }
 
-        val volumes = packages.map {
-            scale(it.volumeM3)
+    private fun getScaledVolumes(
+        packages: List<Package>
+    ): List<Int> {
+        return packages.map {
+            scale(it.volumeM3 ?: 0.0)
         }
+    }
 
-        val dp = Array(packages.size + 1) {
+    private fun createDpTable(
+        packageCount: Int,
+        weightCapacity: Int,
+        volumeCapacity: Int
+    ): Array<Array<IntArray>> {
+        return Array(packageCount + 1) {
             Array(weightCapacity + 1) {
                 IntArray(volumeCapacity + 1)
             }
         }
+    }
 
+    private fun fillDpTable(
+        packages: List<Package>,
+        weights: List<Int>,
+        volumes: List<Int>,
+        dp: Array<Array<IntArray>>,
+        weightCapacity: Int,
+        volumeCapacity: Int
+    ) {
         for (i in 1..packages.size) {
 
             val packageItem = packages[i - 1]
@@ -62,7 +116,6 @@ class OptimizeCargoByWeightAndVolumeUseCase : CargoOptimizerTemplate() {
             val packagePriority = getPriority(packageItem.priority)
 
             for (weight in 0..weightCapacity) {
-
                 for (volume in 0..volumeCapacity) {
 
                     dp[i][weight][volume] =
@@ -84,15 +137,6 @@ class OptimizeCargoByWeightAndVolumeUseCase : CargoOptimizerTemplate() {
                 }
             }
         }
-
-        return backtrack(
-            packages = packages,
-            weights = weights,
-            volumes = volumes,
-            dp = dp,
-            weightCapacity = weightCapacity,
-            volumeCapacity = volumeCapacity
-        )
     }
 
     private fun backtrack(
