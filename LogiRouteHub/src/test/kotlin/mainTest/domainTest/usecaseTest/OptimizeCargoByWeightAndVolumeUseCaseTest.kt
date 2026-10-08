@@ -1,7 +1,10 @@
 package mainTest.domainTest.usecaseTest
 
 import com.google.common.truth.Truth.assertThat
+import domain.model.Package
 import domain.usecase.OptimizeCargoByWeightAndVolumeUseCase
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.Test
 
 class OptimizeCargoByWeightAndVolumeUseCaseTest {
@@ -17,5 +20,38 @@ class OptimizeCargoByWeightAndVolumeUseCaseTest {
         )
 
         assertThat(result).isEmpty()
+    }
+
+    @Test
+    fun shouldReturnEmptyListWhenVolumeCapacityIsZero() {
+        val packageItem = mockPackage(
+            weight = 10.0,
+            volume = 2.0,
+            priority = "URGENT"
+        )
+
+        val useCase = OptimizeCargoByWeightAndVolumeUseCase()
+
+        val result = useCase(
+            packages = listOf(packageItem),
+            capacityKg = 100.0,
+            capacityVolumeM3 = 0.0
+        )
+
+        assertThat(result).isEmpty()
+    }
+    private fun mockPackage(
+        weight: Double,
+        volume: Double,
+        priority: String
+    ): Package {
+        val packageMock = mockk<Package>()
+
+        every { packageMock.weightByKg } returns weight
+        every { packageMock.volumeM3 } returns volume
+        every { packageMock.priority } returns priority
+
+
+        return packageMock
     }
 }
