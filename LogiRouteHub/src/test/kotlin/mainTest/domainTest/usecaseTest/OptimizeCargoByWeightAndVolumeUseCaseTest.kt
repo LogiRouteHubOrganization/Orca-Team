@@ -59,6 +59,26 @@ class OptimizeCargoByWeightAndVolumeUseCaseTest {
 
         assertThat(result).containsExactly(packageItem)
     }
+
+    @Test
+    fun shouldNotSelectPackageWhenItExceedsVolumeCapacity() {
+        val packageItem = mockPackage(
+            weight = 5.0,
+            volume = 8.0,
+            priority = "URGENT"
+        )
+
+        val useCase = OptimizeCargoByWeightAndVolumeUseCase()
+
+        val result = useCase(
+            packages = listOf(packageItem),
+            capacityKg = 10.0,
+            capacityVolumeM3 = 5.0
+        )
+
+        assertThat(result).isEmpty()
+    }
+
     private fun mockPackage(
         weight: Double,
         volume: Double,
