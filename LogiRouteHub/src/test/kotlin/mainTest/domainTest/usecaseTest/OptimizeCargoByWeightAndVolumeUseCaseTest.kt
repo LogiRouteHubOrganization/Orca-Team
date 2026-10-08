@@ -9,10 +9,10 @@ import org.junit.jupiter.api.Test
 
 class OptimizeCargoByWeightAndVolumeUseCaseTest {
 
-    @Test
-    fun shouldReturnEmptyListWhenPackagesAreEmpty() {
-        val useCase = OptimizeCargoByWeightAndVolumeUseCase()
+    private val useCase = OptimizeCargoByWeightAndVolumeUseCase()
 
+    @Test
+    fun `should return an empty list when packages are empty`() {
         val result = useCase(
             packages = emptyList(),
             capacityKg = 100.0,
@@ -23,14 +23,12 @@ class OptimizeCargoByWeightAndVolumeUseCaseTest {
     }
 
     @Test
-    fun shouldReturnEmptyListWhenVolumeCapacityIsZero() {
+    fun `should return an empty list when volume capacity is zero`() {
         val packageItem = mockPackage(
             weight = 10.0,
             volume = 2.0,
             priority = "URGENT"
         )
-
-        val useCase = OptimizeCargoByWeightAndVolumeUseCase()
 
         val result = useCase(
             packages = listOf(packageItem),
@@ -42,14 +40,12 @@ class OptimizeCargoByWeightAndVolumeUseCaseTest {
     }
 
     @Test
-    fun shouldSelectPackageWhenItFitsWeightAndVolumeCapacity() {
+    fun `should select the package when it fits both weight and volume capacity`() {
         val packageItem = mockPackage(
             weight = 5.0,
             volume = 2.0,
             priority = "URGENT"
         )
-
-        val useCase = OptimizeCargoByWeightAndVolumeUseCase()
 
         val result = useCase(
             packages = listOf(packageItem),
@@ -61,15 +57,13 @@ class OptimizeCargoByWeightAndVolumeUseCaseTest {
     }
 
     @Test
-    fun shouldNotSelectPackageWhenItExceedsVolumeCapacity() {
+    fun `should not select the package when it exceeds volume capacity`() {
         val packageItem = mockPackage(
             weight = 5.0,
             volume = 8.0,
             priority = "URGENT"
         )
 
-        val useCase = OptimizeCargoByWeightAndVolumeUseCase()
-
         val result = useCase(
             packages = listOf(packageItem),
             capacityKg = 10.0,
@@ -80,15 +74,13 @@ class OptimizeCargoByWeightAndVolumeUseCaseTest {
     }
 
     @Test
-    fun shouldNotSelectPackageWhenItExceedsWeightCapacity() {
+    fun `should not select the package when it exceeds weight capacity`() {
         val packageItem = mockPackage(
             weight = 15.0,
             volume = 2.0,
             priority = "URGENT"
         )
 
-        val useCase = OptimizeCargoByWeightAndVolumeUseCase()
-
         val result = useCase(
             packages = listOf(packageItem),
             capacityKg = 10.0,
@@ -99,7 +91,7 @@ class OptimizeCargoByWeightAndVolumeUseCaseTest {
     }
 
     @Test
-    fun shouldSelectCombinationWithMaximumTotalPriorityUnderBothConstraints() {
+    fun `should select the combination with the maximum total priority under both constraints`() {
         val urgentPackage = mockPackage(
             weight = 6.0,
             volume = 3.0,
@@ -118,8 +110,6 @@ class OptimizeCargoByWeightAndVolumeUseCaseTest {
             priority = "LOW"
         )
 
-        val useCase = OptimizeCargoByWeightAndVolumeUseCase()
-
         val result = useCase(
             packages = listOf(
                 urgentPackage,
@@ -137,7 +127,7 @@ class OptimizeCargoByWeightAndVolumeUseCaseTest {
     }
 
     @Test
-    fun shouldRespectVolumeWhenWeightAloneWouldAllowCombination() {
+    fun `should respect volume capacity when weight alone would allow the combination`() {
         val bulkyPackage = mockPackage(
             weight = 10.0,
             volume = 4.0,
@@ -156,8 +146,6 @@ class OptimizeCargoByWeightAndVolumeUseCaseTest {
             priority = "STANDARD"
         )
 
-        val useCase = OptimizeCargoByWeightAndVolumeUseCase()
-
         val result = useCase(
             packages = listOf(
                 bulkyPackage,
@@ -175,7 +163,7 @@ class OptimizeCargoByWeightAndVolumeUseCaseTest {
     }
 
     @Test
-    fun shouldSelectPackagesThatExactlyFillBothCapacities() {
+    fun `should select packages that exactly fill both weight and volume capacities`() {
         val firstPackage = mockPackage(
             weight = 6.0,
             volume = 3.0,
@@ -187,8 +175,6 @@ class OptimizeCargoByWeightAndVolumeUseCaseTest {
             volume = 2.0,
             priority = "STANDARD"
         )
-
-        val useCase = OptimizeCargoByWeightAndVolumeUseCase()
 
         val result = useCase(
             packages = listOf(
@@ -215,7 +201,6 @@ class OptimizeCargoByWeightAndVolumeUseCaseTest {
         every { packageMock.weightByKg } returns weight
         every { packageMock.volumeM3 } returns volume
         every { packageMock.priority } returns priority
-
 
         return packageMock
     }
