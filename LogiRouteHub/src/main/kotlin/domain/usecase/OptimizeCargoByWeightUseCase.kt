@@ -1,4 +1,5 @@
 package domain.usecase
+
 import domain.algorithm.knapsack.CargoOptimizerTemplate
 import domain.model.Package
 
@@ -26,6 +27,26 @@ class OptimizeCargoByWeightUseCase : CargoOptimizerTemplate() {
             scale(it.weightByKg)
         }
 
+        val dp = buildDpTable(
+            packages = packages,
+            weights = weights,
+            capacity = capacity
+        )
+
+        return backtrack(
+            packages = packages,
+            weights = weights,
+            dp = dp,
+            capacity = capacity
+        )
+    }
+
+    private fun buildDpTable(
+        packages: List<Package>,
+        weights: List<Int>,
+        capacity: Int
+    ): Array<IntArray> {
+
         val dp = Array(packages.size + 1) {
             IntArray(capacity + 1)
         }
@@ -50,13 +71,9 @@ class OptimizeCargoByWeightUseCase : CargoOptimizerTemplate() {
             }
         }
 
-        return backtrack(
-            packages = packages,
-            weights = weights,
-            dp = dp,
-            capacity = capacity
-        )
+        return dp
     }
+
     private fun backtrack(
         packages: List<Package>,
         weights: List<Int>,
