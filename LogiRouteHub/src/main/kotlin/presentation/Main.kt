@@ -14,8 +14,8 @@ import domain.usecase.FindOptimalPathUseCase
 import domain.model.Package
 import domain.model.request.DispatchVehicleRequest
 import domain.usecase.DispatchVehicleUseCase
-import domain.algorithm.knapsack.KnapsackCargoOptimizer
-import domain.algorithm.knapsack.TwoDimensionalKnapsackCargoOptimizer
+import domain.usecase.OptimizeCargoByWeightUseCase
+import domain.usecase.OptimizeCargoByWeightAndVolumeUseCase
 import kotlinx.coroutines.runBlocking
 import org.koin.core.Koin
 import org.koin.core.context.startKoin
@@ -54,9 +54,9 @@ class Main(
 
     private val dispatchVehicleUseCase = koin.get<DispatchVehicleUseCase>()
 
-    private val weightOnlyOptimizer = KnapsackCargoOptimizer()
+    private val weightOnlyOptimizer = koin.get<OptimizeCargoByWeightUseCase>()
 
-    private val twoDimensionalOptimizer = TwoDimensionalKnapsackCargoOptimizer()
+    private val twoDimensionalOptimizer = koin.get<OptimizeCargoByWeightAndVolumeUseCase>()
 
     suspend fun run() {
         refreshData()
@@ -336,17 +336,18 @@ class Main(
         println("Volume capacity: $volumeCapacityM3 m³")
     }
 
+
     private fun compareOptimizers(
         packages: List<Package>,
         weightCapacityKg: Double,
         volumeCapacityM3: Double
     ) {
-        val weightOnlySelection = weightOnlyOptimizer.optimize(
+        val weightOnlySelection = weightOnlyOptimizer(
             packages = packages,
             capacityKg = weightCapacityKg
         )
 
-        val twoDimensionalSelection = twoDimensionalOptimizer.optimize(
+        val twoDimensionalSelection = twoDimensionalOptimizer(
             packages = packages,
             capacityKg = weightCapacityKg,
             capacityVolumeM3 = volumeCapacityM3
