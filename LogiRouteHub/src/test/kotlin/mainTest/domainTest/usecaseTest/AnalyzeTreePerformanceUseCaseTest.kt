@@ -1,7 +1,5 @@
 package mainTest.domainTest.usecaseTest
 
-
-
 import com.google.common.truth.Truth.assertThat
 import domain.model.request.AnalyzeTreePerformanceRequest
 import domain.tree.simulation.BalancedBST
@@ -18,32 +16,14 @@ class AnalyzeTreePerformanceUseCaseTest {
 
     @Test
     fun `should analyze performance of both trees`() {
-
-         // Given
+        // Given
         val generator = mockk<SequentialTrackingIdGenerator>()
         val unbalancedBST = mockk<UnbalancedBST>(relaxed = true)
         val balancedBST = mockk<BalancedBST>(relaxed = true)
 
-        val trackingIds = listOf(
-            "PKG-001",
-            "PKG-002",
-            "PKG-003"
-        )
-
-        every {
-            generator.generatePackageTrackingIds(3)
-        } returns trackingIds
-
-        every {
-            unbalancedBST.searchSteps("PKG-003")
-        } returns 5
-
-        every {
-            balancedBST.searchSteps("PKG-003")
-        } returns 2
+        setupTreePerformanceStubs(generator, unbalancedBST, balancedBST)
 
         var time = 0L
-
         val request = AnalyzeTreePerformanceRequest(
             numberOfTrackingIds = 3,
             nanoTimeProvider = {
@@ -58,33 +38,29 @@ class AnalyzeTreePerformanceUseCaseTest {
             balancedBST = balancedBST
         )
 
-
         // When
-        val result= useCase(request)
+        val result = useCase(request)
 
         // Then
-        assertThat(result.unbalancedTreeMetrics.treeType)
-            .isEqualTo(TreeType.UNBALANCED_BST)
+        assertThat(result.unbalancedTreeMetrics.treeType).isEqualTo(TreeType.UNBALANCED_BST)
+        assertThat(result.unbalancedTreeMetrics.searchSteps).isEqualTo(5)
+        assertThat(result.balancedTreeMetrics.treeType).isEqualTo(TreeType.BALANCED_BST)
+        assertThat(result.balancedTreeMetrics.searchSteps).isEqualTo(2)
 
-        assertThat(result.unbalancedTreeMetrics.searchSteps)
-            .isEqualTo(5)
+        verify { generator.generatePackageTrackingIds(3) }
+        verify { unbalancedBST.searchSteps("PKG-003") }
+        verify { balancedBST.searchSteps("PKG-003") }
+    }
 
-        assertThat(result.balancedTreeMetrics.treeType)
-            .isEqualTo(TreeType.BALANCED_BST)
+    private fun setupTreePerformanceStubs(
+        generator: SequentialTrackingIdGenerator,
+        unbalancedBST: UnbalancedBST,
+        balancedBST: BalancedBST
+    ) {
+        val trackingIds = listOf("PKG-001", "PKG-002", "PKG-003")
 
-        assertThat(result.balancedTreeMetrics.searchSteps)
-            .isEqualTo(2)
-
-        verify {
-            generator.generatePackageTrackingIds(3)
-        }
-
-        verify {
-            unbalancedBST.searchSteps("PKG-003")
-        }
-
-        verify {
-            balancedBST.searchSteps("PKG-003")
-        }
+        every { generator.generatePackageTrackingIds(3) } returns trackingIds
+        every { unbalancedBST.searchSteps("PKG-003") } returns 5
+        every { balancedBST.searchSteps("PKG-003") } returns 2
     }
 }
