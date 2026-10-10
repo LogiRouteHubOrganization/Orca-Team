@@ -1,5 +1,6 @@
-package domain.algorithm.knapsack
+package mainTest.domainTest.algorithmTest.knapsackTest
 
+import domain.algorithm.knapsack.CargoOptimizerTemplate
 import domain.model.Package
 import io.mockk.mockk
 import org.junit.jupiter.api.Test
