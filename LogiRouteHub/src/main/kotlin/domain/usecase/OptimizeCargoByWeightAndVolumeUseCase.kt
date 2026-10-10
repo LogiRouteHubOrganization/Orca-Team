@@ -169,3 +169,4 @@ class OptimizeCargoByWeightAndVolumeUseCase : CargoOptimizerTemplate() {
         return selectedPackages.reversed()
     }
 }
+
