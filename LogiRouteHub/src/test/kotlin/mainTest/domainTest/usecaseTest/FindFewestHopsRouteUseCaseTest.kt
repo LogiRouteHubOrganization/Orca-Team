@@ -234,58 +234,7 @@ class FindFewestHopsRouteUseCaseTest {
 
     @Test
     fun `should return path with correct order when multiple hops are required`() = runTest {
-        // Given
-        val secondWarehouse = Warehouse(
-            id = "WH-000003",
-            name = "Second Warehouse",
-            regionalZone = "Central",
-            latitude = 31.7,
-            longitude = 35.0
-        )
-
-        val thirdWarehouse = Warehouse(
-            id = "WH-000004",
-            name = "Third Warehouse",
-            regionalZone = "West",
-            latitude = 31.6,
-            longitude = 34.8
-        )
-
-        val firstRoute = Route(
-            id = "RT-000001",
-            originWarehouse = startWarehouse,
-            destinationWarehouse = secondWarehouse,
-            distanceKm = 5.0,
-            typicalDelayMin = 3
-        )
-
-        val secondRoute = Route(
-            id = "RT-000002",
-            originWarehouse = secondWarehouse,
-            destinationWarehouse = thirdWarehouse,
-            distanceKm = 7.0,
-            typicalDelayMin = 4
-        )
-
-        val thirdRoute = Route(
-            id = "RT-000003",
-            originWarehouse = thirdWarehouse,
-            destinationWarehouse = destinationWarehouse,
-            distanceKm = 8.0,
-            typicalDelayMin = 5
-        )
-
-        startWarehouse.addRoute(firstRoute)
-        secondWarehouse.addRoute(secondRoute)
-        thirdWarehouse.addRoute(thirdRoute)
-
-        coEvery {
-            warehouseRepository.findById("WH-000001")
-        } returns Result.success(startWarehouse)
-
-        coEvery {
-            warehouseRepository.findById("WH-000002")
-        } returns Result.success(destinationWarehouse)
+        val (secondWarehouse, thirdWarehouse) = setupMultiHopScenario()
 
         // When
         val result = useCase(
@@ -300,6 +249,47 @@ class FindFewestHopsRouteUseCaseTest {
             thirdWarehouse,
             destinationWarehouse
         ).inOrder()
+    }
+
+    private fun setupMultiHopScenario(): Pair<Warehouse, Warehouse> {
+        val secondWarehouse = Warehouse(
+            id = "WH-000003",
+            name = "Second Warehouse",
+            regionalZone = "Central",
+            latitude = 31.7,
+            longitude = 35.0
+        )
+        val thirdWarehouse = Warehouse(
+            id = "WH-000004",
+            name = "Third Warehouse",
+            regionalZone = "West",
+            latitude = 31.6,
+            longitude = 34.8
+        )
+
+        startWarehouse.addRoute(Route(
+            "RT-000001",
+            startWarehouse,
+            secondWarehouse,
+            5.0, 3))
+        secondWarehouse.addRoute(Route(
+            "RT-000002",
+            secondWarehouse,
+            thirdWarehouse,
+            7.0, 4))
+        thirdWarehouse.addRoute(Route(
+            "RT-000003",
+            thirdWarehouse,
+            destinationWarehouse,
+            8.0, 5))
+
+        coEvery { warehouseRepository.findById("WH-000001")
+        } returns Result.success(startWarehouse)
+
+        coEvery { warehouseRepository.findById("WH-000002")
+        } returns Result.success(destinationWarehouse)
+
+        return Pair(secondWarehouse, thirdWarehouse)
     }
 
     @Test

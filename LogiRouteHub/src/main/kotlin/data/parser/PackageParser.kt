@@ -2,7 +2,6 @@ package data.parser
 
 import data.dataholder.LogisticsPackageRaw
 
-
 class PackageParser {
 
     private val csvSeparator = ","
@@ -20,7 +19,6 @@ class PackageParser {
     fun parsePackageRow(
         packageCsvRow: String
     ): LogisticsPackageRaw? {
-
         val packageColumns = packageCsvRow.split(csvSeparator)
 
         if (hasInvalidColumnCount(packageColumns)) {
@@ -28,28 +26,25 @@ class PackageParser {
             return null
         }
 
-        val packageId = normalizeIdentifier(
-            packageColumns[packageIdColumnIndex]
-        )
+        val packageId = normalizeIdentifier(packageColumns[packageIdColumnIndex])
+        val originHubId = normalizeIdentifier(packageColumns[originHubIdColumnIndex])
+        val destinationHubId = normalizeIdentifier(packageColumns[destinationHubIdColumnIndex])
 
-        val originHubId = normalizeIdentifier(
-            packageColumns[originHubIdColumnIndex]
-        )
-
-        val destinationHubId = normalizeIdentifier(
-            packageColumns[destinationHubIdColumnIndex]
-        )
-
-        if (hasEmptyRequiredField(
-                packageId,
-                originHubId,
-                destinationHubId
-            )
-        ) {
+        if (hasEmptyRequiredField(packageId, originHubId, destinationHubId)) {
             printEmptyPackageFieldWarning(packageCsvRow)
             return null
         }
 
+        return parsePackageDetails(packageColumns, packageCsvRow, packageId, originHubId, destinationHubId)
+    }
+
+    private fun parsePackageDetails(
+        packageColumns: List<String>,
+        packageCsvRow: String,
+        packageId: String,
+        originHubId: String,
+        destinationHubId: String
+    ): LogisticsPackageRaw? {
         val packageWeightByKg = parsePackageWeightByKg(
             packageColumns[packageWeightColumnIndex],
             packageCsvRow
@@ -80,7 +75,6 @@ class PackageParser {
         originHubId: String,
         destinationHubId: String
     ): Boolean {
-
         return packageId.isEmpty() ||
                 originHubId.isEmpty() ||
                 destinationHubId.isEmpty()
@@ -90,15 +84,12 @@ class PackageParser {
         packageWeight: String,
         packageCsvRow: String
     ): Double? {
-
         val packageWeightByKg = packageWeight
             .trim()
             .toDoubleOrNull()
 
         if (packageWeightByKg == null || packageWeightByKg <= 0) {
-            println(
-                "Warning: Invalid package weight -> $packageCsvRow"
-            )
+            println("Warning: Invalid package weight -> $packageCsvRow")
             return null
         }
 
@@ -109,7 +100,6 @@ class PackageParser {
         priority: String,
         packageCsvRow: String
     ): String? {
-
         val normalizedPriority = priority
             .trim()
             .uppercase()
@@ -118,11 +108,8 @@ class PackageParser {
             urgentPriority -> urgentPriority
             standardPriority -> standardPriority
             lowPriority -> lowPriority
-
             else -> {
-                println(
-                    "Warning: Invalid package priority -> $packageCsvRow"
-                )
+                println("Warning: Invalid package priority -> $packageCsvRow")
                 null
             }
         }
@@ -131,7 +118,6 @@ class PackageParser {
     private fun normalizeIdentifier(
         identifier: String
     ): String {
-
         val normalizedIdentifier = identifier
             .trim()
             .uppercase()
@@ -160,18 +146,15 @@ class PackageParser {
     private fun printInvalidPackageRowWarning(
         packageCsvRow: String
     ) {
-        println(
-            "Warning: Invalid package row -> $packageCsvRow"
-        )
+        println("Warning: Invalid package row -> $packageCsvRow")
     }
 
     private fun printEmptyPackageFieldWarning(
         packageCsvRow: String
     ) {
-        println(
-            "Warning: Empty required package field -> $packageCsvRow"
-        )
+        println("Warning: Empty required package field -> $packageCsvRow")
     }
+
     fun toCsvRow(
         logisticsPackage: LogisticsPackageRaw
     ): String {
@@ -184,3 +167,4 @@ class PackageParser {
         ).joinToString(csvSeparator)
     }
 }
+
