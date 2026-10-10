@@ -31,43 +31,7 @@ class PrioritizeDispatchQueueUseCaseTest {
     @Test
     fun `prioritizes packages by priority and then by weight`() = runTest {
         // Given
-        val warehouse = createWarehouse()
-
-        warehouse.addPackage(
-            packageOf(
-                id = "PKG-000001",
-                priority = "LOW",
-                weight = 20.0,
-                originWarehouse = warehouse
-            )
-        )
-
-        warehouse.addPackage(
-            packageOf(
-                id = "PKG-000002",
-                priority = "URGENT",
-                weight = 10.0,
-                originWarehouse = warehouse
-            )
-        )
-
-        warehouse.addPackage(
-            packageOf(
-                id = "PKG-000003",
-                priority = "URGENT",
-                weight = 30.0,
-                originWarehouse = warehouse
-            )
-        )
-
-        warehouse.addPackage(
-            packageOf(
-                id = "PKG-000004",
-                priority = "STANDARD",
-                weight = 50.0,
-                originWarehouse = warehouse
-            )
-        )
+        val warehouse = setupWarehouseWithPackages()
 
         coEvery {
             warehouseRepository.findById("WH-123456")
@@ -81,13 +45,36 @@ class PrioritizeDispatchQueueUseCaseTest {
         assertThat(result.getOrNull()).isEqualTo(warehouse)
 
         assertThat(warehouse.cargoQueue.map { it.id })
-            .containsExactly(
-                "PKG-000003",
-                "PKG-000002",
+            .containsExactly("PKG-000003", "PKG-000002",
                 "PKG-000004",
                 "PKG-000001"
-            )
-            .inOrder()
+            ).inOrder()
+    }
+
+    private fun setupWarehouseWithPackages(): Warehouse {
+        val warehouse = createWarehouse()
+
+        warehouse.addPackage(packageOf(
+            "PKG-000001",
+            "LOW", 20.0,
+            warehouse))
+
+        warehouse.addPackage(packageOf(
+            "PKG-000002",
+            "URGENT", 10.0,
+            warehouse))
+
+        warehouse.addPackage(packageOf(
+            "PKG-000003", "URGENT",
+            30.0,
+            warehouse))
+
+        warehouse.addPackage(packageOf(
+            "PKG-000004",
+            "STANDARD", 50.0,
+            warehouse))
+
+        return warehouse
     }
 
     @Test
