@@ -50,32 +50,32 @@ class RouteRepositoryImpl(
             loadLocalRoutes()
 
             val createdDto = routeRemoteDataSource.createRoute(
-                    route.toCreateDto()
-                )
+                route.toCreateDto()
+            )
 
             val createdRaw = createdDto.toRaw()
 
             routeDataSource.addRoute(createdRaw)
 
             val originWarehouse = warehouseRepository
-                    .findById(createdRaw.originHubId)
-                    .getOrThrow()
-                    ?: throw ResourceNotFoundException.WarehouseNotFound(
-                        createdRaw.originHubId
-                    )
+                .findById(createdRaw.originHubId)
+                .getOrThrow()
+                ?: throw ResourceNotFoundException.WarehouseNotFound(
+                    createdRaw.originHubId
+                )
 
             val destinationWarehouse = warehouseRepository
-                    .findById(createdRaw.destinationHubId)
-                    .getOrThrow()
-                    ?: throw ResourceNotFoundException.WarehouseNotFound(
-                        createdRaw.destinationHubId
-                    )
+                .findById(createdRaw.destinationHubId)
+                .getOrThrow()
+                ?: throw ResourceNotFoundException.WarehouseNotFound(
+                    createdRaw.destinationHubId
+                )
 
             val createdRoute = routeMapper.mapToDomainModel(
-                    rawRoute = createdRaw,
-                    originWarehouse = originWarehouse,
-                    destinationWarehouse = destinationWarehouse
-                )
+                rawRoute = createdRaw,
+                originWarehouse = originWarehouse,
+                destinationWarehouse = destinationWarehouse
+            )
 
             routes.add(createdRoute)
             originWarehouse.addRoute(createdRoute)
@@ -89,78 +89,66 @@ class RouteRepositoryImpl(
         routeId: String,
         updateModel: RouteUpdateModel
     ): Result<Route> = runCatching {
-            loadLocalRoutes()
-            val previousRoute = routes.find { route ->
-                    route.id == routeId
-                } ?: throw ResourceNotFoundException.RouteNotFound(
-                    routeId
-                )
-            val updatedDto = routeRemoteDataSource.updateRoute(
-                    id = routeId,
-                    routeRequest = updateModel.toUpdateDto()
-                )
-            val updatedRaw = updatedDto.toRaw()
-            routeDataSource.updateRoute(updatedRaw)
-            val newOriginWarehouse = warehouseRepository
-                    .findById(updatedRaw.originHubId)
-                    .getOrThrow()
-                    ?: throw ResourceNotFoundException.WarehouseNotFound(
-                        updatedRaw.originHubId
-                    )
+        loadLocalRoutes()
 
-            val newDestinationWarehouse = warehouseRepository
-                    .findById(updatedRaw.destinationHubId)
-                    .getOrThrow()
-                    ?: throw ResourceNotFoundException.WarehouseNotFound(
-                        updatedRaw.destinationHubId
-                    )
-            val updatedRoute = routeMapper.mapToDomainModel(
-                    rawRoute = updatedRaw,
-                    originWarehouse = newOriginWarehouse,
-                    destinationWarehouse = newDestinationWarehouse
-                )
-            updateRouteRelations(
-                previousRoute = previousRoute, updatedRoute = updatedRoute)
+        val previousRoute = routes.find { it.id == routeId }
+            ?: throw ResourceNotFoundException.RouteNotFound(routeId)
 
-            val routeIndex = routes.indexOfFirst { route ->
-                    route.id == routeId
-                }
-            if (routeIndex != -1) {
-                routes[routeIndex] = updatedRoute
-            }
-            updatedRoute
-        }.mapRepositoryException(resourceId = routeId)
+        val updatedRaw = routeRemoteDataSource.updateRoute(
+            id = routeId,
+            routeRequest = updateModel.toUpdateDto()
+        ).toRaw()
+
+        routeDataSource.updateRoute(updatedRaw)
+
+        val originWarehouse = warehouseRepository.findById(updatedRaw.originHubId).getOrThrow()
+            ?: throw ResourceNotFoundException.WarehouseNotFound(updatedRaw.originHubId)
+
+        val destinationWarehouse = warehouseRepository.findById(updatedRaw.destinationHubId).getOrThrow()
+            ?: throw ResourceNotFoundException.WarehouseNotFound(updatedRaw.destinationHubId)
+
+        val updatedRoute = routeMapper.mapToDomainModel(
+            rawRoute = updatedRaw,
+            originWarehouse = originWarehouse,
+            destinationWarehouse = destinationWarehouse
+        )
+
+        updateRouteRelations(previousRoute = previousRoute, updatedRoute = updatedRoute)
+
+        routes.replaceAll { if (it.id == routeId) updatedRoute else it }
+        updatedRoute
+    }.mapRepositoryException(resourceId = routeId)
 
     override suspend fun delete(
         routeId: String
     ): Result<Unit> = runCatching {
-            loadLocalRoutes()
+        loadLocalRoutes()
 
-            val route = routes.find { currentRoute ->
-                    currentRoute.id == routeId
-                } ?: throw ResourceNotFoundException.RouteNotFound(
-                    routeId
-                )
-
-            routeRemoteDataSource.deleteRoute(routeId)
-
-            routeDataSource.deleteRoute(routeId)
-
-            route.originWarehouse.removeRoute(route)
-            routes.remove(route)
-
-            Unit
-        }.mapRepositoryException(
-            resourceId = routeId
+        val route = routes.find { currentRoute ->
+            currentRoute.id == routeId
+        } ?: throw ResourceNotFoundException.RouteNotFound(
+            routeId
         )
+
+        routeRemoteDataSource.deleteRoute(routeId)
+
+        routeDataSource.deleteRoute(routeId)
+
+        route.originWarehouse.removeRoute(route)
+        routes.remove(route)
+
+        Unit
+    }.mapRepositoryException(
+        resourceId = routeId
+    )
 
     override suspend fun refresh(): Result<Unit> =
         runCatching {
             val remoteRoutes = routeRemoteDataSource.getAllRoutes()
 
             val localRoutes = remoteRoutes.map { routeDto ->
-                    routeDto.toRaw()
-                }
+                routeDto.toRaw()
+            }
 
             routeDataSource.replaceRoutes(localRoutes)
         }.recoverCatching { exception ->
@@ -184,8 +172,8 @@ class RouteRepositoryImpl(
         rawRoutes.forEach { rawRoute ->
 
             val originWarehouse = warehouseRepository
-                    .findById(rawRoute.originHubId)
-                    .getOrThrow()
+                .findById(rawRoute.originHubId)
+                .getOrThrow()
 
             if (originWarehouse == null) {
                 println(
@@ -197,8 +185,8 @@ class RouteRepositoryImpl(
             }
 
             val destinationWarehouse = warehouseRepository
-                    .findById(rawRoute.destinationHubId)
-                    .getOrThrow()
+                .findById(rawRoute.destinationHubId)
+                .getOrThrow()
 
             if (destinationWarehouse == null) {
                 println(
@@ -210,10 +198,10 @@ class RouteRepositoryImpl(
             }
 
             val route = routeMapper.mapToDomainModel(
-                    rawRoute = rawRoute,
-                    originWarehouse = originWarehouse,
-                    destinationWarehouse = destinationWarehouse
-                )
+                rawRoute = rawRoute,
+                originWarehouse = originWarehouse,
+                destinationWarehouse = destinationWarehouse
+            )
 
             routes.add(route)
             originWarehouse.addRoute(route)

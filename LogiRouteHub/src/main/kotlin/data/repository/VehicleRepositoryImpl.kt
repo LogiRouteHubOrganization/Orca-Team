@@ -34,99 +34,73 @@ class VehicleRepositoryImpl(
     override suspend fun findById(
         vehicleId: String
     ): Result<Vehicle?> = runCatching {
-            loadLocalVehicles()
-            vehicles.find { vehicle ->
-                vehicle.id == vehicleId
-            }
-        }.mapLocalDataException()
+        loadLocalVehicles()
+        vehicles.find { vehicle ->
+            vehicle.id == vehicleId
+        }
+    }.mapLocalDataException()
 
     override suspend fun add(
         vehicle: Vehicle
     ): Result<Vehicle> = runCatching {
-            loadLocalVehicles()
+        loadLocalVehicles()
 
-            val createdDto = vehicleRemoteDataSource.createVehicle(
-                    vehicle.toCreateDto()
-                )
-
-            val createdRaw = createdDto.toRaw()
-
-            vehicleDataSource.addVehicle(createdRaw)
-
-            val currentWarehouse = warehouseRepository
-                    .findById(createdRaw.currentHubId)
-                    .getOrThrow()
-                    ?: throw ResourceNotFoundException.WarehouseNotFound(
-                        createdRaw.currentHubId
-                    )
-
-            val createdVehicle = vehicleMapper.mapToDomainModel(
-                    rawVehicle = createdRaw,
-                    currentWarehouse = currentWarehouse
-                )
-
-            vehicles.add(createdVehicle)
-            currentWarehouse.addVehicle(createdVehicle)
-
-            createdVehicle
-        }.mapRepositoryException(
-            resourceId = vehicle.id
+        val createdDto = vehicleRemoteDataSource.createVehicle(
+            vehicle.toCreateDto()
         )
+
+        val createdRaw = createdDto.toRaw()
+
+        vehicleDataSource.addVehicle(createdRaw)
+
+        val currentWarehouse = warehouseRepository
+            .findById(createdRaw.currentHubId)
+            .getOrThrow()
+            ?: throw ResourceNotFoundException.WarehouseNotFound(
+                createdRaw.currentHubId
+            )
+
+        val createdVehicle = vehicleMapper.mapToDomainModel(
+            rawVehicle = createdRaw,
+            currentWarehouse = currentWarehouse
+        )
+
+        vehicles.add(createdVehicle)
+        currentWarehouse.addVehicle(createdVehicle)
+
+        createdVehicle
+    }.mapRepositoryException(
+        resourceId = vehicle.id
+    )
 
     override suspend fun update(
         vehicleId: String,
         updateModel: VehicleUpdateModel
     ): Result<Vehicle> = runCatching {
-            loadLocalVehicles()
+        loadLocalVehicles()
 
-            val previousVehicle = vehicles.find { vehicle ->
-                    vehicle.id == vehicleId
-                } ?: throw ResourceNotFoundException.VehicleNotFound(
-                    vehicleId
-                )
+        val previousVehicle = vehicles.find { it.id == vehicleId }
+            ?: throw ResourceNotFoundException.VehicleNotFound(vehicleId)
 
-            val updatedDto = vehicleRemoteDataSource.updateVehicle(
-                    id = vehicleId,
-                    vehicleRequest = updateModel.toUpdateDto()
-                )
+        val updatedRaw = vehicleRemoteDataSource.updateVehicle(
+            id = vehicleId,
+            vehicleRequest = updateModel.toUpdateDto()
+        ).toRaw()
 
-            val updatedRaw = updatedDto.toRaw()
+        vehicleDataSource.updateVehicle(updatedRaw)
 
-            vehicleDataSource.updateVehicle(updatedRaw)
+        val newWarehouse = warehouseRepository.findById(updatedRaw.currentHubId).getOrThrow()
+            ?: throw ResourceNotFoundException.WarehouseNotFound(updatedRaw.currentHubId)
 
-            val newWarehouse = warehouseRepository
-                    .findById(updatedRaw.currentHubId)
-                    .getOrThrow()
-                    ?: throw ResourceNotFoundException.WarehouseNotFound(
-                        updatedRaw.currentHubId
-                    )
+        val updatedVehicle = vehicleMapper.mapToDomainModel(updatedRaw, newWarehouse).apply {
+            restoreAssignedPackages(previousVehicle.assignedPackages)
+        }
 
-            val updatedVehicle = vehicleMapper.mapToDomainModel(
-                    rawVehicle = updatedRaw,
-                    currentWarehouse = newWarehouse
-                )
+        updateVehicleRelations(previousVehicle = previousVehicle, updatedVehicle = updatedVehicle)
 
-            updatedVehicle.restoreAssignedPackages(
-                previousVehicle.assignedPackages
-            )
-
-            updateVehicleRelations(
-                previousVehicle = previousVehicle,
-                updatedVehicle = updatedVehicle
-            )
-
-            val vehicleIndex = vehicles.indexOfFirst { vehicle ->
-                    vehicle.id == vehicleId
-                }
-
-            if (vehicleIndex != -1) {
-                vehicles[vehicleIndex] = updatedVehicle
-            }
-
-            updatedVehicle
-        }.mapRepositoryException(
-            resourceId = vehicleId
-        )
+        vehicles.replaceAll { if (it.id == vehicleId) updatedVehicle else it }
+        updatedVehicle
+    }.mapRepositoryException(resourceId = vehicleId)
 
     override suspend fun delete(
         vehicleId: String
@@ -135,10 +109,10 @@ class VehicleRepositoryImpl(
             loadLocalVehicles()
 
             val vehicle = vehicles.find { currentVehicle ->
-                    currentVehicle.id == vehicleId
-                } ?: throw ResourceNotFoundException.VehicleNotFound(
-                    vehicleId
-                )
+                currentVehicle.id == vehicleId
+            } ?: throw ResourceNotFoundException.VehicleNotFound(
+                vehicleId
+            )
 
             vehicleRemoteDataSource.deleteVehicle(vehicleId)
 
@@ -157,8 +131,8 @@ class VehicleRepositoryImpl(
             val remoteVehicles = vehicleRemoteDataSource.getAllVehicles()
 
             val localVehicles = remoteVehicles.map { vehicleDto ->
-                    vehicleDto.toRaw()
-                }
+                vehicleDto.toRaw()
+            }
 
             vehicleDataSource.replaceVehicles(
                 localVehicles
@@ -170,8 +144,8 @@ class VehicleRepositoryImpl(
         }
 
     override suspend fun initializeStationedVehicles(): Result<Unit> = runCatching {
-            loadLocalVehicles()
-        }.mapLocalDataException()
+        loadLocalVehicles()
+    }.mapLocalDataException()
 
     private suspend fun loadLocalVehicles() {
         if (isLoaded) {
@@ -183,8 +157,8 @@ class VehicleRepositoryImpl(
         rawVehicles.forEach { rawVehicle ->
 
             val currentWarehouse = warehouseRepository
-                    .findById(rawVehicle.currentHubId)
-                    .getOrThrow()
+                .findById(rawVehicle.currentHubId)
+                .getOrThrow()
 
             if (currentWarehouse == null) {
                 println(
@@ -196,9 +170,9 @@ class VehicleRepositoryImpl(
             }
 
             val vehicle = vehicleMapper.mapToDomainModel(
-                    rawVehicle = rawVehicle,
-                    currentWarehouse = currentWarehouse
-                )
+                rawVehicle = rawVehicle,
+                currentWarehouse = currentWarehouse
+            )
 
             vehicles.add(vehicle)
             currentWarehouse.addVehicle(vehicle)
@@ -218,9 +192,9 @@ class VehicleRepositoryImpl(
         if (previousWarehouse.id == newWarehouse.id) {
 
             val vehicleIndex = previousWarehouse.stationedVehicles
-                    .indexOfFirst { vehicle ->
-                        vehicle.id == previousVehicle.id
-                    }
+                .indexOfFirst { vehicle ->
+                    vehicle.id == previousVehicle.id
+                }
 
             if (vehicleIndex != -1) {
                 previousWarehouse.updateVehicleAtIndex(
