@@ -28,9 +28,12 @@ class CreatedStateTest {
         // Given
         val createdState = state
 
-        // When & Then
+        // When
+        val nextState = { createdState.markAsInTransit() }
+
+        // Then
         assertThrows(InvalidShipmentStateTransitionException::class.java) {
-            createdState.markAsInTransit()
+            nextState()
         }
     }
 
@@ -39,9 +42,12 @@ class CreatedStateTest {
         // Given
         val createdState = state
 
-        // When & Then
+        // When
+        val transitionCall = { createdState.markAsDelivered() }
+
+        // Then
         assertThrows(InvalidShipmentStateTransitionException::class.java) {
-            createdState.markAsDelivered()
+            transitionCall()
         }
     }
 
@@ -50,9 +56,12 @@ class CreatedStateTest {
         // Given
         val createdState = state
 
-        // When & Then
+        // When
+        val transitionCall = { createdState.deliveryFailed() }
+
+        // Then
         assertThrows(InvalidShipmentStateTransitionException::class.java) {
-            createdState.deliveryFailed()
+            transitionCall()
         }
     }
 }

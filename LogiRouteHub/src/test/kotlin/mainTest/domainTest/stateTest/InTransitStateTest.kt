@@ -39,9 +39,12 @@ class InTransitStateTest {
         // Given
         val state = InTransitState()
 
-        // When & Then
+        // When
+        val transitionCall = { state.assignToVehicle() }
+
+        // Then
         assertThrows<InvalidShipmentStateTransitionException> {
-            state.assignToVehicle()
+            transitionCall()
         }
     }
 
@@ -50,9 +53,12 @@ class InTransitStateTest {
         // Given
         val state = InTransitState()
 
-        // When & Then
+        // When
+        val transitionCall = { state.markAsInTransit() }
+
+        // Then
         assertThrows<InvalidShipmentStateTransitionException> {
-            state.markAsInTransit()
+            transitionCall()
         }
     }
 }
