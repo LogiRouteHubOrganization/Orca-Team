@@ -1,4 +1,4 @@
-package mainTest.domainTest.usecaseTest.knapsackTest
+package mainTest.domainTest.usecaseTest
 
 import com.google.common.truth.Truth.assertThat
 import domain.model.Package
@@ -149,3 +149,4 @@ class OptimizeCargoByWeightUseCaseTest {
         }
     }
 }
+
