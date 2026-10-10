@@ -144,6 +144,16 @@ class FindOptimalPathUseCaseTest {
 
     @Test
     fun `should choose shorter path when multiple paths exist`() = runTest {
+        setupShorterPathScenario()
+
+        val result = useCase("WH-000001", "WH-000002")
+
+        assertThat(result.getOrNull()).isEqualTo(
+            listOf(startWarehouse, destinationWarehouse)
+        )
+    }
+
+    private fun setupShorterPathScenario() {
         val intermediateWarehouse = Warehouse(
             id = "WH-000003",
             name = "Intermediate Warehouse",
@@ -152,43 +162,18 @@ class FindOptimalPathUseCaseTest {
             longitude = 34.9
         )
 
-        val directRoute = Route(
-            id = "RT-000001",
-            originWarehouse = startWarehouse,
-            destinationWarehouse = destinationWarehouse,
-            distanceKm = 20.0,
-            typicalDelayMin = 5
-        )
+        startWarehouse.addRoute(Route("RT-000001", startWarehouse, destinationWarehouse, 20.0, 5))
+        startWarehouse.addRoute(Route("RT-000002", startWarehouse, intermediateWarehouse, 5.0, 3))
+        intermediateWarehouse.addRoute(Route("RT-000003", intermediateWarehouse, destinationWarehouse, 5.0, 4))
 
-        val firstRoute = Route(
-            id = "RT-000002",
-            originWarehouse = startWarehouse,
-            destinationWarehouse = intermediateWarehouse,
-            distanceKm = 5.0,
-            typicalDelayMin = 3
-        )
+        coEvery { warehouseRepository.findById("WH-000001")
+        } returns Result.success(startWarehouse)
 
-        val secondRoute = Route(
-            id = "RT-000003",
-            originWarehouse = intermediateWarehouse,
-            destinationWarehouse = destinationWarehouse,
-            distanceKm = 5.0,
-            typicalDelayMin = 4
-        )
+        coEvery { warehouseRepository.findById("WH-000002")
+        } returns Result.success(destinationWarehouse)
 
-        startWarehouse.addRoute(directRoute)
-        startWarehouse.addRoute(firstRoute)
-        intermediateWarehouse.addRoute(secondRoute)
-
-        coEvery { warehouseRepository.findById("WH-000001") } returns Result.success(startWarehouse)
-        coEvery { warehouseRepository.findById("WH-000002") } returns Result.success(destinationWarehouse)
-        coEvery { warehouseRepository.findAll() } returns Result.success(
-            listOf(startWarehouse, intermediateWarehouse, destinationWarehouse)
-        )
-
-        val result = useCase("WH-000001", "WH-000002")
-
-        assertThat(result.getOrNull()).isEqualTo(
+        coEvery { warehouseRepository.findAll()
+        } returns Result.success(
             listOf(startWarehouse, intermediateWarehouse, destinationWarehouse)
         )
     }

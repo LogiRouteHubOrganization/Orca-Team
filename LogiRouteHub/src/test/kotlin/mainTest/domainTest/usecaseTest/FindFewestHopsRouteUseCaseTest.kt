@@ -157,67 +157,7 @@ class FindFewestHopsRouteUseCaseTest {
 
     @Test
     fun `should choose path with fewer hops when multiple paths exist`() = runTest {
-        // Given
-        val intermediateWarehouse = Warehouse(
-            id = "WH-000003",
-            name = "Intermediate Warehouse",
-            regionalZone = "Central",
-            latitude = 31.7,
-            longitude = 35.0
-        )
-
-        val farWarehouse = Warehouse(
-            id = "WH-000004",
-            name = "Far Warehouse",
-            regionalZone = "West",
-            latitude = 31.6,
-            longitude = 34.8
-        )
-
-        val directRoute = Route(
-            id = "RT-000001",
-            originWarehouse = startWarehouse,
-            destinationWarehouse = destinationWarehouse,
-            distanceKm = 100.0,
-            typicalDelayMin = 10
-        )
-
-        val firstRoute = Route(
-            id = "RT-000002",
-            originWarehouse = startWarehouse,
-            destinationWarehouse = intermediateWarehouse,
-            distanceKm = 5.0,
-            typicalDelayMin = 3
-        )
-
-        val secondRoute = Route(
-            id = "RT-000003",
-            originWarehouse = intermediateWarehouse,
-            destinationWarehouse = farWarehouse,
-            distanceKm = 5.0,
-            typicalDelayMin = 3
-        )
-
-        val thirdRoute = Route(
-            id = "RT-000004",
-            originWarehouse = farWarehouse,
-            destinationWarehouse = destinationWarehouse,
-            distanceKm = 5.0,
-            typicalDelayMin = 3
-        )
-
-        startWarehouse.addRoute(directRoute)
-        startWarehouse.addRoute(firstRoute)
-        intermediateWarehouse.addRoute(secondRoute)
-        farWarehouse.addRoute(thirdRoute)
-
-        coEvery {
-            warehouseRepository.findById("WH-000001")
-        } returns Result.success(startWarehouse)
-
-        coEvery {
-            warehouseRepository.findById("WH-000002")
-        } returns Result.success(destinationWarehouse)
+        setupMultiplePathsScenario()
 
         // When
         val result = useCase(
@@ -230,6 +170,53 @@ class FindFewestHopsRouteUseCaseTest {
             startWarehouse,
             destinationWarehouse
         ).inOrder()
+    }
+
+    private fun setupMultiplePathsScenario() {
+        val intermediateWarehouse = Warehouse(
+            id = "WH-000003",
+            name = "Intermediate",
+            regionalZone = "Central",
+            latitude = 31.7,
+            longitude = 35.0
+        )
+        val farWarehouse = Warehouse(
+            id = "WH-000004",
+            name = "Far",
+            regionalZone = "West",
+            latitude = 31.6,
+            longitude = 34.8
+        )
+
+        startWarehouse.addRoute(Route(
+            "RT-000001",
+            startWarehouse,
+            destinationWarehouse,
+            100.0, 10))
+
+        startWarehouse.addRoute(Route(
+            "RT-000002",
+            startWarehouse,
+            intermediateWarehouse,
+            5.0, 3))
+
+        intermediateWarehouse.addRoute(Route(
+            "RT-000003",
+            intermediateWarehouse,
+            farWarehouse,
+            5.0, 3))
+
+        farWarehouse.addRoute(Route(
+            "RT-000004",
+            farWarehouse,
+            destinationWarehouse,
+            5.0, 3))
+
+        coEvery { warehouseRepository.findById("WH-000001")
+        } returns Result.success(startWarehouse)
+
+        coEvery { warehouseRepository.findById("WH-000002")
+        } returns Result.success(destinationWarehouse)
     }
 
     @Test
@@ -336,50 +323,7 @@ class FindFewestHopsRouteUseCaseTest {
 
     @Test
     fun `should handle cycle without infinite traversal`() = runTest {
-        // Given
-        val middleWarehouse = Warehouse(
-            id = "WH-000003",
-            name = "Middle Warehouse",
-            regionalZone = "Central",
-            latitude = 31.7,
-            longitude = 35.0
-        )
-
-        val startToMiddle = Route(
-            id = "RT-000001",
-            originWarehouse = startWarehouse,
-            destinationWarehouse = middleWarehouse,
-            distanceKm = 5.0,
-            typicalDelayMin = 3
-        )
-
-        val middleToStart = Route(
-            id = "RT-000002",
-            originWarehouse = middleWarehouse,
-            destinationWarehouse = startWarehouse,
-            distanceKm = 5.0,
-            typicalDelayMin = 3
-        )
-
-        val middleToDestination = Route(
-            id = "RT-000003",
-            originWarehouse = middleWarehouse,
-            destinationWarehouse = destinationWarehouse,
-            distanceKm = 5.0,
-            typicalDelayMin = 3
-        )
-
-        startWarehouse.addRoute(startToMiddle)
-        middleWarehouse.addRoute(middleToStart)
-        middleWarehouse.addRoute(middleToDestination)
-
-        coEvery {
-            warehouseRepository.findById("WH-000001")
-        } returns Result.success(startWarehouse)
-
-        coEvery {
-            warehouseRepository.findById("WH-000002")
-        } returns Result.success(destinationWarehouse)
+        val middleWarehouse = setupCycleScenario()
 
         // When
         val result = useCase(
@@ -393,6 +337,38 @@ class FindFewestHopsRouteUseCaseTest {
             middleWarehouse,
             destinationWarehouse
         ).inOrder()
+    }
+
+    private fun setupCycleScenario(): Warehouse {
+        val middleWarehouse = Warehouse(
+            id = "WH-000003", name = "Middle", regionalZone = "Central", latitude = 31.7, longitude = 35.0
+        )
+
+        startWarehouse.addRoute(Route(
+            "RT-000001",
+            startWarehouse,
+            middleWarehouse,
+            5.0, 3))
+
+        middleWarehouse.addRoute(Route(
+            "RT-000002",
+            middleWarehouse,
+            startWarehouse,
+            5.0, 3))
+
+        middleWarehouse.addRoute(Route(
+            "RT-000003",
+            middleWarehouse,
+            destinationWarehouse,
+            5.0, 3))
+
+        coEvery { warehouseRepository.findById("WH-000001")
+        } returns Result.success(startWarehouse)
+
+        coEvery { warehouseRepository.findById("WH-000002")
+        } returns Result.success(destinationWarehouse)
+
+        return middleWarehouse
     }
 }
 
