@@ -2,7 +2,6 @@ package data.parser
 
 import data.dataholder.WarehouseRaw
 
-
 class WarehouseParser {
     private val csvSeparator = ","
     private val expectedColumnCount = 5
@@ -23,7 +22,7 @@ class WarehouseParser {
         val columns = trimmedRow.split(csvSeparator)
 
         if (hasInvalidColumnCount(columns)) {
-            println("Diagnostic Warning: " + "Invalid warehouse column count -> '$row'")
+            println("Diagnostic Warning: Invalid warehouse column count -> '$row'")
             return null
         }
 
@@ -41,43 +40,41 @@ class WarehouseParser {
         columns: List<String>,
         originalRow: String
     ): WarehouseRaw? {
-
-        val warehouseId = normalizeIdentifier(
-            columns[warehouseIdColumnIndex]
-        )
-
+        val warehouseId = normalizeIdentifier(columns[warehouseIdColumnIndex])
         val warehouseName = columns[warehouseNameColumnIndex].trim()
-
-        val regionalZone = columns[regionalZoneColumnIndex]
-            .trim()
-            .uppercase()
-
+        val regionalZone = columns[regionalZoneColumnIndex].trim().uppercase()
         val latitudeText = columns[latitudeColumnIndex].trim()
         val longitudeText = columns[longitudeColumnIndex].trim()
 
-        if (hasEmptyWarehouseField(
-                warehouseId = warehouseId,
-                warehouseName = warehouseName,
-                regionalZone = regionalZone,
-                latitude = latitudeText,
-                longitude = longitudeText
-            )
-        ) {
-            println(
-                "Diagnostic Warning: " +
-                        "Skipping row with empty fields -> '$originalRow'"
-            )
+        if (hasEmptyWarehouseField(warehouseId, warehouseName, regionalZone, latitudeText, longitudeText)) {
+            println("Diagnostic Warning: Skipping row with empty fields -> '$originalRow'")
             return null
         }
 
+        return parseCoordinatesAndBuildWarehouse(
+            columns = columns,
+            originalRow = originalRow,
+            warehouseId = warehouseId,
+            warehouseName = warehouseName,
+            regionalZone = regionalZone
+        )
+    }
+
+    private fun parseCoordinatesAndBuildWarehouse(
+        columns: List<String>,
+        originalRow: String,
+        warehouseId: String,
+        warehouseName: String,
+        regionalZone: String
+    ): WarehouseRaw? {
         val latitude = parseCoordinate(
-            coordinate = latitudeText,
+            coordinate = columns[latitudeColumnIndex].trim(),
             coordinateName = "latitude",
             originalRow = originalRow
         ) ?: return null
 
         val longitude = parseCoordinate(
-            coordinate = longitudeText,
+            coordinate = columns[longitudeColumnIndex].trim(),
             coordinateName = "longitude",
             originalRow = originalRow
         ) ?: return null
@@ -98,7 +95,6 @@ class WarehouseParser {
         latitude: String,
         longitude: String
     ): Boolean {
-
         return warehouseId.isEmpty() ||
                 warehouseName.isEmpty() ||
                 regionalZone.isEmpty() ||
@@ -111,16 +107,10 @@ class WarehouseParser {
         coordinateName: String,
         originalRow: String
     ): Double? {
-
-        val coordinateValue = coordinate
-            .trim()
-            .toDoubleOrNull()
+        val coordinateValue = coordinate.trim().toDoubleOrNull()
 
         if (coordinateValue == null) {
-            println(
-                "Diagnostic Warning: " +
-                        "Invalid $coordinateName -> '$originalRow'"
-            )
+            println("Diagnostic Warning: Invalid $coordinateName -> '$originalRow'")
             return null
         }
 
@@ -130,11 +120,7 @@ class WarehouseParser {
     private fun normalizeIdentifier(
         identifier: String
     ): String {
-
-        val normalizedIdentifier = identifier
-            .trim()
-            .uppercase()
-
+        val normalizedIdentifier = identifier.trim().uppercase()
         val identifierParts = normalizedIdentifier.split("-")
 
         if (identifierParts.size != 2) {
@@ -154,5 +140,15 @@ class WarehouseParser {
         )
 
         return "$prefix-$normalizedNumericPart"
+    }
+
+    fun toCsvRow(warehouse: WarehouseRaw): String {
+        return listOf(
+            warehouse.warehouseId,
+            warehouse.warehouseName,
+            warehouse.regionalZone,
+            warehouse.latitude,
+            warehouse.longitude
+        ).joinToString(csvSeparator)
     }
 }

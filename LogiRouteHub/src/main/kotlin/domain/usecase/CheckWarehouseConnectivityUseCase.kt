@@ -1,11 +1,10 @@
 package domain.usecase
 
 import domain.repository.WarehouseRepository
-import domain.routing.LeastHopRouter
 
 class CheckWarehouseConnectivityUseCase(
     private val warehouseRepository: WarehouseRepository,
-    private val leastHopRouter: LeastHopRouter
+    private val findFewestHopsRouteUseCase: FindFewestHopsRouteUseCase
 ) {
 
     suspend operator fun invoke(
@@ -13,20 +12,21 @@ class CheckWarehouseConnectivityUseCase(
         destinationWarehouseId: String
     ): Result<Boolean> = runCatching {
 
-        val startWarehouse = warehouseRepository
+        warehouseRepository
             .findById(startWarehouseId)
             .getOrThrow()
             ?: return@runCatching false
 
-        val destinationWarehouse = warehouseRepository
+        warehouseRepository
             .findById(destinationWarehouseId)
             .getOrThrow()
             ?: return@runCatching false
 
-        val warehousePath = leastHopRouter.findLeastHopPath(
-            startWarehouse = startWarehouse,
-            destinationWarehouse = destinationWarehouse
-        )
+        val warehousePath = findFewestHopsRouteUseCase(
+            startWarehouseId = startWarehouseId,
+            destinationWarehouseId = destinationWarehouseId
+        ).getOrThrow()
+
         warehousePath.isNotEmpty()
     }
 }
