@@ -1,6 +1,7 @@
 package domain.usecase
 
 import domain.exception.EntityValidationException
+import domain.extension.runCatchingCancellable
 import domain.model.Package
 import domain.model.request.ReroutePackageRequest
 import domain.model.updateinput.PackageUpdateModel
@@ -17,16 +18,16 @@ class ReroutePackageUseCase(
 
     suspend operator fun invoke(
         input: ReroutePackageRequest
-    ): Result<Package?> = runCatching {
+    ): Result<Package?> = runCatchingCancellable {
 
         val warehouse = warehouseRepository
             .findById(input.warehouseId)
             .getOrThrow()
-            ?: return@runCatching null
+            ?: return@runCatchingCancellable null
 
         val logisticsPackage = warehouse.cargoQueue.find {
             it.id == input.packageId
-        } ?: return@runCatching null
+        } ?: return@runCatchingCancellable null
 
         val reroutedPackage = logisticsPackage.copy(
             destinationWarehouse = input.newDestinationWarehouse

@@ -6,6 +6,7 @@ import domain.model.Package
 import domain.model.request.DispatchVehicleRequest
 import domain.repository.VehicleRepository
 import domain.repository.WarehouseRepository
+import domain.extension.runCatchingCancellable
 
 class DispatchVehicleUseCase(
     private val vehicleRepository: VehicleRepository,
@@ -15,12 +16,11 @@ class DispatchVehicleUseCase(
 
     suspend operator fun invoke(
         input: DispatchVehicleRequest
-    ): Result<List<Package>> = runCatching {
+    ): Result<List<Package>> = runCatchingCancellable {
 
-        val vehicle = vehicleRepository.findById(input.vehicleId).getOrThrow() ?: return@runCatching emptyList()
+        val vehicle = vehicleRepository.findById(input.vehicleId).getOrThrow() ?: return@runCatchingCancellable emptyList()
 
-        val warehouse = warehouseRepository.findById(input.warehouseId).getOrThrow() ?: return@runCatching emptyList()
-
+        val warehouse = warehouseRepository.findById(input.warehouseId).getOrThrow() ?: return@runCatchingCancellable emptyList()
         val supportedPriorities = setOf("URGENT", "STANDARD", "LOW")
 
         warehouse.cargoQueue.forEach { logisticsPackage ->

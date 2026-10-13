@@ -145,7 +145,7 @@ class VehicleRepositoryImpl(
             )
         }
 
-    override suspend fun initializeStationedVehicles(): Result<Unit> = runCatching {
+    override suspend fun initializeStationedVehicles(): Result<Unit> = runCatchingCancellable  {
         loadLocalVehicles()
     }.mapLocalDataException()
 

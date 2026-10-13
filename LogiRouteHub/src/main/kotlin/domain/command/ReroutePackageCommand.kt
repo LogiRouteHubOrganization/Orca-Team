@@ -2,6 +2,7 @@ package domain.command
 
 import domain.command.telemetry.CommandTelemetry
 import domain.command.telemetry.PackageState
+import domain.extension.runCatchingCancellable
 import domain.model.Package
 import domain.model.request.ReroutePackageRequest
 import domain.model.updateinput.PackageUpdateModel
@@ -30,32 +31,25 @@ class ReroutePackageCommand(
     override val commandType = "ReroutePackageCommand"
 
     override suspend fun execute(): Result<Unit> {
-        return runCatching {
+        return runCatchingCancellable {
             val warehouse =
                 dependencies.warehouseRepository
                     .findById(input.warehouseId)
                     .getOrThrow()
                     ?: error("Warehouse not found: ${input.warehouseId}")
 
-            val indexedPackage =
-                warehouse.cargoQueue
-                    .withIndex()
+            val indexedPackage = warehouse.cargoQueue.withIndex()
                     .find { it.value.id == input.packageId }
                     ?: error("Package not found: ${input.packageId}")
 
-            previousPackageState =
-                indexedPackage.value
+            previousPackageState = indexedPackage.value
 
-            previousIndex =
-                indexedPackage.index
+            previousIndex = indexedPackage.index
 
-            val reroutedPackage =
-                dependencies.reroutePackageUseCase(input)
-                    .getOrThrow()
+            val reroutedPackage = dependencies.reroutePackageUseCase(input).getOrThrow()
                     ?: error("Package rerouting failed")
 
-            afterPackageState =
-                reroutedPackage
+            afterPackageState = reroutedPackage
 
             recordStateTransition()
 
@@ -63,27 +57,22 @@ class ReroutePackageCommand(
         }
     }
     override suspend fun undo(): Result<Unit> {
-        return runCatching {
-            val oldPackage =
-                previousPackageState
+        return runCatchingCancellable {
+            val oldPackage = previousPackageState
                     ?: error("Previous package state is unavailable")
 
-            val newPackage =
-                afterPackageState
+            val newPackage = afterPackageState
                     ?: error("After package state is unavailable")
 
-            val index =
-                previousIndex
+            val index = previousIndex
                     ?: error("Previous package index is unavailable")
 
             dependencies.packageRepository.update(
                 oldPackage.id,
                 PackageUpdateModel(
                     weightByKg = oldPackage.weightByKg,
-                    originWarehouseId =
-                        oldPackage.originWarehouse?.id,
-                    destinationWarehouseId =
-                        oldPackage.destinationWarehouse?.id
+                    originWarehouseId = oldPackage.originWarehouse?.id,
+                    destinationWarehouseId = oldPackage.destinationWarehouse?.id
                 )
             ).getOrThrow()
 
@@ -91,14 +80,12 @@ class ReroutePackageCommand(
                 commandType = commandType,
                 beforeState = PackageState(
                     packageId = newPackage.id,
-                    destinationWarehouseId =
-                        newPackage.destinationWarehouse?.id,
+                    destinationWarehouseId = newPackage.destinationWarehouse?.id,
                     index = index
                 ),
                 afterState = PackageState(
                     packageId = oldPackage.id,
-                    destinationWarehouseId =
-                        oldPackage.destinationWarehouse?.id,
+                    destinationWarehouseId = oldPackage.destinationWarehouse?.id,
                     index = index
                 )
             )
@@ -108,27 +95,22 @@ class ReroutePackageCommand(
     }
 
     override suspend fun redo(): Result<Unit> {
-        return runCatching {
-            val oldPackage =
-                previousPackageState
+        return runCatchingCancellable {
+            val oldPackage = previousPackageState
                     ?: error("Previous package state is unavailable")
 
-            val newPackage =
-                afterPackageState
+            val newPackage = afterPackageState
                     ?: error("After package state is unavailable")
 
-            val index =
-                previousIndex
+            val index = previousIndex
                     ?: error("Previous package index is unavailable")
 
             dependencies.packageRepository.update(
                 newPackage.id,
                 PackageUpdateModel(
                     weightByKg = newPackage.weightByKg,
-                    originWarehouseId =
-                        newPackage.originWarehouse?.id,
-                    destinationWarehouseId =
-                        newPackage.destinationWarehouse?.id
+                    originWarehouseId = newPackage.originWarehouse?.id,
+                    destinationWarehouseId = newPackage.destinationWarehouse?.id
                 )
             ).getOrThrow()
 
@@ -136,47 +118,36 @@ class ReroutePackageCommand(
                 commandType = commandType,
                 beforeState = PackageState(
                     packageId = oldPackage.id,
-                    destinationWarehouseId =
-                        oldPackage.destinationWarehouse?.id,
+                    destinationWarehouseId = oldPackage.destinationWarehouse?.id,
                     index = index
                 ),
                 afterState = PackageState(
                     packageId = newPackage.id,
-                    destinationWarehouseId =
-                        newPackage.destinationWarehouse?.id,
+                    destinationWarehouseId = newPackage.destinationWarehouse?.id,
                     index = index
                 )
             )
-
             Unit
         }
     }
 
     private fun recordStateTransition() {
-        val oldPackage =
-            previousPackageState
-                ?: return
+        val oldPackage = previousPackageState ?: return
 
-        val newPackage =
-            afterPackageState
-                ?: return
+        val newPackage = afterPackageState ?: return
 
-        val index =
-            previousIndex
-                ?: return
+        val index = previousIndex ?: return
 
         dependencies.telemetry.recordStateTransition(
             commandType = commandType,
             beforeState = PackageState(
                 packageId = oldPackage.id,
-                destinationWarehouseId =
-                    oldPackage.destinationWarehouse?.id,
+                destinationWarehouseId = oldPackage.destinationWarehouse?.id,
                 index = index
             ),
             afterState = PackageState(
                 packageId = newPackage.id,
-                destinationWarehouseId =
-                    newPackage.destinationWarehouse?.id,
+                destinationWarehouseId = newPackage.destinationWarehouse?.id,
                 index = index
             )
         )

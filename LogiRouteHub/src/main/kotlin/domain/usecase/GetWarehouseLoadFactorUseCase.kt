@@ -1,5 +1,6 @@
 package domain.usecase
 
+import domain.extension.runCatchingCancellable
 import domain.repository.WarehouseRepository
 
 class GetWarehouseLoadFactorUseCase(
@@ -10,10 +11,11 @@ class GetWarehouseLoadFactorUseCase(
 
     suspend operator fun invoke(
         warehouseId: String
-    ): Result<Double> = runCatching {
+    ): Result<Double> = runCatchingCancellable  {
 
         val warehouse = warehouseRepository.findById(warehouseId).getOrThrow()
-            ?: return@runCatching zeroCapacity
+            ?: return@runCatchingCancellable zeroCapacity
+
 
         val totalPackageWeight = warehouse.cargoQueue.map { packageItem -> packageItem.weightByKg }
             .fold(initialValueForTheSum) { totalWeight, packageWeight ->

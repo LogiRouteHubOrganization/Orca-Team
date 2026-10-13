@@ -1,5 +1,6 @@
 package domain.usecase
 
+import domain.extension.runCatchingCancellable
 import domain.model.Warehouse
 import domain.model.request.LeastHopRouterState
 import domain.repository.WarehouseRepository
@@ -11,17 +12,17 @@ class FindFewestHopsRouteUseCase(
     suspend operator fun invoke(
         startWarehouseId: String,
         destinationWarehouseId: String
-    ): Result<List<Warehouse>> = runCatching {
+    ): Result<List<Warehouse>> = runCatchingCancellable  {
 
         val startWarehouse = warehouseRepository
             .findById(startWarehouseId)
             .getOrThrow()
-            ?: return@runCatching emptyList()
+            ?:  return@runCatchingCancellable emptyList()
 
         val destinationWarehouse = warehouseRepository
             .findById(destinationWarehouseId)
             .getOrThrow()
-            ?: return@runCatching emptyList()
+            ?: return@runCatchingCancellable emptyList()
 
         findLeastHopPath(
             startWarehouse = startWarehouse,

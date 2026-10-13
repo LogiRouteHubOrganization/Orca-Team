@@ -1,5 +1,6 @@
 package domain.usecase
 
+import domain.extension.runCatchingCancellable
 import domain.repository.WarehouseRepository
 
 class CheckWarehouseConnectivityUseCase(
@@ -10,17 +11,17 @@ class CheckWarehouseConnectivityUseCase(
     suspend operator fun invoke(
         startWarehouseId: String,
         destinationWarehouseId: String
-    ): Result<Boolean> = runCatching {
+    ): Result<Boolean> = runCatchingCancellable {
 
         warehouseRepository
             .findById(startWarehouseId)
             .getOrThrow()
-            ?: return@runCatching false
+            ?: return@runCatchingCancellable false
 
         warehouseRepository
             .findById(destinationWarehouseId)
             .getOrThrow()
-            ?: return@runCatching false
+            ?: return@runCatchingCancellable false
 
         val warehousePath = findFewestHopsRouteUseCase(
             startWarehouseId = startWarehouseId,
