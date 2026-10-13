@@ -2,6 +2,8 @@ package data.remote.retry
 
 import kotlinx.coroutines.delay
 import kotlin.math.pow
+import kotlinx.coroutines.CancellationException
+
 
 abstract class RetryTemplate(
     private val maxAttempts: Int = 3,
@@ -10,27 +12,55 @@ abstract class RetryTemplate(
     private val logger: RetryLogger = RetryLogger()
 ) {
 
+
     suspend fun <T> execute(
         operationName: String,
         block: suspend () -> T
     ): Result<T> {
+        require(maxAttempts > 0) {
+            "maxAttempts must be greater than zero"
+        }
+
         repeat(maxAttempts) { attemptIndex ->
             val currentAttempt = attemptIndex + 1
-            logger.logAttempt(operationName, currentAttempt, maxAttempts)
+
+            logger.logAttempt(
+                operationName,
+                currentAttempt,
+                maxAttempts
+            )
 
             try {
                 val result = block()
-                logger.logFinalSuccess(operationName, currentAttempt, maxAttempts)
+
+                logger.logFinalSuccess(
+                    operationName,
+                    currentAttempt,
+                    maxAttempts
+                )
+
                 return Result.success(result)
+            } catch (cancellation: CancellationException) {
+                throw cancellation
             } catch (exception: Exception) {
-                logException(operationName, currentAttempt, attemptIndex, exception)
+                logException(
+                    operationName,
+                    currentAttempt,
+                    attemptIndex,
+                    exception
+                )
+
                 if (shouldStopRetry(currentAttempt, exception)) {
                     return Result.failure(exception)
                 }
+
+                delay(calculateDelay(attemptIndex))
             }
         }
+
         error("Retry execution ended unexpectedly")
     }
+
 
     private fun logException(
         operationName: String,

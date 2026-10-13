@@ -1,3 +1,4 @@
+
 package data.datasource.local.csv
 
 import data.dataholder.LogisticsPackageRaw
@@ -5,6 +6,8 @@ import data.datasource.local.LocalPackageDataSource
 import data.exception.local.LocalDataException
 import data.parser.PackageParser
 import data.validation.LocalDataSourceValidator
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 
 class CsvPackageDataSourceImpl(
@@ -15,7 +18,74 @@ class CsvPackageDataSourceImpl(
 
     private val headerLineCount = 1
 
-    override fun loadPackages(): List<LogisticsPackageRaw> {
+    private val csvHeader =
+        "id,weight,originHubId,destinationHubId,priority"
+
+    override suspend fun loadPackages(): List<LogisticsPackageRaw> =
+        withContext(Dispatchers.IO) {
+            loadPackagesFromCsv()
+        }
+
+    override suspend fun addPackage(
+        logisticsPackage: LogisticsPackageRaw
+    ) {
+        withContext(Dispatchers.IO) {
+            val packages = loadPackagesFromCsv().toMutableList()
+
+            packages.add(logisticsPackage)
+
+            writePackagesToCsv(packages)
+        }
+    }
+
+    override suspend fun updatePackage(
+        logisticsPackage: LogisticsPackageRaw
+    ) {
+        withContext(Dispatchers.IO) {
+            val packages = loadPackagesFromCsv().toMutableList()
+
+            val index = packages.indexOfFirst {
+                it.packageId == logisticsPackage.packageId
+            }
+
+            if (index == -1) {
+                throw LocalDataException(
+                    "Package not found: ${logisticsPackage.packageId}"
+                )
+            }
+
+            packages[index] = logisticsPackage
+
+            writePackagesToCsv(packages)
+        }
+    }
+
+    override suspend fun deletePackage(packageId: String) {
+        withContext(Dispatchers.IO) {
+            val packages = loadPackagesFromCsv().toMutableList()
+
+            val removed = packages.removeIf {
+                it.packageId == packageId
+            }
+
+            if (!removed) {
+                throw LocalDataException(
+                    "Package not found: $packageId"
+                )
+            }
+            writePackagesToCsv(packages)
+        }
+    }
+
+    override suspend fun replacePackages(
+        packages: List<LogisticsPackageRaw>
+    ) {
+        withContext(Dispatchers.IO) {
+            writePackagesToCsv(packages)
+        }
+    }
+
+    private fun loadPackagesFromCsv(): List<LogisticsPackageRaw> {
         localDataSourceValidator.validate(packageFile)
 
         val packageRows = packageFile.readLines()
@@ -26,78 +96,18 @@ class CsvPackageDataSourceImpl(
             )
         }
 
-        val dataRows = packageRows.drop(headerLineCount)
-
-        return dataRows.mapNotNull { row ->
-            packageParser.parsePackageRow(row)
-        }
+        return packageRows
+            .drop(headerLineCount)
+            .mapNotNull(packageParser::parsePackageRow)
     }
 
-    override fun addPackage(
-        logisticsPackage: LogisticsPackageRaw
-    ) {
-        val packages = loadPackages().toMutableList()
-
-        packages.add(logisticsPackage)
-
-        writePackages(packages)
-    }
-
-    override fun updatePackage(
-        logisticsPackage: LogisticsPackageRaw
-    ) {
-        val packages = loadPackages().toMutableList()
-
-        val index = packages.indexOfFirst {
-            it.packageId == logisticsPackage.packageId
-        }
-
-        if (index == -1) {
-            throw LocalDataException(
-                "Package not found: ${logisticsPackage.packageId}"
-            )
-        }
-
-        packages[index] = logisticsPackage
-
-        writePackages(packages)
-    }
-
-    override fun deletePackage(
-        packageId: String
-    ) {
-        val packages = loadPackages().toMutableList()
-
-        val removed = packages.removeIf {
-            it.packageId == packageId
-        }
-
-        if (!removed) {
-            throw LocalDataException(
-                "Package not found: $packageId"
-            )
-        }
-
-        writePackages(packages)
-    }
-
-    override fun replacePackages(
+    private fun writePackagesToCsv(
         packages: List<LogisticsPackageRaw>
     ) {
-        writePackages(packages)
-    }
-
-    private fun writePackages(
-        packages: List<LogisticsPackageRaw>
-    ) {
-        val header = "id,weight,originHubId,destinationHubId,priority"
-
-        val rows = packages.map(
-            packageParser::toCsvRow
-        )
+        val rows = packages.map(packageParser::toCsvRow)
 
         val content = buildList {
-            add(header)
+            add(csvHeader)
             addAll(rows)
         }.joinToString(System.lineSeparator())
 

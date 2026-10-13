@@ -9,6 +9,8 @@ import data.datasource.remote.RemotePackageDataSource
 import data.remote.mapper.toCreateDto
 import data.remote.mapper.toRaw
 import data.remote.mapper.toUpdateDto
+import data.extension.runCatchingCancellable
+import data.extension.recoverCatchingCancellable
 import domain.exception.ResourceNotFoundException
 import domain.model.Package
 import domain.repository.PackageRepository
@@ -23,14 +25,14 @@ class PackageRepositoryImpl(
 ) : PackageRepository {
 
     override suspend fun findAll(): Result<List<Package>> =
-        runCatching {
+        runCatchingCancellable {
             loadLocalPackages()
         }.mapLocalDataException()
 
     override suspend fun findById(
         packageId: String
     ): Result<Package?> =
-        runCatching {
+        runCatchingCancellable {
             loadLocalPackages().find {
                 it.id == packageId
             }
@@ -38,7 +40,7 @@ class PackageRepositoryImpl(
 
     override suspend fun add(
         logisticsPackage: Package
-    ): Result<Package> = runCatching {
+    ): Result<Package> = runCatchingCancellable {
             val createdDto = packageRemoteDataSource.createPackage(
                     logisticsPackage.toCreateDto()
                 )
@@ -57,7 +59,7 @@ class PackageRepositoryImpl(
     override suspend fun update(
         packageId: String,
         updateModel: PackageUpdateModel
-    ): Result<Package> = runCatching {
+    ): Result<Package> = runCatchingCancellable {
         val updatedDto = packageRemoteDataSource.updatePackage(
                     id = packageId,
                     packageRequest = updateModel.toUpdateDto()
@@ -69,9 +71,7 @@ class PackageRepositoryImpl(
 
             rebuildCargoQueues()
 
-            findLocalPackageOrThrow(
-                packageId
-            )
+            findLocalPackageOrThrow(packageId)
         }.mapRepositoryException(
             resourceId = packageId
         )
@@ -79,7 +79,7 @@ class PackageRepositoryImpl(
     override suspend fun delete(
         packageId: String
     ): Result<Unit> =
-        runCatching {
+        runCatchingCancellable {
             packageRemoteDataSource.deletePackage(
                 packageId
             )
@@ -93,7 +93,7 @@ class PackageRepositoryImpl(
         )
 
     override suspend fun refresh(): Result<Unit> =
-        runCatching {
+        runCatchingCancellable {
             val remotePackages =
                 packageRemoteDataSource.getAllPackages()
 
@@ -157,7 +157,7 @@ class PackageRepositoryImpl(
     }
 
     private fun <T> Result<T>.mapLocalDataException(): Result<T> {
-        return recoverCatching { throwable ->
+        return recoverCatchingCancellable { throwable ->
             throw when (throwable) {
                 is LocalDataException ->
                     throwable.toDomainException()
@@ -170,7 +170,7 @@ class PackageRepositoryImpl(
     private fun <T> Result<T>.mapRepositoryException(
         resourceId: String? = null
     ): Result<T> {
-        return recoverCatching { throwable ->
+        return recoverCatchingCancellable { throwable ->
             throw when (throwable) {
                 is LocalDataException ->
                     throwable.toDomainException()
@@ -191,7 +191,7 @@ class PackageRepositoryImpl(
         }
     }
     override suspend fun initializeCargoQueues(): Result<Unit> =
-        runCatching {
+        runCatchingCancellable {
             rebuildCargoQueues()
         }.mapLocalDataException()
 

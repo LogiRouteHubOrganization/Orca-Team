@@ -6,6 +6,8 @@ import data.exception.local.toDomainException
 import data.exception.remote.toDomainException
 import data.mapper.WarehouseMapper
 import data.datasource.remote.RemoteWarehouseDataSource
+import data.extension.recoverCatchingCancellable
+import data.extension.runCatchingCancellable
 import data.remote.mapper.toCreateDto
 import data.remote.mapper.toRaw
 import data.remote.mapper.toUpdateDto
@@ -22,15 +24,17 @@ class WarehouseRepositoryImpl(
     private val warehouses = mutableListOf<Warehouse>()
     private var isLoaded = false
 
+
     override suspend fun findAll(): Result<List<Warehouse>> =
-        runCatching {
+        runCatchingCancellable {
             loadLocalWarehouses().toList()
         }.mapLocalDataException()
+
 
     override suspend fun findById(
         warehouseId: String
     ): Result<Warehouse?> =
-        runCatching {
+        runCatchingCancellable {
             loadLocalWarehouses().find {
                 it.id == warehouseId
             }
@@ -39,7 +43,7 @@ class WarehouseRepositoryImpl(
     override suspend fun add(
         warehouse: Warehouse
     ): Result<Warehouse> =
-        runCatching {
+        runCatchingCancellable {
             loadLocalWarehouses()
 
             val createdDto = warehouseRemoteDataSource.createWarehouse(
@@ -64,7 +68,7 @@ class WarehouseRepositoryImpl(
     override suspend fun update(
         warehouseId: String,
         updateModel: WarehouseUpdateModel
-    ): Result<Warehouse> = runCatching {
+    ): Result<Warehouse> = runCatchingCancellable {
             loadLocalWarehouses()
             val updatedDto = warehouseRemoteDataSource.updateWarehouse(
                     id = warehouseId,
@@ -96,7 +100,7 @@ class WarehouseRepositoryImpl(
     override suspend fun delete(
         warehouseId: String
     ): Result<Unit> =
-        runCatching {
+        runCatchingCancellable {
             loadLocalWarehouses()
             warehouseRemoteDataSource.deleteWarehouse(
                 warehouseId
@@ -117,7 +121,7 @@ class WarehouseRepositoryImpl(
         )
 
     override suspend fun refresh(): Result<Unit> =
-        runCatching {
+        runCatchingCancellable {
             val remoteWarehouses = warehouseRemoteDataSource.getAllWarehouses()
 
             val localWarehouses = remoteWarehouses.map { warehouseDto ->
@@ -131,7 +135,7 @@ class WarehouseRepositoryImpl(
             reloadLocalWarehouses()
         }.mapRepositoryException()
 
-    private fun loadLocalWarehouses(): List<Warehouse> {
+    private suspend fun loadLocalWarehouses(): List<Warehouse> {
         if (!isLoaded) {
             reloadLocalWarehouses()
         }
@@ -139,10 +143,10 @@ class WarehouseRepositoryImpl(
         return warehouses
     }
 
-    private fun reloadLocalWarehouses() {
+    private suspend fun reloadLocalWarehouses() {
         val loadedWarehouses = warehouseDataSource
-                .loadWarehouses()
-                .map(warehouseMapper::mapToDomainModel)
+            .loadWarehouses()
+            .map(warehouseMapper::mapToDomainModel)
 
         warehouses.clear()
         warehouses.addAll(loadedWarehouses)
@@ -150,7 +154,7 @@ class WarehouseRepositoryImpl(
         isLoaded = true
     }
 
-    private fun findLocalWarehouseOrThrow(
+    private suspend fun findLocalWarehouseOrThrow(
         warehouseId: String
     ): Warehouse {
         return loadLocalWarehouses().find {
@@ -161,7 +165,7 @@ class WarehouseRepositoryImpl(
     }
 
     private fun <T> Result<T>.mapLocalDataException(): Result<T> {
-        return recoverCatching { throwable ->
+        return recoverCatchingCancellable { throwable ->
             throw when (throwable) {
                 is LocalDataException ->
                     throwable.toDomainException()
@@ -171,12 +175,14 @@ class WarehouseRepositoryImpl(
         }
     }
 
+
     private fun <T> Result<T>.mapRepositoryException(
         resourceId: String? = null
     ): Result<T> {
-        return recoverCatching { throwable ->
+        return recoverCatchingCancellable { throwable ->
             throw when (throwable) {
-                is LocalDataException -> throwable.toDomainException()
+                is LocalDataException ->
+                    throwable.toDomainException()
 
                 else -> {
                     if (resourceId != null) {
@@ -193,4 +199,5 @@ class WarehouseRepositoryImpl(
             }
         }
     }
+
 }

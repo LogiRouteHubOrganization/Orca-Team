@@ -9,6 +9,8 @@ import data.datasource.remote.RemoteVehicleDataSource
 import data.remote.mapper.toCreateDto
 import data.remote.mapper.toRaw
 import data.remote.mapper.toUpdateDto
+import data.extension.runCatchingCancellable
+import data.extension.recoverCatchingCancellable
 import domain.exception.ResourceNotFoundException
 import domain.model.Vehicle
 import domain.model.updateinput.VehicleUpdateModel
@@ -26,14 +28,14 @@ class VehicleRepositoryImpl(
     private var isLoaded = false
 
     override suspend fun findAll(): Result<List<Vehicle>> =
-        runCatching {
+        runCatchingCancellable {
             loadLocalVehicles()
             vehicles.toList()
         }.mapLocalDataException()
 
     override suspend fun findById(
         vehicleId: String
-    ): Result<Vehicle?> = runCatching {
+    ): Result<Vehicle?> = runCatchingCancellable {
         loadLocalVehicles()
         vehicles.find { vehicle ->
             vehicle.id == vehicleId
@@ -42,7 +44,7 @@ class VehicleRepositoryImpl(
 
     override suspend fun add(
         vehicle: Vehicle
-    ): Result<Vehicle> = runCatching {
+    ): Result<Vehicle> = runCatchingCancellable {
         loadLocalVehicles()
 
         val createdDto = vehicleRemoteDataSource.createVehicle(
@@ -76,7 +78,7 @@ class VehicleRepositoryImpl(
     override suspend fun update(
         vehicleId: String,
         updateModel: VehicleUpdateModel
-    ): Result<Vehicle> = runCatching {
+    ): Result<Vehicle> = runCatchingCancellable {
         loadLocalVehicles()
 
         val previousVehicle = vehicles.find { it.id == vehicleId }
@@ -105,7 +107,7 @@ class VehicleRepositoryImpl(
     override suspend fun delete(
         vehicleId: String
     ): Result<Unit> =
-        runCatching {
+        runCatchingCancellable {
             loadLocalVehicles()
 
             val vehicle = vehicles.find { currentVehicle ->
@@ -127,7 +129,7 @@ class VehicleRepositoryImpl(
         )
 
     override suspend fun refresh(): Result<Unit> =
-        runCatching {
+        runCatchingCancellable {
             val remoteVehicles = vehicleRemoteDataSource.getAllVehicles()
 
             val localVehicles = remoteVehicles.map { vehicleDto ->
@@ -137,7 +139,7 @@ class VehicleRepositoryImpl(
             vehicleDataSource.replaceVehicles(
                 localVehicles
             )
-        }.recoverCatching { exception ->
+        }.recoverCatchingCancellable { exception ->
             throw exception.toDomainException(
                 resourceType = "Vehicle"
             )
@@ -211,7 +213,7 @@ class VehicleRepositoryImpl(
     }
 
     private fun <T> Result<T>.mapLocalDataException(): Result<T> {
-        return recoverCatching { throwable ->
+        return recoverCatchingCancellable { throwable ->
             throw when (throwable) {
                 is LocalDataException ->
                     throwable.toDomainException()
@@ -224,7 +226,7 @@ class VehicleRepositoryImpl(
     private fun <T> Result<T>.mapRepositoryException(
         resourceId: String
     ): Result<T> {
-        return recoverCatching { exception ->
+        return recoverCatchingCancellable { exception ->
             throw when (exception) {
                 is LocalDataException ->
                     exception.toDomainException()

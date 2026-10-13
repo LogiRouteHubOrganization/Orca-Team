@@ -9,6 +9,8 @@ import data.datasource.remote.RemoteRouteDataSource
 import data.remote.mapper.toCreateDto
 import data.remote.mapper.toRaw
 import data.remote.mapper.toUpdateDto
+import data.extension.runCatchingCancellable
+import data.extension.recoverCatchingCancellable
 import domain.exception.ResourceNotFoundException
 import domain.model.Route
 import domain.model.updateinput.RouteUpdateModel
@@ -28,7 +30,7 @@ class RouteRepositoryImpl(
     override suspend fun findById(
         routeId: String
     ): Result<Route?> =
-        runCatching {
+        runCatchingCancellable {
             loadLocalRoutes()
 
             routes.find { route ->
@@ -37,7 +39,7 @@ class RouteRepositoryImpl(
         }.mapLocalDataException()
 
     override suspend fun findAll(): Result<List<Route>> =
-        runCatching {
+        runCatchingCancellable {
             loadLocalRoutes()
 
             routes.toList()
@@ -46,7 +48,7 @@ class RouteRepositoryImpl(
     override suspend fun add(
         route: Route
     ): Result<Route> =
-        runCatching {
+        runCatchingCancellable {
             loadLocalRoutes()
 
             val createdDto = routeRemoteDataSource.createRoute(
@@ -88,7 +90,7 @@ class RouteRepositoryImpl(
     override suspend fun update(
         routeId: String,
         updateModel: RouteUpdateModel
-    ): Result<Route> = runCatching {
+    ): Result<Route> = runCatchingCancellable {
         loadLocalRoutes()
 
         val previousRoute = routes.find { it.id == routeId }
@@ -121,7 +123,7 @@ class RouteRepositoryImpl(
 
     override suspend fun delete(
         routeId: String
-    ): Result<Unit> = runCatching {
+    ): Result<Unit> = runCatchingCancellable {
         loadLocalRoutes()
 
         val route = routes.find { currentRoute ->
@@ -143,7 +145,7 @@ class RouteRepositoryImpl(
     )
 
     override suspend fun refresh(): Result<Unit> =
-        runCatching {
+        runCatchingCancellable {
             val remoteRoutes = routeRemoteDataSource.getAllRoutes()
 
             val localRoutes = remoteRoutes.map { routeDto ->
@@ -151,14 +153,14 @@ class RouteRepositoryImpl(
             }
 
             routeDataSource.replaceRoutes(localRoutes)
-        }.recoverCatching { exception ->
+        }.recoverCatchingCancellable { exception ->
             throw exception.toDomainException(
                 resourceType = "Route"
             )
         }
 
     override suspend fun initializeOutgoingRoutes(): Result<Unit> =
-        runCatching {
+        runCatchingCancellable {
             loadLocalRoutes()
         }.mapLocalDataException()
 
@@ -243,7 +245,7 @@ class RouteRepositoryImpl(
     }
 
     private fun <T> Result<T>.mapLocalDataException(): Result<T> {
-        return recoverCatching { throwable ->
+        return recoverCatchingCancellable { throwable ->
             throw when (throwable) {
                 is LocalDataException ->
                     throwable.toDomainException()
@@ -256,7 +258,7 @@ class RouteRepositoryImpl(
     private fun <T> Result<T>.mapRepositoryException(
         resourceId: String
     ): Result<T> {
-        return recoverCatching { exception ->
+        return recoverCatchingCancellable { exception ->
             throw when (exception) {
                 is LocalDataException -> exception.toDomainException()
 

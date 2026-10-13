@@ -1,3 +1,4 @@
+
 package data.datasource.local.csv
 
 import data.dataholder.WarehouseRaw
@@ -5,6 +6,8 @@ import data.datasource.local.LocalWarehouseDataSource
 import data.exception.local.LocalDataException
 import data.parser.WarehouseParser
 import data.validation.LocalDataSourceValidator
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 
 class CsvWarehouseDataSourceImpl(
@@ -15,7 +18,71 @@ class CsvWarehouseDataSourceImpl(
 
     private val headerLineCount = 1
 
-    override fun loadWarehouses(): List<WarehouseRaw> {
+    private val csvHeader =
+        "id,name,regional_zone,latitude,longitude"
+
+    override suspend fun loadWarehouses(): List<WarehouseRaw> =
+        withContext(Dispatchers.IO) {
+            loadWarehousesFromCsv()
+        }
+
+    override suspend fun addWarehouse(warehouse: WarehouseRaw) {
+        withContext(Dispatchers.IO) {
+            val warehouses = loadWarehousesFromCsv().toMutableList()
+
+            warehouses.add(warehouse)
+
+            writeWarehousesToCsv(warehouses)
+        }
+    }
+
+    override suspend fun updateWarehouse(warehouse: WarehouseRaw) {
+        withContext(Dispatchers.IO) {
+            val warehouses = loadWarehousesFromCsv().toMutableList()
+
+            val index = warehouses.indexOfFirst {
+                it.warehouseId == warehouse.warehouseId
+            }
+
+            if (index == -1) {
+                throw LocalDataException(
+                    "Warehouse not found: ${warehouse.warehouseId}"
+                )
+            }
+
+            warehouses[index] = warehouse
+
+            writeWarehousesToCsv(warehouses)
+        }
+    }
+
+    override suspend fun deleteWarehouse(warehouseId: String) {
+        withContext(Dispatchers.IO) {
+            val warehouses = loadWarehousesFromCsv().toMutableList()
+
+            val removed = warehouses.removeIf {
+                it.warehouseId == warehouseId
+            }
+
+            if (!removed) {
+                throw LocalDataException(
+                    "Warehouse not found: $warehouseId"
+                )
+            }
+
+            writeWarehousesToCsv(warehouses)
+        }
+    }
+
+    override suspend fun replaceWarehouses(
+        warehouses: List<WarehouseRaw>
+    ) {
+        withContext(Dispatchers.IO) {
+            writeWarehousesToCsv(warehouses)
+        }
+    }
+
+    private fun loadWarehousesFromCsv(): List<WarehouseRaw> {
         localDataSourceValidator.validate(warehouseFile)
 
         val warehouseRows = warehouseFile.readLines()
@@ -26,76 +93,18 @@ class CsvWarehouseDataSourceImpl(
             )
         }
 
-        val dataRows = warehouseRows.drop(headerLineCount)
-
-        return dataRows.mapNotNull { row ->
-            warehouseParser.parseWarehouseRow(row)
-        }
+        return warehouseRows
+            .drop(headerLineCount)
+            .mapNotNull(warehouseParser::parseWarehouseRow)
     }
 
-    override fun addWarehouse(
-        warehouse: WarehouseRaw
-    ) {
-        val warehouses = loadWarehouses().toMutableList()
-
-        warehouses.add(warehouse)
-
-        writeWarehouses(warehouses)
-    }
-
-    override fun updateWarehouse(
-        warehouse: WarehouseRaw
-    ) {
-        val warehouses = loadWarehouses().toMutableList()
-
-        val index = warehouses.indexOfFirst {
-            it.warehouseId == warehouse.warehouseId
-        }
-
-        if (index == -1) {
-            throw LocalDataException(
-                "Warehouse not found: ${warehouse.warehouseId}"
-            )
-        }
-
-        warehouses[index] = warehouse
-
-        writeWarehouses(warehouses)
-    }
-
-    override fun deleteWarehouse(
-        warehouseId: String
-    ) {
-        val warehouses = loadWarehouses().toMutableList()
-
-        val removed = warehouses.removeIf { it.warehouseId == warehouseId }
-
-        if (!removed) {
-            throw LocalDataException(
-                "Warehouse not found: $warehouseId"
-            )
-        }
-
-        writeWarehouses(warehouses)
-    }
-
-    override fun replaceWarehouses(
+    private fun writeWarehousesToCsv(
         warehouses: List<WarehouseRaw>
     ) {
-        writeWarehouses(warehouses)
-    }
-
-    private fun writeWarehouses(
-        warehouses: List<WarehouseRaw>
-    ) {
-        val header = "id,name,regional_zone,latitude,longitude"
-
-        val rows = warehouses.map(
-            warehouseParser::toCsvRow
-        )
+        val rows = warehouses.map(warehouseParser::toCsvRow)
 
         val content = buildList {
-            add(header)
+            add(csvHeader)
             addAll(rows)
         }.joinToString(System.lineSeparator())
 

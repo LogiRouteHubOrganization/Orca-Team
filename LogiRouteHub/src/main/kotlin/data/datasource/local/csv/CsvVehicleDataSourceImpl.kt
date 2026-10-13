@@ -1,3 +1,4 @@
+
 package data.datasource.local.csv
 
 import data.dataholder.FleetRaw
@@ -5,6 +6,8 @@ import data.datasource.local.LocalVehicleDataSource
 import data.exception.local.LocalDataException
 import data.parser.FleetParser
 import data.validation.LocalDataSourceValidator
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 
 class CsvVehicleDataSourceImpl(
@@ -15,7 +18,69 @@ class CsvVehicleDataSourceImpl(
 
     private val headerLineCount = 1
 
-    override fun loadVehicles(): List<FleetRaw> {
+    private val csvHeader =
+        "vehicleId,currentHubId,maxCapacityKg,costPerKm"
+
+    override suspend fun loadVehicles(): List<FleetRaw> =
+        withContext(Dispatchers.IO) {
+            loadVehiclesFromCsv()
+        }
+
+    override suspend fun addVehicle(vehicle: FleetRaw) {
+        withContext(Dispatchers.IO) {
+            val vehicles = loadVehiclesFromCsv().toMutableList()
+
+            vehicles.add(vehicle)
+
+            writeVehiclesToCsv(vehicles)
+        }
+    }
+
+    override suspend fun updateVehicle(vehicle: FleetRaw) {
+        withContext(Dispatchers.IO) {
+            val vehicles = loadVehiclesFromCsv().toMutableList()
+
+            val vehicleIndex = vehicles.indexOfFirst {
+                it.vehicleId == vehicle.vehicleId
+            }
+
+            if (vehicleIndex == -1) {
+                throw LocalDataException(
+                    "Vehicle '${vehicle.vehicleId}' was not found in local data"
+                )
+            }
+
+            vehicles[vehicleIndex] = vehicle
+
+            writeVehiclesToCsv(vehicles)
+        }
+    }
+
+    override suspend fun deleteVehicle(vehicleId: String) {
+        withContext(Dispatchers.IO) {
+            val vehicles = loadVehiclesFromCsv().toMutableList()
+
+            val wasRemoved = vehicles.removeIf {
+                it.vehicleId == vehicleId
+            }
+
+            if (!wasRemoved) {
+                throw LocalDataException(
+                    "Vehicle '$vehicleId' was not found in local data"
+                )
+            }
+
+            writeVehiclesToCsv(vehicles)
+        }
+    }
+
+    override suspend fun replaceVehicles(vehicles: List<FleetRaw>) {
+        withContext(Dispatchers.IO) {
+            writeVehiclesToCsv(vehicles)
+        }
+    }
+
+    private fun loadVehiclesFromCsv(): List<FleetRaw> {
         localDataSourceValidator.validate(vehicleFile)
 
         val lines = vehicleFile.readLines()
@@ -26,73 +91,19 @@ class CsvVehicleDataSourceImpl(
             )
         }
 
-        val dataRows = lines.drop(headerLineCount)
-
-        return dataRows.mapNotNull { row ->
-            fleetParser.parseFleetRow(row)
-        }
+        return lines
+            .drop(headerLineCount)
+            .mapNotNull(fleetParser::parseFleetRow)
     }
 
-    override fun addVehicle(vehicle: FleetRaw) {
-        val vehicles = loadVehicles().toMutableList()
-
-        vehicles.add(vehicle)
-
-        writeVehicles(vehicles)
-    }
-
-    override fun updateVehicle(vehicle: FleetRaw) {
-        val vehicles = loadVehicles().toMutableList()
-
-        val vehicleIndex = vehicles.indexOfFirst {
-            it.vehicleId == vehicle.vehicleId
-        }
-
-        if (vehicleIndex == -1) {
-            throw LocalDataException(
-                "Vehicle '${vehicle.vehicleId}' was not found in local data"
-            )
-        }
-
-        vehicles[vehicleIndex] = vehicle
-
-        writeVehicles(vehicles)
-    }
-
-    override fun deleteVehicle(vehicleId: String) {
-        val vehicles = loadVehicles().toMutableList()
-
-        val wasRemoved = vehicles.removeIf {
-            it.vehicleId == vehicleId
-        }
-
-        if (!wasRemoved) {
-            throw LocalDataException(
-                "Vehicle '$vehicleId' was not found in local data"
-            )
-        }
-
-        writeVehicles(vehicles)
-    }
-
-    override fun replaceVehicles(
+    private fun writeVehiclesToCsv(
         vehicles: List<FleetRaw>
     ) {
-        writeVehicles(vehicles)
-    }
-
-    private fun writeVehicles(
-        vehicles: List<FleetRaw>
-    ) {
-        val header = "vehicleId,currentHubId,maxCapacityKg,costPerKm"
-
         val content = buildList {
-            add(header)
+            add(csvHeader)
 
             vehicles.forEach { vehicle ->
-                add(
-                    fleetParser.toCsvRow(vehicle)
-                )
+                add(fleetParser.toCsvRow(vehicle))
             }
         }.joinToString("\n")
 

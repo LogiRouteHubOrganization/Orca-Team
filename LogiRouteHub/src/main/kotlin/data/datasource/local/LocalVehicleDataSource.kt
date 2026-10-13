@@ -1,16 +1,17 @@
+
 package data.datasource.local
 
 import data.dataholder.FleetRaw
 
 interface LocalVehicleDataSource {
 
-    fun loadVehicles(): List<FleetRaw>
+    suspend fun loadVehicles(): List<FleetRaw>
 
-    fun addVehicle(vehicle: FleetRaw)
+    suspend fun addVehicle(vehicle: FleetRaw)
 
-    fun updateVehicle(vehicle: FleetRaw)
+    suspend fun updateVehicle(vehicle: FleetRaw)
 
-    fun deleteVehicle(vehicleId: String)
+    suspend fun deleteVehicle(vehicleId: String)
 
-    fun replaceVehicles(vehicles: List<FleetRaw>)
+    suspend fun replaceVehicles(vehicles: List<FleetRaw>)
 }
