@@ -1,5 +1,6 @@
 package domain.usecase
 
+import domain.extension.runCatchingCancellable
 import domain.model.Vehicle
 import domain.model.Warehouse
 import domain.model.request.FleetRebalancingConfig
@@ -13,7 +14,7 @@ class TriggerFleetRebalancingUseCase(
 
     suspend operator fun invoke(
         config: FleetRebalancingConfig
-    ): Result<List<FleetRebalancingPlan>> = runCatching {
+    ): Result<List<FleetRebalancingPlan>> = runCatchingCancellable {
 
         val warehouses = warehouseRepository.findAll().getOrThrow()
 

@@ -1,5 +1,6 @@
 package domain.usecase
 
+import domain.extension.runCatchingCancellable
 import domain.model.Package
 import domain.model.Warehouse
 import domain.model.request.PackagePriorityLevels
@@ -12,10 +13,10 @@ class PrioritizeDispatchQueueUseCase(
 
     suspend operator fun invoke(
         warehouseId: String
-    ): Result<Warehouse?> = runCatching {
+    ): Result<Warehouse?> = runCatchingCancellable {
 
         val warehouse = warehouseRepository.findById(warehouseId).getOrThrow()
-            ?: return@runCatching null
+            ?: return@runCatchingCancellable null
 
         val prioritizedPackages = warehouse.cargoQueue
             .sortedWith(compareByDescending<Package> {

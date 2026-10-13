@@ -1,5 +1,6 @@
 package domain.usecase
 
+import domain.extension.runCatchingCancellable
 import domain.model.Vehicle
 
 class RecommendVehicleByCapacityAndCostUseCase(
@@ -10,7 +11,7 @@ class RecommendVehicleByCapacityAndCostUseCase(
     suspend operator fun invoke(
         warehouseId: String,
         requiredLoadKg: Double
-    ): Result<Vehicle?> = runCatching {
+    ): Result<Vehicle?> = runCatchingCancellable{
 
         val suitableVehicles = findStationedVehiclesByCapacityUseCase(
             warehouseId = warehouseId,

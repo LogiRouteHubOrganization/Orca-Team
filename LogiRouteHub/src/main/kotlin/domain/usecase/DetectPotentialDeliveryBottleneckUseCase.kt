@@ -1,5 +1,6 @@
 package domain.usecase
 
+import domain.extension.runCatchingCancellable
 import domain.model.Warehouse
 import domain.model.request.PotentialDeliveryBottleneck
 import domain.model.request.WarehouseCapacityInfo
@@ -9,8 +10,7 @@ import domain.repository.WarehouseRepository
 class DetectPotentialDeliveryBottleneckUseCase(
     private val warehouseRepository: WarehouseRepository
 ) {
-    suspend operator fun invoke(): Result<List<PotentialDeliveryBottleneck>> =
-        runCatching {
+    suspend operator fun invoke(): Result<List<PotentialDeliveryBottleneck>> = runCatchingCancellable {
             val warehouses = warehouseRepository.findAll().getOrThrow()
 
             warehouses.map { warehouse ->
