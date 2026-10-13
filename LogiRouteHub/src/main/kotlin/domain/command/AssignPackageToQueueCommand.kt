@@ -2,6 +2,7 @@ package domain.command
 
 import domain.command.telemetry.CommandTelemetry
 import domain.command.telemetry.QueueState
+import domain.extension.runCatchingCancellable
 import domain.model.Package
 import domain.model.Warehouse
 import domain.model.updateinput.WarehouseUpdateModel
@@ -28,22 +29,17 @@ class AssignPackageToQueueCommand(
     override val commandType = "AssignPackageToQueueCommand"
 
     override suspend fun execute(): Result<Unit> {
-        return runCatching {
-            val currentWarehouse =
-                logisticsPackage.originWarehouse
+        return runCatching  {
+            val currentWarehouse = logisticsPackage.originWarehouse
 
             warehouse = currentWarehouse
 
-            previousWarehouseQueue =
-                currentWarehouse.cargoQueue.toList()
+            previousWarehouseQueue = currentWarehouse.cargoQueue.toList()
 
             dependencies.assignPackageToCargoQueueUseCase(
                 logisticsPackage
             )
-
-            afterWarehouseQueue =
-                currentWarehouse.cargoQueue.toList()
-
+            afterWarehouseQueue = currentWarehouse.cargoQueue.toList()
             recordStateTransition()
 
             Unit
@@ -51,16 +47,13 @@ class AssignPackageToQueueCommand(
     }
 
     override suspend fun undo(): Result<Unit> {
-        return runCatching {
-            val executedWarehouse =
-                warehouse ?: error("Command has not been executed")
+        return runCatchingCancellable  {
+            val executedWarehouse = warehouse ?: error("Command has not been executed")
 
-            val oldQueue =
-                previousWarehouseQueue
+            val oldQueue = previousWarehouseQueue
                     ?: error("Previous state is unavailable")
 
-            val newQueue =
-                afterWarehouseQueue
+            val newQueue = afterWarehouseQueue
                     ?: error("After state is unavailable")
 
             executedWarehouse.restoreCargoQueue(oldQueue)
@@ -90,17 +83,12 @@ class AssignPackageToQueueCommand(
     }
 
     override suspend fun redo(): Result<Unit> {
-        return runCatching {
-            val executedWarehouse =
-                warehouse ?: error("Command has not been executed")
+        return runCatchingCancellable  {
+            val executedWarehouse = warehouse ?: error("Command has not been executed")
 
-            val oldQueue =
-                previousWarehouseQueue
-                    ?: error("Previous state is unavailable")
+            val oldQueue = previousWarehouseQueue ?: error("Previous state is unavailable")
 
-            val newQueue =
-                afterWarehouseQueue
-                    ?: error("After state is unavailable")
+            val newQueue = afterWarehouseQueue ?: error("After state is unavailable")
 
             executedWarehouse.restoreCargoQueue(newQueue)
 

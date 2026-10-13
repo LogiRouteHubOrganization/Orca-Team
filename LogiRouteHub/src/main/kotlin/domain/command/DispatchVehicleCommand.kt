@@ -2,6 +2,7 @@ package domain.command
 
 import domain.command.telemetry.CommandTelemetry
 import domain.command.telemetry.DispatchState
+import domain.extension.runCatchingCancellable
 import domain.model.Package
 import domain.model.Vehicle
 import domain.model.Warehouse
@@ -36,7 +37,7 @@ class DispatchVehicleCommand(
     override val commandType = "DispatchVehicleCommand"
 
     override suspend fun execute(): Result<Unit> {
-        return runCatching {
+        return runCatchingCancellable  {
             val currentVehicle = dependencies.vehicleRepository
                 .findById(request.vehicleId)
                 .getOrThrow() ?: error("Vehicle not found: ${request.vehicleId}")
@@ -65,7 +66,7 @@ class DispatchVehicleCommand(
     }
 
     override suspend fun undo(): Result<Unit> {
-        return runCatching {
+        return runCatchingCancellable  {
             val (executedVehicle, executedWarehouse) = getExecutedEntities()
             val oldVehiclePackages = previousVehiclePackages ?: error("Previous vehicle state is unavailable")
             val oldWarehouseQueue = previousWarehouseQueue ?: error("Previous warehouse state is unavailable")
@@ -79,7 +80,7 @@ class DispatchVehicleCommand(
     }
 
     override suspend fun redo(): Result<Unit> {
-        return runCatching {
+        return runCatchingCancellable  {
             val (executedVehicle, executedWarehouse) = getExecutedEntities()
             val oldVehiclePackages = previousVehiclePackages ?: error("Previous vehicle state is unavailable")
             val oldWarehouseQueue = previousWarehouseQueue ?: error("Previous warehouse state is unavailable")
