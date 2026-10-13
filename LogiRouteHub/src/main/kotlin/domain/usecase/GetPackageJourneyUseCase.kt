@@ -1,5 +1,6 @@
 package domain.usecase
 
+import domain.extension.runCatchingCancellable
 import domain.model.request.PackageJourney
 import domain.repository.PackageRepository
 
@@ -10,10 +11,10 @@ class GetPackageJourneyUseCase(
 
     suspend operator fun invoke(
         packageId: String
-    ): Result<PackageJourney?> = runCatching {
+    ):  Result<PackageJourney?> = runCatchingCancellable {
 
         val logisticsPackage = packageRepository.findById(packageId).getOrThrow()
-            ?: return@runCatching null
+            ?: return@runCatchingCancellable null
 
         val warehousePath = findOptimalPathUseCase(
             startWarehouseId = logisticsPackage.originWarehouse.id,
