@@ -1,0 +1,68 @@
+package mainTest.domainTest.stateTest
+
+import com.google.common.truth.Truth.assertThat
+import domain.exception.InvalidShipmentStateTransitionException
+import domain.state.AssignedToVehicleState
+import domain.state.CreatedState
+import org.junit.Assert.assertThrows
+import org.junit.jupiter.api.Test
+
+class CreatedStateTest {
+
+    private val state = CreatedState()
+
+    @Test
+    fun `should transition to AssignedToVehicleState when vehicle is assigned`() {
+        // Given
+        val createdState = state
+
+        // When
+        val nextState = createdState.assignToVehicle()
+
+        // Then
+        assertThat(nextState).isInstanceOf(AssignedToVehicleState::class.java)
+    }
+
+    @Test
+    fun `should reject transit before vehicle assignment`() {
+        // Given
+        val createdState = state
+
+        // When
+        val nextState = { createdState.markAsInTransit() }
+
+        // Then
+        assertThrows(InvalidShipmentStateTransitionException::class.java) {
+            nextState()
+        }
+    }
+
+    @Test
+    fun `should reject delivery while shipment is created`() {
+        // Given
+        val createdState = state
+
+        // When
+        val transitionCall = { createdState.markAsDelivered() }
+
+        // Then
+        assertThrows(InvalidShipmentStateTransitionException::class.java) {
+            transitionCall()
+        }
+    }
+
+    @Test
+    fun `should reject delivery failure while shipment is created`() {
+        // Given
+        val createdState = state
+
+        // When
+        val transitionCall = { createdState.deliveryFailed() }
+
+        // Then
+        assertThrows(InvalidShipmentStateTransitionException::class.java) {
+            transitionCall()
+        }
+    }
+}
+

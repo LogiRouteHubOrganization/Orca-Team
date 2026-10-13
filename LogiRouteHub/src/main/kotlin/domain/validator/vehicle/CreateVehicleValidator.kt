@@ -11,11 +11,11 @@ class CreateVehicleValidator {
         id: String,
         maxCapacityKg: Double,
         costPerKm: Double,
-        currentWarehouse: Warehouse
+        currentWarehouse: Warehouse,
+        maxVolumeM3: Double? = null
     ): ResultValidator {
 
-
-        val results: List<ResultValidator> = listOf(
+        val results: List<ResultValidator> = listOfNotNull(
 
             IdValidator(
                 field = "id",
@@ -29,6 +29,12 @@ class CreateVehicleValidator {
             PositiveNumberValidator(
                 field = "costPerKm"
             ).validate(costPerKm),
+
+            maxVolumeM3?.let {
+                PositiveNumberValidator(
+                    field = "maxVolumeM3"
+                ).validate(it)
+            },
 
             IdValidator(
                 field = "currentWarehouseId",

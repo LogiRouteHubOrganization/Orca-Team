@@ -6,7 +6,7 @@ import domain.model.request.WarehouseCapacityInfo
 import domain.repository.WarehouseRepository
 
 
-class DetectDeliveryBottleneckUseCase(
+class DetectPotentialDeliveryBottleneckUseCase(
     private val warehouseRepository: WarehouseRepository
 ) {
     suspend operator fun invoke(): Result<List<PotentialDeliveryBottleneck>> =

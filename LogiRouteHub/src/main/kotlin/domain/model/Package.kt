@@ -1,18 +1,23 @@
 package domain.model
 
+import domain.exception.EntityValidationException
 import domain.pricing.DispatchStrategy
 import domain.pricing.decorator.PackageComponent
-import domain.validator.logisticspackage.CreatePackageValidator
-import domain.exception.EntityValidationException
+import domain.state.CreatedState
+import domain.state.ShipmentState
 import domain.validator.ResultValidator
+import domain.validator.logisticspackage.CreatePackageValidator
 
 data class Package(
     val id: String,
     val weightByKg: Double,
     val priority: String,
     val originWarehouse: Warehouse,
-    val destinationWarehouse: Warehouse
+    val destinationWarehouse: Warehouse,
+    val volumeM3: Double? = null
 ) : PackageComponent {
+
+    var state: ShipmentState = CreatedState()
 
     init {
         val validationResult = CreatePackageValidator().invoke(
@@ -20,7 +25,8 @@ data class Package(
             weightByKg = weightByKg,
             priority = priority,
             originWarehouse = originWarehouse,
-            destinationWarehouse = destinationWarehouse
+            destinationWarehouse = destinationWarehouse,
+            volumeM3 = volumeM3
         )
 
         if (validationResult is ResultValidator.Invalid) {
@@ -28,12 +34,27 @@ data class Package(
         }
     }
 
+    fun assignToVehicle() {
+        state = state.assignToVehicle()
+    }
+
+    fun markAsInTransit() {
+        state = state.markAsInTransit()
+    }
+
+    fun markAsDelivered() {
+        state = state.markAsDelivered()
+    }
+
+    fun deliveryFailed() {
+        state = state.deliveryFailed()
+    }
+
     override fun calculateTransitRate(
         selectedRoute: Route,
         assignedVehicle: Vehicle,
         dispatchStrategy: DispatchStrategy
     ): Double {
-
         return dispatchStrategy.calculateTransitCost(
             logisticsPackage = this,
             selectedRoute = selectedRoute,

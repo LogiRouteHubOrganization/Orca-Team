@@ -6,3 +6,4 @@ data class WarehouseUpdateModel(
     val latitude: Double? = null,
     val longitude: Double? = null
 )
+

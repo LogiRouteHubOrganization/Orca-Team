@@ -1,15 +1,11 @@
 package domain.usecase
 
-import domain.model.Route
-import domain.model.Warehouse
 import domain.model.request.PackageJourney
 import domain.repository.PackageRepository
-import domain.routing.ShortestPathRouter
-
 
 class GetPackageJourneyUseCase(
     private val packageRepository: PackageRepository,
-    private val shortestPathRouter: ShortestPathRouter
+    private val findOptimalPathUseCase: FindOptimalPathUseCase
 ) {
 
     suspend operator fun invoke(
@@ -19,12 +15,14 @@ class GetPackageJourneyUseCase(
         val logisticsPackage = packageRepository.findById(packageId).getOrThrow()
             ?: return@runCatching null
 
-        val warehousePath = shortestPathRouter.findShortestPath(
-            startWarehouse = logisticsPackage.originWarehouse,
-            destinationWarehouse = logisticsPackage.destinationWarehouse
-        )
+        val warehousePath = findOptimalPathUseCase(
+            startWarehouseId = logisticsPackage.originWarehouse.id,
+            destinationWarehouseId = logisticsPackage.destinationWarehouse.id
+        ).getOrThrow()
 
-        val routePath = warehousePath.zipWithNext().mapNotNull { (origin, destination) ->
+        val routePath = warehousePath
+            .zipWithNext()
+            .mapNotNull { (origin, destination) ->
                 origin.outgoingRoutes.firstOrNull { route ->
                     route.destinationWarehouse.id == destination.id
                 }

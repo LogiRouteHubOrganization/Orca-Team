@@ -36,8 +36,7 @@ class RouteParser {
         line: String
     ): List<String> {
         return line
-            .split(csvSeparator)
-            .map { value ->
+            .split(csvSeparator).map { value ->
                 value.trim()
             }
     }
@@ -83,14 +82,10 @@ class RouteParser {
             values[distanceColumnIndex],
             rowNumber
         )
-
         if (distanceKm == null) return null
-
         val typicalDelayMin = parseTypicalDelayMin(
-            values[delayColumnIndex],
-            rowNumber
+            values[delayColumnIndex], rowNumber
         )
-
         if (typicalDelayMin == null) return null
 
         return RouteRaw(
@@ -113,9 +108,7 @@ class RouteParser {
         rowNumber: Int
     ): Double? {
 
-        val distanceKm = distance
-            .trim()
-            .toDoubleOrNull()
+        val distanceKm = distance.trim().toDoubleOrNull()
 
         if (distanceKm == null || distanceKm <= 0) {
             println(
@@ -133,9 +126,7 @@ class RouteParser {
         rowNumber: Int
     ): Int? {
 
-        val typicalDelayMin = delay
-            .trim()
-            .toIntOrNull()
+        val typicalDelayMin = delay.trim().toIntOrNull()
 
         if (typicalDelayMin == null || typicalDelayMin < 0) {
             println(
@@ -152,9 +143,7 @@ class RouteParser {
         identifier: String
     ): String {
 
-        val normalizedIdentifier = identifier
-            .trim()
-            .uppercase()
+        val normalizedIdentifier = identifier.trim().uppercase()
 
         val identifierParts = normalizedIdentifier.split("-")
 
@@ -175,5 +164,14 @@ class RouteParser {
         )
 
         return "$prefix-$normalizedNumericPart"
+    }
+    fun toCsvRow(route: RouteRaw): String {
+        return listOf(
+            route.routeId,
+            route.originHubId,
+            route.destinationHubId,
+            route.distanceKm,
+            route.typicalDelayMin
+        ).joinToString(csvSeparator)
     }
 }

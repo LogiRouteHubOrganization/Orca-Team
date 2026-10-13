@@ -22,6 +22,9 @@ class UpdatePackageValidator {
             updateModel.weightByKg?.let {
                 PositiveNumberValidator(field = "weightByKg").validate(it)
             },
+            updateModel.volumeM3?.let {
+                PositiveNumberValidator(field = "volumeM3").validate(it)
+            },
             updateModel.priority?.let {
                 PriorityValidator(field = "priority").validate(it)
             },
@@ -32,14 +35,13 @@ class UpdatePackageValidator {
                 IdValidator(field = "destinationWarehouseId", allowedPrefixes = whPrefix).validate(it)
             }
         )
-
         val errors = results.filterIsInstance<ResultValidator.Invalid>().flatMap { it.errors }
         return if (errors.isEmpty()) ResultValidator.Valid else ResultValidator.Invalid(errors)
     }
-
     private fun hasAnyUpdate(updateModel: PackageUpdateModel): Boolean {
         return listOf(
             updateModel.weightByKg,
+            updateModel.volumeM3,
             updateModel.priority,
             updateModel.originWarehouseId,
             updateModel.destinationWarehouseId
