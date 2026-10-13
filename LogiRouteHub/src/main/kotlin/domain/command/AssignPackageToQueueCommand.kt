@@ -36,9 +36,8 @@ class AssignPackageToQueueCommand(
 
             previousWarehouseQueue = currentWarehouse.cargoQueue.toList()
 
-            dependencies.assignPackageToCargoQueueUseCase(
-                logisticsPackage
-            )
+            dependencies.assignPackageToCargoQueueUseCase(logisticsPackage).getOrThrow()
+
             afterWarehouseQueue = currentWarehouse.cargoQueue.toList()
             recordStateTransition()
 
