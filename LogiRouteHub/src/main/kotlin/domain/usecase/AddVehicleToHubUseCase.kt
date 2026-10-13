@@ -1,6 +1,7 @@
 package domain.usecase
 
 import domain.exception.EntityValidationException
+import domain.extension.runCatchingCancellable
 import domain.model.Warehouse
 import domain.model.updateinput.VehicleUpdateModel
 import domain.repository.VehicleRepository
@@ -17,11 +18,11 @@ class AddVehicleToHubUseCase(
     suspend operator fun invoke(
         warehouseId: String,
         vehicleId: String
-    ): Result<Warehouse?> = runCatching {
+    ):  Result<Warehouse?> = runCatchingCancellable {
 
-        val warehouse = warehouseRepository.findById(warehouseId).getOrThrow() ?: return@runCatching null
+        val warehouse = warehouseRepository.findById(warehouseId).getOrThrow() ?: return@runCatchingCancellable null
 
-        val vehicle = vehicleRepository.findById(vehicleId).getOrThrow() ?: return@runCatching null
+        val vehicle = vehicleRepository.findById(vehicleId).getOrThrow() ?: return@runCatchingCancellable null
 
         val vehicleUpdateModel = VehicleUpdateModel(
             currentWarehouseId = warehouse.id
