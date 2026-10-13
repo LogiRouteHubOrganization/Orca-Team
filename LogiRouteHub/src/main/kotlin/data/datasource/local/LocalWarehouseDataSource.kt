@@ -1,16 +1,17 @@
+
 package data.datasource.local
 
 import data.dataholder.WarehouseRaw
 
 interface LocalWarehouseDataSource {
 
-    fun loadWarehouses(): List<WarehouseRaw>
+    suspend fun loadWarehouses(): List<WarehouseRaw>
 
-    fun addWarehouse(warehouse: WarehouseRaw)
+    suspend fun addWarehouse(warehouse: WarehouseRaw)
 
-    fun updateWarehouse(warehouse: WarehouseRaw)
+    suspend fun updateWarehouse(warehouse: WarehouseRaw)
 
-    fun deleteWarehouse(warehouseId: String)
+    suspend fun deleteWarehouse(warehouseId: String)
 
-    fun replaceWarehouses(warehouses: List<WarehouseRaw>)
+    suspend fun replaceWarehouses(warehouses: List<WarehouseRaw>)
 }

@@ -1,16 +1,15 @@
 package data.datasource.local
 
 import data.dataholder.LogisticsPackageRaw
-
 interface LocalPackageDataSource {
 
-    fun loadPackages(): List<LogisticsPackageRaw>
+    suspend fun loadPackages(): List<LogisticsPackageRaw>
 
-    fun addPackage(logisticsPackage: LogisticsPackageRaw)
+    suspend fun addPackage(logisticsPackage: LogisticsPackageRaw)
 
-    fun updatePackage(logisticsPackage: LogisticsPackageRaw)
+    suspend fun updatePackage(logisticsPackage: LogisticsPackageRaw)
 
-    fun deletePackage(packageId: String)
+    suspend fun deletePackage(packageId: String)
 
-    fun replacePackages(packages: List<LogisticsPackageRaw>)
+    suspend fun replacePackages(packages: List<LogisticsPackageRaw>)
 }
