@@ -8,6 +8,8 @@ import domain.repository.VehicleRepository
 import domain.repository.WarehouseRepository
 import domain.validator.ResultValidator
 import domain.validator.vehicle.UpdateVehicleValidator
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 
 class AddVehicleToHubUseCase(
     private val warehouseRepository: WarehouseRepository,
@@ -18,11 +20,18 @@ class AddVehicleToHubUseCase(
     suspend operator fun invoke(
         warehouseId: String,
         vehicleId: String
-    ):  Result<Warehouse?> = runCatchingCancellable {
+    ): Result<Warehouse?> = runCatchingCancellable {
 
-        val warehouse = warehouseRepository.findById(warehouseId).getOrThrow() ?: return@runCatchingCancellable null
+        val (warehouse, vehicle) = coroutineScope {
+            val warehouseDeferred = async { warehouseRepository.findById(warehouseId).getOrThrow() }
+            val vehicleDeferred = async { vehicleRepository.findById(vehicleId).getOrThrow() }
 
-        val vehicle = vehicleRepository.findById(vehicleId).getOrThrow() ?: return@runCatchingCancellable null
+            Pair(warehouseDeferred.await(), vehicleDeferred.await())
+        }
+
+        if (warehouse == null || vehicle == null) {
+            return@runCatchingCancellable null
+        }
 
         val vehicleUpdateModel = VehicleUpdateModel(
             currentWarehouseId = warehouse.id
@@ -35,8 +44,10 @@ class AddVehicleToHubUseCase(
                 validationResult.errors
             )
         }
+
         val updatedVehicle = vehicleRepository.update(vehicle.id, vehicleUpdateModel)
             .getOrThrow()
+
 
         warehouse.addVehicle(updatedVehicle)
         warehouse
