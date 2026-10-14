@@ -7,6 +7,8 @@ import domain.model.request.DispatchVehicleRequest
 import domain.repository.VehicleRepository
 import domain.repository.WarehouseRepository
 import domain.extension.runCatchingCancellable
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 
 class DispatchVehicleUseCase(
     private val vehicleRepository: VehicleRepository,
@@ -18,9 +20,17 @@ class DispatchVehicleUseCase(
         input: DispatchVehicleRequest
     ): Result<List<Package>> = runCatchingCancellable {
 
-        val vehicle = vehicleRepository.findById(input.vehicleId).getOrThrow() ?: return@runCatchingCancellable emptyList()
+        val (vehicle, warehouse) = coroutineScope {
+            val vehicleDeferred = async { vehicleRepository.findById(input.vehicleId).getOrThrow() }
+            val warehouseDeferred = async { warehouseRepository.findById(input.warehouseId).getOrThrow() }
 
-        val warehouse = warehouseRepository.findById(input.warehouseId).getOrThrow() ?: return@runCatchingCancellable emptyList()
+            Pair(vehicleDeferred.await(), warehouseDeferred.await())
+        }
+
+        if (vehicle == null || warehouse == null) {
+            return@runCatchingCancellable emptyList()
+        }
+
         val supportedPriorities = setOf("URGENT", "STANDARD", "LOW")
 
         warehouse.cargoQueue.forEach { logisticsPackage ->
@@ -31,12 +41,10 @@ class DispatchVehicleUseCase(
 
         val availableCapacity = vehicle.maxCapacityKg - vehicle.calculateTotalLoadedWeightKg()
 
-        // Select the optimal cargo using the Knapsack algorithm
         val packagesToDispatch = optimizeCargoByWeightUseCase.optimize(
             packages = warehouse.cargoQueue,
             capacityKg = availableCapacity
         )
-        // Dispatch selected packages through the dispatch pipeline
         packagesToDispatch.forEach { logisticsPackage ->
 
             val dispatchProcessor = when (logisticsPackage.priority) {

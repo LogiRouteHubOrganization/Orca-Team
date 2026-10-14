@@ -2,6 +2,8 @@ package domain.usecase
 
 import domain.extension.runCatchingCancellable
 import domain.repository.WarehouseRepository
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 
 class CheckWarehouseConnectivityUseCase(
     private val warehouseRepository: WarehouseRepository,
@@ -13,15 +15,16 @@ class CheckWarehouseConnectivityUseCase(
         destinationWarehouseId: String
     ): Result<Boolean> = runCatchingCancellable {
 
-        warehouseRepository
-            .findById(startWarehouseId)
-            .getOrThrow()
-            ?: return@runCatchingCancellable false
+        val (startWarehouse, destinationWarehouse) = coroutineScope {
+            val startDeferred = async { warehouseRepository.findById(startWarehouseId).getOrThrow() }
+            val destDeferred = async { warehouseRepository.findById(destinationWarehouseId).getOrThrow() }
 
-        warehouseRepository
-            .findById(destinationWarehouseId)
-            .getOrThrow()
-            ?: return@runCatchingCancellable false
+            Pair(startDeferred.await(), destDeferred.await())
+        }
+
+        if (startWarehouse == null || destinationWarehouse == null) {
+            return@runCatchingCancellable false
+        }
 
         val warehousePath = findFewestHopsRouteUseCase(
             startWarehouseId = startWarehouseId,
