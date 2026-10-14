@@ -4,6 +4,8 @@ import domain.extension.runCatchingCancellable
 import domain.model.Warehouse
 import domain.model.request.LeastHopRouterState
 import domain.repository.WarehouseRepository
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 
 class FindFewestHopsRouteUseCase(
     private val warehouseRepository: WarehouseRepository
@@ -14,16 +16,18 @@ class FindFewestHopsRouteUseCase(
         destinationWarehouseId: String
     ): Result<List<Warehouse>> = runCatchingCancellable  {
 
-        val startWarehouse = warehouseRepository
-            .findById(startWarehouseId)
-            .getOrThrow()
-            ?:  return@runCatchingCancellable emptyList()
 
-        val destinationWarehouse = warehouseRepository
-            .findById(destinationWarehouseId)
-            .getOrThrow()
-            ?: return@runCatchingCancellable emptyList()
+        val (startWarehouse, destinationWarehouse) = coroutineScope {
 
+            val startDeferred = async { warehouseRepository.findById(startWarehouseId).getOrThrow() }
+
+            val destinationDeferred = async { warehouseRepository.findById(destinationWarehouseId).getOrThrow() }
+
+            Pair(startDeferred.await(), destinationDeferred.await())
+        }
+        if (startWarehouse == null || destinationWarehouse == null) {
+            return@runCatchingCancellable emptyList()
+        }
         findLeastHopPath(
             startWarehouse = startWarehouse,
             destinationWarehouse = destinationWarehouse
@@ -58,8 +62,7 @@ class FindFewestHopsRouteUseCase(
         destinationWarehouse: Warehouse
     ): List<Warehouse> {
 
-        val currentWarehouse = state.queue.firstOrNull()
-            ?: return emptyList()
+        val currentWarehouse = state.queue.firstOrNull() ?: return emptyList()
 
         val remainingQueue = ArrayDeque(state.queue.drop(1))
         val nextState = processOutgoingRoutes(currentWarehouse, remainingQueue, state)
