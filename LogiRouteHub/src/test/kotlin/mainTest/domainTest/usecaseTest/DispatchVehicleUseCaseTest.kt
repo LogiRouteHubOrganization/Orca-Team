@@ -17,6 +17,11 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -201,20 +206,28 @@ class DispatchVehicleUseCaseTest {
 
     @Test
     fun `should return empty list when vehicle does not exist`() = runTest {
-        coEvery { vehicleRepository.findById("TRK-000001") } returns Result.success(null)
+        // Given
+        coEvery {
+            vehicleRepository.findById("TRK-000001")
+        } returns Result.success(null)
 
+        coEvery {
+            warehouseRepository.findById("WH-000001")
+        } returns Result.success(mockWarehouse())
+
+        // When
         val result = dispatchVehicleUseCase(createDispatchRequest())
 
-        assertThat(result).isEqualTo(Result.success(emptyList<Package>()))
-    }
+        // Then
+        assertThat(result.isSuccess).isTrue()
+        assertThat(result.getOrNull()).isEmpty()
 
-    @Test
-    fun `should skip warehouse lookup when vehicle does not exist`() = runTest {
-        coEvery { vehicleRepository.findById("TRK-000001") } returns Result.success(null)
-
-        dispatchVehicleUseCase(createDispatchRequest())
-
-        coVerify(exactly = 0) { warehouseRepository.findById(any()) }
+        coVerify(exactly = 1) {
+            vehicleRepository.findById("TRK-000001")
+        }
+        coVerify(exactly = 1) {
+            warehouseRepository.findById("WH-000001")
+        }
     }
 
     @Test
@@ -239,6 +252,208 @@ class DispatchVehicleUseCaseTest {
 
         assertThat(result).isEqualTo(Result.success(emptyList<Package>()))
     }
+
+    @Test
+    fun `should start vehicle and warehouse lookups concurrently`() = runTest {
+        // Given
+        val vehicleLookupStarted = CompletableDeferred<Unit>()
+        val warehouseLookupStarted = CompletableDeferred<Unit>()
+        val allowLookupsToFinish = CompletableDeferred<Unit>()
+
+        val vehicle = mockVehicle()
+        val warehouse = mockWarehouse()
+
+        coEvery {
+            vehicleRepository.findById("TRK-000001")
+        } coAnswers {
+            vehicleLookupStarted.complete(Unit)
+            allowLookupsToFinish.await()
+            Result.success(vehicle)
+        }
+
+        coEvery {
+            warehouseRepository.findById("WH-000001")
+        } coAnswers {
+            warehouseLookupStarted.complete(Unit)
+            allowLookupsToFinish.await()
+            Result.success(warehouse)
+        }
+
+        // When
+        val resultDeferred = async {
+            dispatchVehicleUseCase(createDispatchRequest())
+        }
+
+        vehicleLookupStarted.await()
+        warehouseLookupStarted.await()
+        allowLookupsToFinish.complete(Unit)
+        val result = resultDeferred.await()
+
+        // Then
+        assertThat(result.isSuccess).isTrue()
+        assertThat(result.getOrNull()).isEmpty()
+    }
+
+    @Test
+    fun `should cancel both lookups when caller cancels dispatch`() = runTest {
+        // Given
+        val vehicleLookupStarted = CompletableDeferred<Unit>()
+        val warehouseLookupStarted = CompletableDeferred<Unit>()
+        val vehicleCancelled = CompletableDeferred<Unit>()
+        val warehouseCancelled = CompletableDeferred<Unit>()
+
+        coEvery {
+            vehicleRepository.findById("TRK-000001")
+        } coAnswers {
+            vehicleLookupStarted.complete(Unit)
+            try {
+                awaitCancellation()
+            } finally {
+                vehicleCancelled.complete(Unit)
+            }
+        }
+
+        coEvery {
+            warehouseRepository.findById("WH-000001")
+        } coAnswers {
+            warehouseLookupStarted.complete(Unit)
+            try {
+                awaitCancellation()
+            } finally {
+                warehouseCancelled.complete(Unit)
+            }
+        }
+
+        // When
+        val dispatchJob = async {
+            dispatchVehicleUseCase(createDispatchRequest())
+        }
+
+        vehicleLookupStarted.await()
+        warehouseLookupStarted.await()
+
+        dispatchJob.cancelAndJoin()
+
+        // Then
+        assertThat(dispatchJob.isCancelled).isTrue()
+        assertThat(vehicleCancelled.isCompleted).isTrue()
+        assertThat(warehouseCancelled.isCompleted).isTrue()
+    }
+
+
+    @Test
+    fun `should cancel warehouse lookup when vehicle lookup fails`() = runTest {
+        // Given
+        val warehouseLookupStarted = CompletableDeferred<Unit>()
+        val allowVehicleFailure = CompletableDeferred<Unit>()
+        val warehouseLookupCancelled = CompletableDeferred<Unit>()
+
+        val expectedException = RuntimeException("Vehicle lookup failed")
+
+        coEvery {
+            vehicleRepository.findById("TRK-000001")
+        } coAnswers {
+            allowVehicleFailure.await()
+            throw expectedException
+        }
+
+        coEvery {
+            warehouseRepository.findById("WH-000001")
+        } coAnswers {
+            warehouseLookupStarted.complete(Unit)
+
+            try {
+                awaitCancellation()
+            } finally {
+                warehouseLookupCancelled.complete(Unit)
+            }
+        }
+
+        // When
+        val resultDeferred = async {
+            dispatchVehicleUseCase(createDispatchRequest())
+        }
+
+        warehouseLookupStarted.await()
+        allowVehicleFailure.complete(Unit)
+
+        val result = resultDeferred.await()
+
+        // Then
+        assertThat(result.isFailure).isTrue()
+        assertThat(result.exceptionOrNull())
+            .isInstanceOf(RuntimeException::class.java)
+        assertThat(result.exceptionOrNull()?.message)
+            .isEqualTo("Vehicle lookup failed")
+
+        assertThat(warehouseLookupCancelled.isCompleted).isTrue()
+
+        coVerify(exactly = 1) {
+            vehicleRepository.findById("TRK-000001")
+        }
+        coVerify(exactly = 1) {
+            warehouseRepository.findById("WH-000001")
+        }
+    }
+
+
+    @Test
+    fun `should scatter caller cancellation instead of returning failure`() = runTest {
+        // Given
+        val vehicleLookupStarted = CompletableDeferred<Unit>()
+        val warehouseLookupStarted = CompletableDeferred<Unit>()
+        val vehicleLookupCancelled = CompletableDeferred<Unit>()
+        val warehouseLookupCancelled = CompletableDeferred<Unit>()
+
+        coEvery {
+            vehicleRepository.findById("TRK-000001")
+        } coAnswers {
+            vehicleLookupStarted.complete(Unit)
+
+            try {
+                awaitCancellation()
+            } finally {
+                vehicleLookupCancelled.complete(Unit)
+            }
+        }
+
+        coEvery {
+            warehouseRepository.findById("WH-000001")
+        } coAnswers {
+            warehouseLookupStarted.complete(Unit)
+
+            try {
+                awaitCancellation()
+            } finally {
+                warehouseLookupCancelled.complete(Unit)
+            }
+        }
+
+        // When
+        val dispatchJob = async {
+            dispatchVehicleUseCase(createDispatchRequest())
+        }
+
+        vehicleLookupStarted.await()
+        warehouseLookupStarted.await()
+
+        dispatchJob.cancelAndJoin()
+
+        val cancellationResult = runCatching {
+            dispatchJob.await()
+        }
+
+        // Then
+        assertThat(dispatchJob.isCancelled).isTrue()
+        assertThat(cancellationResult.isFailure).isTrue()
+        assertThat(cancellationResult.exceptionOrNull())
+            .isInstanceOf(CancellationException::class.java)
+
+        assertThat(vehicleLookupCancelled.isCompleted).isTrue()
+        assertThat(warehouseLookupCancelled.isCompleted).isTrue()
+    }
+
+
 
 
     private fun createDispatchRequest(
