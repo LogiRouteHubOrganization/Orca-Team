@@ -15,6 +15,7 @@ class CheckWarehouseConnectivityUseCase(
         destinationWarehouseId: String
     ): Result<Boolean> = runCatchingCancellable {
 
+
         val (startWarehouse, destinationWarehouse) = coroutineScope {
             val startDeferred = async { warehouseRepository.findById(startWarehouseId).getOrThrow() }
             val destDeferred = async { warehouseRepository.findById(destinationWarehouseId).getOrThrow() }

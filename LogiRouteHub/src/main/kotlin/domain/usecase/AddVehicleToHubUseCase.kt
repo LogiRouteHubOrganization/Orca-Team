@@ -48,6 +48,7 @@ class AddVehicleToHubUseCase(
         val updatedVehicle = vehicleRepository.update(vehicle.id, vehicleUpdateModel)
             .getOrThrow()
 
+
         warehouse.addVehicle(updatedVehicle)
         warehouse
     }

@@ -45,6 +45,7 @@ class DispatchVehicleUseCase(
             packages = warehouse.cargoQueue,
             capacityKg = availableCapacity
         )
+
         packagesToDispatch.forEach { logisticsPackage ->
 
             val dispatchProcessor = when (logisticsPackage.priority) {
