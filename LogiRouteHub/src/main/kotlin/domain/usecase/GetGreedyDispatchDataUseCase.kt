@@ -5,6 +5,9 @@ import domain.algorithm.greedy.VehicleCoverageMapper
 import domain.extension.runCatchingCancellable
 import domain.repository.RouteRepository
 import domain.repository.VehicleRepository
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.async
+
 
 class GetGreedyDispatchDataUseCase(
     private val vehicleRepository: VehicleRepository,
@@ -14,9 +17,13 @@ class GetGreedyDispatchDataUseCase(
 
     suspend operator fun invoke(): Result<List<VehicleCoverage>> = runCatchingCancellable {
 
-        val vehicles = vehicleRepository.findAll().getOrThrow()
-        val routes = routeRepository.findAll().getOrThrow()
+        val (vehicles, routes) = coroutineScope {
+            val vehiclesDeferred = async { vehicleRepository.findAll().getOrThrow() }
 
+            val routesDeferred = async { routeRepository.findAll().getOrThrow() }
+
+            Pair(vehiclesDeferred.await(), routesDeferred.await())
+        }
 
         greedyInputPreparer.prepareVehicleCoverage(vehicles, routes)
     }
