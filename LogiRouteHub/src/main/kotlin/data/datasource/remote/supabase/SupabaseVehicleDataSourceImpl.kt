@@ -1,3 +1,4 @@
+
 package data.datasource.remote.supabase
 
 import data.datasource.remote.RemoteVehicleDataSource
@@ -8,94 +9,79 @@ import data.remote.utils.safeApiCall
 import data.remote.retry.RetryableRemoteDatasource
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class SupabaseVehicleDataSourceImpl(
     private val client: SupabaseClient,
     private val retryTemplate: RetryableRemoteDatasource
 ) : RemoteVehicleDataSource {
+
     private val tableName = "vehicles"
 
-    override suspend fun getAllVehicles(): List<VehicleDto> {
-        val result = retryTemplate.execute(
-            operationName = "GetAllVehicles"
-        ) {
-            safeApiCall {
-                client.from(tableName).select()
-                    .decodeList<VehicleDto>()
+    override suspend fun getAllVehicles(): List<VehicleDto> =
+        withContext(Dispatchers.IO) {
+            val result = retryTemplate.execute(operationName = "GetAllVehicles") {
+                safeApiCall {
+                    client.from(tableName).select().decodeList<VehicleDto>()
+                }
             }
+            result.getOrThrow()
         }
 
-        return result.getOrThrow()
-    }
-
-    override suspend fun getVehicleById(id: String): VehicleDto? {
-        val result = retryTemplate.execute(
-            operationName = "GetVehicleById"
-        ) {
-            safeApiCall {
-                client.from(tableName).select {
-                        filter {
-                            eq("id", id)
-                        }
-                    }
-                    .decodeSingleOrNull<VehicleDto>()
+    override suspend fun getVehicleById(id: String): VehicleDto? =
+        withContext(Dispatchers.IO) {
+            val result = retryTemplate.execute(operationName = "GetVehicleById") {
+                safeApiCall {
+                    client.from(tableName).select {
+                            filter { eq("id", id) }
+                        }.decodeSingleOrNull<VehicleDto>()
+                }
             }
+            result.getOrThrow()
         }
-
-        return result.getOrThrow()
-    }
 
     override suspend fun createVehicle(
         vehicleRequest: VehicleCreateRequestDto
-    ): VehicleDto {
-        val result = retryTemplate.execute(
-            operationName = "CreateVehicle"
-        ) {
+    ): VehicleDto = withContext(Dispatchers.IO) {
+        val result = retryTemplate.execute(operationName = "CreateVehicle") {
             safeApiCall {
-                client.from(tableName).insert(vehicleRequest) {
-                        select()
-                    }
-                    .decodeSingle<VehicleDto>()
+                client.from(tableName).insert(vehicleRequest) { select() }.decodeSingle<VehicleDto>()
             }
         }
 
-        return result.getOrThrow()
+        result.getOrThrow()
     }
 
     override suspend fun updateVehicle(
         id: String,
         vehicleRequest: VehicleUpdateRequestDto
-    ): VehicleDto {
-        val result = retryTemplate.execute(
-            operationName = "UpdateVehicle"
-        ) {
+    ): VehicleDto = withContext(Dispatchers.IO) {
+        val result = retryTemplate.execute(operationName = "UpdateVehicle") {
             safeApiCall {
-                client.from(tableName).update(vehicleRequest) {
-                        filter {
-                            eq("id", id)
-                        }
+                client.from(tableName)
+                    .update(vehicleRequest) {
+                        filter { eq("id", id) }
                         select()
-                    }
-                    .decodeSingle<VehicleDto>()
-            }
-        }
-
-        return result.getOrThrow()
-    }
-
-    override suspend fun deleteVehicle(id: String) {
-        val result = retryTemplate.execute(
-            operationName = "DeleteVehicle"
-        ) {
-            safeApiCall {
-                client.from(tableName).delete {
-                    filter {
-                            eq("id", id)
-                        }
-                    }
+                    }.decodeSingle<VehicleDto>()
             }
         }
 
         result.getOrThrow()
+    }
+
+    override suspend fun deleteVehicle(id: String) {
+        withContext(Dispatchers.IO) {
+            val result = retryTemplate.execute(
+                operationName = "DeleteVehicle"
+            ) {
+                safeApiCall {
+                    client.from(tableName).delete {
+                            filter { eq("id", id) }
+                        }
+                }
+            }
+            result.getOrThrow()
+        }
     }
 }

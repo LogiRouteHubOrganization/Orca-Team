@@ -19,6 +19,8 @@ import domain.usecase.OptimizeCargoByWeightAndVolumeUseCase
 import kotlinx.coroutines.runBlocking
 import org.koin.core.Koin
 import org.koin.core.context.startKoin
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 
 fun main(): Unit = runBlocking {
 
@@ -66,26 +68,27 @@ class Main(
     }
 
 
+
     private suspend fun refreshData() {
         println("\n=== Refreshing Data ===")
 
-        warehouseRepository.refresh()
-            .onSuccess { println("Warehouses refreshed successfully.") }
-            .onFailure { println("Warehouses refresh failed: ${it.message}") }
+        coroutineScope {
+            val warehousesDeferred = async { warehouseRepository.refresh().getOrThrow() }
 
-        packageRepository.refresh()
-            .onSuccess { println("Packages refreshed successfully.") }
-            .onFailure { println("Packages refresh failed: ${it.message}") }
+            val packagesDeferred = async { packageRepository.refresh().getOrThrow() }
 
-        vehicleRepository.refresh()
-            .onSuccess { println("Vehicles refreshed successfully.") }
-            .onFailure { println("Vehicles refresh failed: ${it.message}") }
+            val vehiclesDeferred = async { vehicleRepository.refresh().getOrThrow() }
 
-        routeRepository.refresh()
-            .onSuccess { println("Routes refreshed successfully.") }
-            .onFailure { println("Routes refresh failed: ${it.message}") }
+            val routesDeferred = async { routeRepository.refresh().getOrThrow() }
+
+            warehousesDeferred.await()
+            packagesDeferred.await()
+            vehiclesDeferred.await()
+            routesDeferred.await()
+        }
+
+        println("All repositories refreshed successfully.")
     }
-
 
     private suspend fun initializeRelationships() {
         println("\n=== Initializing Relationships ===")
