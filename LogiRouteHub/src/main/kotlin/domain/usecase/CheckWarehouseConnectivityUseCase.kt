@@ -18,9 +18,9 @@ class CheckWarehouseConnectivityUseCase(
 
         val (startWarehouse, destinationWarehouse) = coroutineScope {
             val startDeferred = async { warehouseRepository.findById(startWarehouseId).getOrThrow() }
-            val destDeferred = async { warehouseRepository.findById(destinationWarehouseId).getOrThrow() }
+            val destinationDeferred = async { warehouseRepository.findById(destinationWarehouseId).getOrThrow() }
 
-            Pair(startDeferred.await(), destDeferred.await())
+            Pair(startDeferred.await(), destinationDeferred.await())
         }
 
         if (startWarehouse == null || destinationWarehouse == null) {

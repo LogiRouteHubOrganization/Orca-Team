@@ -9,6 +9,11 @@ import domain.usecase.FindFewestHopsRouteUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 
@@ -71,12 +76,17 @@ class FindFewestHopsRouteUseCaseTest {
         ).inOrder()
     }
 
+
     @Test
     fun `should return empty list when start warehouse does not exist`() = runTest {
         // Given
         coEvery {
             warehouseRepository.findById("WH-000001")
         } returns Result.success(null)
+
+        coEvery {
+            warehouseRepository.findById("WH-000002")
+        } returns Result.success(destinationWarehouse)
 
         // When
         val result = useCase(
@@ -90,12 +100,11 @@ class FindFewestHopsRouteUseCaseTest {
 
         coVerify(exactly = 1) {
             warehouseRepository.findById("WH-000001")
-        }
-
-        coVerify(exactly = 0) {
             warehouseRepository.findById("WH-000002")
         }
     }
+
+
 
     @Test
     fun `should return empty list when destination warehouse does not exist`() = runTest {
@@ -120,12 +129,10 @@ class FindFewestHopsRouteUseCaseTest {
 
         coVerify(exactly = 1) {
             warehouseRepository.findById("WH-000001")
-        }
-
-        coVerify(exactly = 1) {
             warehouseRepository.findById("WH-000002")
         }
     }
+
 
     @Test
     fun `should return failure when warehouse repository fails`() = runTest {
@@ -136,6 +143,10 @@ class FindFewestHopsRouteUseCaseTest {
             warehouseRepository.findById("WH-000001")
         } returns Result.failure(exception)
 
+        coEvery {
+            warehouseRepository.findById("WH-000002")
+        } returns Result.success(destinationWarehouse)
+
         // When
         val result = useCase(
             startWarehouseId = "WH-000001",
@@ -144,16 +155,15 @@ class FindFewestHopsRouteUseCaseTest {
 
         // Then
         assertThat(result.isFailure).isTrue()
-        assertThat(result.exceptionOrNull()).isEqualTo(exception)
+        assertThat(result.exceptionOrNull()?.message)
+            .isEqualTo("Repository error")
 
         coVerify(exactly = 1) {
             warehouseRepository.findById("WH-000001")
-        }
-
-        coVerify(exactly = 0) {
             warehouseRepository.findById("WH-000002")
         }
     }
+
 
     @Test
     fun `should choose path with fewer hops when multiple paths exist`() = runTest {
@@ -171,6 +181,174 @@ class FindFewestHopsRouteUseCaseTest {
             destinationWarehouse
         ).inOrder()
     }
+
+    @Test
+    fun `should start both warehouse lookups concurrently`() = runTest {
+        // Given
+        val startLookupStarted = CompletableDeferred<Unit>()
+        val destinationLookupStarted = CompletableDeferred<Unit>()
+        val allowLookupsToFinish = CompletableDeferred<Unit>()
+
+        coEvery {
+            warehouseRepository.findById("WH-000001")
+        } coAnswers {
+            startLookupStarted.complete(Unit)
+            allowLookupsToFinish.await()
+            Result.success(startWarehouse)
+        }
+
+        coEvery {
+            warehouseRepository.findById("WH-000002")
+        } coAnswers {
+            destinationLookupStarted.complete(Unit)
+            allowLookupsToFinish.await()
+            Result.success(destinationWarehouse)
+        }
+
+        // When
+        val resultDeferred = async {
+            useCase(
+                startWarehouseId = "WH-000001",
+                destinationWarehouseId = "WH-000002"
+            )
+        }
+
+        startLookupStarted.await()
+        destinationLookupStarted.await()
+
+        allowLookupsToFinish.complete(Unit)
+
+        val result = resultDeferred.await()
+
+        // Then
+        assertThat(result.isSuccess).isTrue()
+
+        coVerify(exactly = 1) {
+            warehouseRepository.findById("WH-000001")
+        }
+        coVerify(exactly = 1) {
+            warehouseRepository.findById("WH-000002")
+        }
+    }
+
+    @Test
+    fun `should scatter caller cancellation to both warehouse lookups`() = runTest {
+        // Given
+        val startLookupStarted = CompletableDeferred<Unit>()
+        val destinationLookupStarted = CompletableDeferred<Unit>()
+        val startLookupCancelled = CompletableDeferred<Unit>()
+        val destinationLookupCancelled = CompletableDeferred<Unit>()
+
+        coEvery {
+            warehouseRepository.findById("WH-000001")
+        } coAnswers {
+            startLookupStarted.complete(Unit)
+
+            try {
+                awaitCancellation()
+            } finally {
+                startLookupCancelled.complete(Unit)
+            }
+        }
+
+        coEvery {
+            warehouseRepository.findById("WH-000002")
+        } coAnswers {
+            destinationLookupStarted.complete(Unit)
+
+            try {
+                awaitCancellation()
+            } finally {
+                destinationLookupCancelled.complete(Unit)
+            }
+        }
+
+        // When
+        val routeJob = async {
+            useCase(
+                startWarehouseId = "WH-000001",
+                destinationWarehouseId = "WH-000002"
+            )
+        }
+
+        startLookupStarted.await()
+        destinationLookupStarted.await()
+        routeJob.cancelAndJoin()
+
+        val cancellationResult = runCatching {
+            routeJob.await()
+        }
+
+        // Then
+        assertThat(routeJob.isCancelled).isTrue()
+        assertThat(cancellationResult.isFailure).isTrue()
+        assertThat(cancellationResult.exceptionOrNull())
+            .isInstanceOf(CancellationException::class.java)
+
+        assertThat(startLookupCancelled.isCompleted).isTrue()
+        assertThat(destinationLookupCancelled.isCompleted).isTrue()
+    }
+
+    @Test
+    fun `should cancel destination lookup when start lookup fails`() = runTest {
+        // Given
+        val destinationLookupStarted = CompletableDeferred<Unit>()
+        val allowStartFailure = CompletableDeferred<Unit>()
+        val destinationLookupCancelled = CompletableDeferred<Unit>()
+
+        val expectedException = RuntimeException("Start warehouse lookup failed")
+
+        coEvery {
+            warehouseRepository.findById("WH-000001")
+        } coAnswers {
+            allowStartFailure.await()
+            throw expectedException
+        }
+
+        coEvery {
+            warehouseRepository.findById("WH-000002")
+        } coAnswers {
+            destinationLookupStarted.complete(Unit)
+
+            try {
+                awaitCancellation()
+            } finally {
+                destinationLookupCancelled.complete(Unit)
+            }
+        }
+
+        // When
+        val resultDeferred = async {
+            useCase(
+                startWarehouseId = "WH-000001",
+                destinationWarehouseId = "WH-000002"
+            )
+        }
+
+        destinationLookupStarted.await()
+        allowStartFailure.complete(Unit)
+
+        val result = resultDeferred.await()
+
+        // Then
+        assertThat(result.isFailure).isTrue()
+        assertThat(result.exceptionOrNull())
+            .isInstanceOf(RuntimeException::class.java)
+        assertThat(result.exceptionOrNull()?.message)
+            .isEqualTo("Start warehouse lookup failed")
+
+        assertThat(destinationLookupCancelled.isCompleted).isTrue()
+
+        coVerify(exactly = 1) {
+            warehouseRepository.findById("WH-000001")
+        }
+        coVerify(exactly = 1) {
+            warehouseRepository.findById("WH-000002")
+        }
+    }
+
+
+
 
     private fun setupMultiplePathsScenario() {
         val intermediateWarehouse = Warehouse(

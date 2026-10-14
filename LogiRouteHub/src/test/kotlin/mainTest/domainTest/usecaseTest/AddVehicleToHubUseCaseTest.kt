@@ -17,6 +17,11 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -253,5 +258,308 @@ class AddVehicleToHubUseCaseTest {
             currentWarehouse = warehouse
         )
     }
+
+    @Test
+    fun `should fetch warehouse and vehicle concurrently`() = runTest {
+        // Given
+        val warehouse = createWarehouse(id = "WH-000001", name = "Main Warehouse")
+        val vehicle = createVehicle(id = "TRK-000001", warehouse = warehouse)
+
+        val updateModel = VehicleUpdateModel(currentWarehouseId = warehouse.id)
+        val updatedVehicle = vehicle.copy(currentWarehouse = warehouse)
+
+        val warehouseStarted = CompletableDeferred<Unit>()
+        val vehicleStarted = CompletableDeferred<Unit>()
+
+        val allowWarehouseToFinish = CompletableDeferred<Unit>()
+        val allowVehicleToFinish = CompletableDeferred<Unit>()
+
+        coEvery {
+            warehouseRepository.findById(warehouse.id)
+        } coAnswers {
+            warehouseStarted.complete(Unit)
+            allowWarehouseToFinish.await()
+            Result.success(warehouse)
+        }
+
+        coEvery {
+            vehicleRepository.findById(vehicle.id)
+        } coAnswers {
+            vehicleStarted.complete(Unit)
+            allowVehicleToFinish.await()
+            Result.success(vehicle)
+        }
+        every {
+            updateVehicleValidator(updateModel)
+        } returns ResultValidator.Valid
+
+        coEvery {
+            vehicleRepository.update(vehicle.id, updateModel)
+        } returns Result.success(updatedVehicle)
+
+        // When
+        val resultDeferred = async {
+            useCase(warehouse.id, vehicle.id)
+        }
+
+        // Then
+        warehouseStarted.await()
+        vehicleStarted.await()
+
+        allowWarehouseToFinish.complete(Unit)
+        allowVehicleToFinish.complete(Unit)
+
+        val result = resultDeferred.await()
+
+        assertThat(result.isSuccess).isTrue()
+        assertThat(result.getOrThrow()).isSameInstanceAs(warehouse)
+
+        coVerify(exactly = 1) {
+            warehouseRepository.findById(warehouse.id)
+            vehicleRepository.findById(vehicle.id)
+            vehicleRepository.update(vehicle.id, updateModel)
+        }
+    }
+
+    @Test
+    fun `should cancel sibling request when warehouse lookup fails`() = runTest {
+        // Given
+        val warehouseId = "WH-000001"
+        val vehicleId = "TRK-000001"
+        val warehouseFailure = RuntimeException("Warehouse lookup failed")
+
+        val warehouseStarted = CompletableDeferred<Unit>()
+        val allowWarehouseFailure = CompletableDeferred<Unit>()
+        val vehicleRequestStarted = CompletableDeferred<Unit>()
+        val vehicleRequestCancelled = CompletableDeferred<Unit>()
+
+        coEvery {
+            warehouseRepository.findById(warehouseId)
+        } coAnswers {
+            warehouseStarted.complete(Unit)
+            allowWarehouseFailure.await()
+            Result.failure(warehouseFailure)
+        }
+
+        coEvery {
+            vehicleRepository.findById(vehicleId)
+        } coAnswers {
+            vehicleRequestStarted.complete(Unit)
+
+            try {
+                awaitCancellation()
+            } finally {
+                vehicleRequestCancelled.complete(Unit)
+            }
+        }
+        // When
+        val resultDeferred = async {
+            useCase(warehouseId, vehicleId)
+        }
+
+        warehouseStarted.await()
+        vehicleRequestStarted.await()
+        allowWarehouseFailure.complete(Unit)
+        val result = resultDeferred.await()
+
+        // Then
+        assertThat(result.isFailure).isTrue()
+
+        assertThat(result.exceptionOrNull())
+            .hasMessageThat()
+            .isEqualTo("Warehouse lookup failed")
+
+        vehicleRequestCancelled.await()
+
+        coVerify(exactly = 1) {
+            warehouseRepository.findById(warehouseId)
+            vehicleRepository.findById(vehicleId)
+        }
+        coVerify(exactly = 0) {
+            vehicleRepository.update(any(), any())
+        }
+    }
+
+    @Test
+    fun `should cancel sibling request when vehicle lookup fails`() = runTest {
+        // Given
+        val warehouseId = "WH-000001"
+        val vehicleId = "TRK-000001"
+        val vehicleFailure = RuntimeException("Vehicle lookup failed")
+
+        val warehouseStarted = CompletableDeferred<Unit>()
+        val warehouseCancelled = CompletableDeferred<Unit>()
+        val allowVehicleFailure = CompletableDeferred<Unit>()
+
+        coEvery {
+            warehouseRepository.findById(warehouseId)
+        } coAnswers {
+            warehouseStarted.complete(Unit)
+
+            try {
+                awaitCancellation()
+            } finally {
+                warehouseCancelled.complete(Unit)
+            }
+        }
+
+        coEvery {
+            vehicleRepository.findById(vehicleId)
+        } coAnswers {
+            warehouseStarted.await()
+            allowVehicleFailure.await()
+            Result.failure(vehicleFailure)
+        }
+
+        // When
+        val resultDeferred = async {
+            useCase(warehouseId, vehicleId)
+        }
+
+        warehouseStarted.await()
+        allowVehicleFailure.complete(Unit)
+
+        val result = resultDeferred.await()
+
+        // Then
+        assertThat(result.isFailure).isTrue()
+        assertThat(result.exceptionOrNull()?.message)
+            .isEqualTo("Vehicle lookup failed")
+
+        warehouseCancelled.await()
+
+        coVerify(exactly = 1) {
+            warehouseRepository.findById(warehouseId)
+            vehicleRepository.findById(vehicleId)
+        }
+        coVerify(exactly = 0) {
+            vehicleRepository.update(any(), any())
+        }
+    }
+
+    @Test
+    fun `should update vehicle only after both lookups complete`() = runTest {
+        // Given
+        val warehouse = createWarehouse("WH-000001", "Main Warehouse")
+        val vehicle = createVehicle("TRK-000001", warehouse)
+        val updateModel = VehicleUpdateModel(
+            currentWarehouseId = warehouse.id
+        )
+        val updatedVehicle = vehicle.copy(currentWarehouse = warehouse)
+
+        val allowWarehouseToFinish = CompletableDeferred<Unit>()
+        val allowVehicleToFinish = CompletableDeferred<Unit>()
+
+        coEvery {
+            warehouseRepository.findById(warehouse.id)
+        } coAnswers {
+            allowWarehouseToFinish.await()
+            Result.success(warehouse)
+        }
+
+        coEvery {
+            vehicleRepository.findById(vehicle.id)
+        } coAnswers {
+            allowVehicleToFinish.await()
+            Result.success(vehicle)
+        }
+
+        every {
+            updateVehicleValidator(updateModel)
+        } returns ResultValidator.Valid
+
+        coEvery {
+            vehicleRepository.update(vehicle.id, updateModel)
+        } returns Result.success(updatedVehicle)
+
+        // When
+        val resultDeferred = async {
+            useCase(warehouse.id, vehicle.id)
+        }
+
+        allowWarehouseToFinish.complete(Unit)
+        runCurrent()
+
+        // Then
+        coVerify(exactly = 0) {
+            vehicleRepository.update(any(), any())
+        }
+
+        // When
+        allowVehicleToFinish.complete(Unit)
+        val result = resultDeferred.await()
+
+        // Then
+        assertThat(result.isSuccess).isTrue()
+
+        coVerify(exactly = 1) {
+            vehicleRepository.update(vehicle.id, updateModel)
+        }
+    }
+
+    @Test
+    fun `should cancel all child requests when caller cancels operation`() = runTest {
+        // Given
+        val warehouseId = "WH-000001"
+        val vehicleId = "TRK-000001"
+
+        val warehouseStarted = CompletableDeferred<Unit>()
+        val vehicleStarted = CompletableDeferred<Unit>()
+
+        val warehouseCancelled = CompletableDeferred<Unit>()
+        val vehicleCancelled = CompletableDeferred<Unit>()
+
+        coEvery {
+            warehouseRepository.findById(warehouseId)
+        } coAnswers {
+            warehouseStarted.complete(Unit)
+
+            try {
+                awaitCancellation()
+            } finally {
+                warehouseCancelled.complete(Unit)
+            }
+        }
+        coEvery {
+            vehicleRepository.findById(vehicleId)
+        } coAnswers {
+            vehicleStarted.complete(Unit)
+
+            try {
+                awaitCancellation()
+            } finally {
+                vehicleCancelled.complete(Unit)
+            }
+        }
+        // When
+        val operation = async {
+            useCase(warehouseId, vehicleId)
+        }
+
+        warehouseStarted.await()
+        vehicleStarted.await()
+        operation.cancelAndJoin()
+
+        // Then
+        assertThat(operation.isCancelled).isTrue()
+        warehouseCancelled.await()
+        vehicleCancelled.await()
+
+        coVerify(exactly = 1) {
+            warehouseRepository.findById(warehouseId)
+            vehicleRepository.findById(vehicleId)
+        }
+
+        coVerify(exactly = 0) {
+            vehicleRepository.update(any(), any())
+        }
+    }
+
+
+
+
+
+
+
 }
 
