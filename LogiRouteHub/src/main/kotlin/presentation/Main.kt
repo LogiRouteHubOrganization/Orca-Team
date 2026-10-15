@@ -16,6 +16,8 @@ import domain.model.request.DispatchVehicleRequest
 import domain.usecase.DispatchVehicleUseCase
 import domain.usecase.OptimizeCargoByWeightUseCase
 import domain.usecase.OptimizeCargoByWeightAndVolumeUseCase
+import domain.algorithm.knn.CargoFeatures
+import domain.usecase.ClassifyPackageSectorUseCase
 import kotlinx.coroutines.runBlocking
 import org.koin.core.Koin
 import org.koin.core.context.startKoin
@@ -59,6 +61,8 @@ class Main(
     private val weightOnlyOptimizer = koin.get<OptimizeCargoByWeightUseCase>()
 
     private val twoDimensionalOptimizer = koin.get<OptimizeCargoByWeightAndVolumeUseCase>()
+
+    private val classifyPackageSectorUseCase = koin.get<ClassifyPackageSectorUseCase>()
 
     suspend fun run() {
         refreshData()
@@ -223,6 +227,8 @@ class Main(
 
 
         dispatchVehicle()
+
+        demoKnnSectorClassification()
     }
 
 
@@ -456,5 +462,31 @@ class Main(
                 println("Dispatch failed: ${it.message}")
             }
     }
+
+
+    private suspend fun demoKnnSectorClassification() {
+        println("\n=== KNN Sector Classification ===")
+
+        val cargoToClassify = CargoFeatures(
+            latitude = 31.55,
+            longitude = 34.48,
+            weightKg = 15.0
+        )
+
+        println("New Cargo:")
+        println("Weight: ${cargoToClassify.weightKg} kg")
+        println("Latitude: ${cargoToClassify.latitude}")
+        println("Longitude: ${cargoToClassify.longitude}")
+
+        classifyPackageSectorUseCase(cargoToClassify)
+            .onSuccess { predictedSector ->
+                println("Predicted Sector: $predictedSector")
+            }
+            .onFailure { exception ->
+                println("Classification failed: ${exception.message}")
+            }
+    }
+
+
 }
 
