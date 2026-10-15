@@ -2,6 +2,7 @@
 package di
 
 import domain.algorithm.greedy.VehicleCoverageMapper
+import domain.algorithm.knn.KNNClassifier
 import domain.model.request.PackagePriorityLevels
 import domain.model.request.RouteRiskConfig
 import domain.pricing.decorator.PackageDecoratorComposer
@@ -15,6 +16,7 @@ import domain.usecase.AnalyzeTreePerformanceUseCase
 import domain.usecase.AssignPackageToCargoQueueUseCase
 import domain.usecase.CalculatePricingUseCase
 import domain.usecase.CheckWarehouseConnectivityUseCase
+import domain.usecase.ClassifyPackageSectorUseCase
 import domain.usecase.DetectPotentialDeliveryBottleneckUseCase
 import domain.usecase.DispatchVehicleUseCase
 import domain.usecase.EstimateDeliveryTimeUseCase
@@ -348,4 +350,8 @@ val useCaseModule = module {
             warehouseValidator = get()
         )
     }
+
+    factory { KNNClassifier() }
+
+    factory { ClassifyPackageSectorUseCase(packageRepository = get(), knnClassifier = get()) }
 }
