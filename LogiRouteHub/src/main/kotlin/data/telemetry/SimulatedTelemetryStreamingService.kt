@@ -1,3 +1,4 @@
+
 package data.telemetry
 
 import domain.model.VehicleTelemetry
@@ -52,10 +53,10 @@ class SimulatedTelemetryStreamingService(
             return VehicleTelemetry(
                 vehicleId = vehicleId,
                 latitude = 31.5 + movement +
-                        Random.Default.nextDouble(-0.02, 0.02),
+                        Random.nextDouble(-0.02, 0.02),
                 longitude = 34.45 + movement +
-                        Random.Default.nextDouble(-0.02, 0.02),
-                speedKmh = Random.Default.nextDouble(0.0, 120.0),
+                        Random.nextDouble(-0.02, 0.02),
+                speedKmh = Random.nextDouble(0.0, 120.0),
                 fuelPercentage = (100.0 - sequence * 0.5)
                     .coerceAtLeast(0.0),
                 timestamp = Instant.now()
