@@ -1,4 +1,4 @@
-package dataTest.serviceTest
+package dataTest.telemetrTest
 
 import com.google.common.truth.Truth
 import data.telemetry.SimulatedTelemetryStreamingService
