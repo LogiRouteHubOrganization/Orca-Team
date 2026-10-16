@@ -2,6 +2,7 @@ package presentation
 
 import di.networkModule
 import di.repositoryModule
+import di.telemetryModule
 import di.useCaseModule
 import di.validatorModule
 import domain.repository.PackageRepository
@@ -26,12 +27,13 @@ import kotlinx.coroutines.coroutineScope
 
 fun main(): Unit = runBlocking {
 
-    val koin = startKoin {
+    val koin =startKoin {
         modules(
             networkModule,
             repositoryModule,
             validatorModule,
-            useCaseModule
+            useCaseModule,
+            telemetryModule
         )
     }.koin
 

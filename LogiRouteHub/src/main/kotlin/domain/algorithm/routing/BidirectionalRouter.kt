@@ -1,4 +1,4 @@
-package domain.routing
+package domain.algorithm.routing
 
 import domain.model.Warehouse
 

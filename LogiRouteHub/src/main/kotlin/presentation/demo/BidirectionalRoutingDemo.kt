@@ -1,7 +1,7 @@
 package presentation.demo
 
 import domain.model.Warehouse
-import domain.routing.BidirectionalRouter
+import domain.algorithm.routing.BidirectionalRouter
 import java.util.Locale
 
 class BidirectionalRoutingDemo(

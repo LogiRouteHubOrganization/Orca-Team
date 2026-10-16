@@ -2,10 +2,10 @@ package mainTest.domainTest.usecaseTest
 
 import com.google.common.truth.Truth.assertThat
 import domain.model.request.AnalyzeTreePerformanceRequest
-import domain.tree.simulation.BalancedBST
-import domain.tree.simulation.SequentialTrackingIdGenerator
-import domain.tree.simulation.TreeType
-import domain.tree.simulation.UnbalancedBST
+import domain.algorithm.tree.simulation.BalancedBST
+import domain.algorithm.tree.simulation.SequentialTrackingIdGenerator
+import domain.algorithm.tree.simulation.TreeType
+import domain.algorithm.tree.simulation.UnbalancedBST
 import domain.usecase.AnalyzeTreePerformanceUseCase
 import io.mockk.every
 import io.mockk.mockk

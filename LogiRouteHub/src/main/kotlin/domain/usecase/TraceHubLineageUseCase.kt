@@ -1,7 +1,7 @@
 package domain.usecase
 
-import domain.tree.hierarchy.HubLineageTracer
-import domain.tree.hierarchy.HubTreeWarehouseNode
+import domain.algorithm.tree.hierarchy.HubLineageTracer
+import domain.algorithm.tree.hierarchy.HubTreeWarehouseNode
 
 class TraceHubLineageUseCase(
     private val hubLineageTracer: HubLineageTracer

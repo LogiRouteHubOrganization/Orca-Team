@@ -1,4 +1,4 @@
-package domain.tree.simulation
+package domain.algorithm.tree.simulation
 
 class UnbalancedBST {
 

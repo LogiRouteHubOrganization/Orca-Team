@@ -3,8 +3,8 @@ package mainTest.domainTest.usecaseTest
 
 
 import com.google.common.truth.Truth.assertThat
-import domain.tree.hierarchy.HubLineageTracer
-import domain.tree.hierarchy.HubTreeWarehouseNode
+import domain.algorithm.tree.hierarchy.HubLineageTracer
+import domain.algorithm.tree.hierarchy.HubTreeWarehouseNode
 import domain.usecase.TraceHubLineageUseCase
 import io.mockk.every
 import io.mockk.mockk

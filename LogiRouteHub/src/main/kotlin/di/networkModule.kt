@@ -40,29 +40,39 @@ private fun createSupabaseClient(
     }
 
 private fun loadSupabaseCredentials(): SupabaseCredentials {
-    val localProperties = Properties()
     val propertiesFile = File("local.properties")
 
     require(propertiesFile.exists()) {
-        "local.properties file not found"
+        "local.properties file not found at: ${propertiesFile.absolutePath}"
     }
+
+    val localProperties = Properties()
 
     propertiesFile.inputStream().use { inputStream ->
         localProperties.load(inputStream)
     }
 
-    val supabaseUrl = localProperties.getProperty("SUPABASE_URL")
-        ?: error("SUPABASE_URL is not defined in local.properties")
+    val supabaseUrl = localProperties
+        .getProperty("SUPABASE_URL")
+        ?.trim()
+        ?.takeIf { it.isNotEmpty() }
+        ?: error("SUPABASE_URL is missing or empty")
 
-    val supabaseKey = localProperties.getProperty("SUPABASE_PUBLISHABLE_KEY")
-        ?: error("SUPABASE_PUBLISHABLE_KEY is not defined in local.properties")
+    val supabaseKey = localProperties
+        .getProperty("SUPABASE_PUBLISHABLE_KEY")
+        ?.trim()
+        ?.takeIf { it.isNotEmpty() }
+        ?: error("SUPABASE_PUBLISHABLE_KEY is missing or empty")
+
+    require(supabaseUrl.startsWith("https://")) {
+        "SUPABASE_URL must start with https://"
+    }
 
     return SupabaseCredentials(
         supabaseUrl = supabaseUrl,
         supabaseKey = supabaseKey
     )
 }
-
 private data class SupabaseCredentials(
     val supabaseUrl: String,
     val supabaseKey: String
