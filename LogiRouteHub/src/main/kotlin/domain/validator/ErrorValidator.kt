@@ -29,4 +29,6 @@ sealed class ErrorValidator {
     ) : ErrorValidator()
 
     data object EmptyUpdate : ErrorValidator()
+
+    data object InvalidFuelPercentage : ErrorValidator()
 }
