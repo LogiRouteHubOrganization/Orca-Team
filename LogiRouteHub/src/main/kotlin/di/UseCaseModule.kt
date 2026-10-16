@@ -6,10 +6,10 @@ import domain.algorithm.knn.KNNClassifier
 import domain.model.request.PackagePriorityLevels
 import domain.model.request.RouteRiskConfig
 import domain.pricing.decorator.PackageDecoratorComposer
-import domain.tree.hierarchy.HubLineageTracer
-import domain.tree.simulation.BalancedBST
-import domain.tree.simulation.SequentialTrackingIdGenerator
-import domain.tree.simulation.UnbalancedBST
+import domain.algorithm.tree.hierarchy.HubLineageTracer
+import domain.algorithm.tree.simulation.BalancedBST
+import domain.algorithm.tree.simulation.SequentialTrackingIdGenerator
+import domain.algorithm.tree.simulation.UnbalancedBST
 import domain.usecase.AddVehicleToHubUseCase
 import domain.usecase.AnalyzePackageDestinationDemandUseCase
 import domain.usecase.AnalyzeTreePerformanceUseCase
@@ -51,6 +51,7 @@ import domain.usecase.crud.warehouse.GetWarehouseByIdUseCase
 import domain.usecase.crud.warehouse.UpdateWarehouseUseCase
 import domain.usecase.OptimizeCargoByWeightUseCase
 import domain.usecase.OptimizeCargoByWeightAndVolumeUseCase
+import domain.usecase.TrackActiveFleetUseCase
 import org.koin.dsl.module
 
 val useCaseModule = module {
@@ -353,5 +354,17 @@ val useCaseModule = module {
 
     factory { KNNClassifier() }
 
-    factory { ClassifyPackageSectorUseCase(packageRepository = get(), knnClassifier = get()) }
+    factory {
+        ClassifyPackageSectorUseCase(
+            packageRepository = get(),
+            knnClassifier = get()
+        )
+    }
+
+    // Real-Time Telemetry
+    factory {
+        TrackActiveFleetUseCase(
+            telemetryStreamingService = get()
+        )
+    }
 }
