@@ -2,11 +2,11 @@ package presentation.demo
 
 import domain.model.Warehouse
 import domain.model.request.WarehouseLevel
-import domain.tree.hierarchy.HubHierarchyInput
-import domain.tree.hierarchy.HubLineageTracer
-import domain.tree.hierarchy.HubTree
-import domain.tree.hierarchy.HubTreeBuilder
-import domain.tree.hierarchy.HubTreeWarehouseNode
+import domain.algorithm.tree.hierarchy.HubHierarchyInput
+import domain.algorithm.tree.hierarchy.HubLineageTracer
+import domain.algorithm.tree.hierarchy.HubTree
+import domain.algorithm.tree.hierarchy.HubTreeBuilder
+import domain.algorithm.tree.hierarchy.HubTreeWarehouseNode
 import domain.usecase.TraceHubLineageUseCase
 
 class HubTreeDemo(

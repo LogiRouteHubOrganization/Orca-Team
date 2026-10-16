@@ -1,7 +1,8 @@
-package domain.tree.hierarchy
+package domain.algorithm.tree.hierarchy
 
 import domain.model.Warehouse
 import domain.model.request.WarehouseLevel
+import kotlin.collections.get
 
 class HubTreeBuilder {
     private val requiredGlobalHubCount = 1

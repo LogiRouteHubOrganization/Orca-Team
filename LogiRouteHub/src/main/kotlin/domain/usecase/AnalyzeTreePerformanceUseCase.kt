@@ -1,12 +1,12 @@
 package domain.usecase
 
 import domain.model.request.AnalyzeTreePerformanceRequest
-import domain.tree.simulation.SimulationResult
-import domain.tree.simulation.PerformanceMetrics
-import domain.tree.simulation.TreeType
-import domain.tree.simulation.UnbalancedBST
-import domain.tree.simulation.BalancedBST
-import domain.tree.simulation.SequentialTrackingIdGenerator
+import domain.algorithm.tree.simulation.SimulationResult
+import domain.algorithm.tree.simulation.PerformanceMetrics
+import domain.algorithm.tree.simulation.TreeType
+import domain.algorithm.tree.simulation.UnbalancedBST
+import domain.algorithm.tree.simulation.BalancedBST
+import domain.algorithm.tree.simulation.SequentialTrackingIdGenerator
 
 class AnalyzeTreePerformanceUseCase(
     private val generator: SequentialTrackingIdGenerator,
