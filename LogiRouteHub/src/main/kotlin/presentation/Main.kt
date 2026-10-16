@@ -5,29 +5,42 @@ import di.repositoryModule
 import di.telemetryModule
 import di.useCaseModule
 import di.validatorModule
+
 import domain.repository.PackageRepository
 import domain.repository.RouteRepository
 import domain.repository.VehicleRepository
 import domain.repository.WarehouseRepository
+
 import domain.usecase.AnalyzePackageDestinationDemandUseCase
 import domain.usecase.FindFewestHopsRouteUseCase
 import domain.usecase.FindOptimalPathUseCase
-import domain.model.Package
-import domain.model.request.DispatchVehicleRequest
 import domain.usecase.DispatchVehicleUseCase
 import domain.usecase.OptimizeCargoByWeightUseCase
 import domain.usecase.OptimizeCargoByWeightAndVolumeUseCase
-import domain.algorithm.knn.CargoFeatures
 import domain.usecase.ClassifyPackageSectorUseCase
+import domain.usecase.TrackActiveFleetUseCase
+
+import domain.model.Package
+import domain.model.request.DispatchVehicleRequest
+import domain.algorithm.knn.CargoFeatures
+import domain.service.TelemetryStreamingService
+
+import presentation.cli.RouteCommand
+import presentation.cli.ClassificationCommand
+import presentation.cli.FleetTrackingCommand
+import presentation.cli.InteractiveCli
+
 import kotlinx.coroutines.runBlocking
-import org.koin.core.Koin
-import org.koin.core.context.startKoin
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 
+import org.koin.core.Koin
+import org.koin.core.context.startKoin
+
+
 fun main(): Unit = runBlocking {
 
-    val koin =startKoin {
+    val koin = startKoin {
         modules(
             networkModule,
             repositoryModule,
@@ -40,52 +53,105 @@ fun main(): Unit = runBlocking {
     Main(koin).run()
 }
 
+
 class Main(
     private val koin: Koin
 ) {
 
-    private val warehouseRepository = koin.get<WarehouseRepository>()
+    private val warehouseRepository =
+        koin.get<WarehouseRepository>()
 
-    private val packageRepository = koin.get<PackageRepository>()
+    private val packageRepository =
+        koin.get<PackageRepository>()
 
-    private val vehicleRepository = koin.get<VehicleRepository>()
+    private val vehicleRepository =
+        koin.get<VehicleRepository>()
 
-    private val routeRepository = koin.get<RouteRepository>()
+    private val routeRepository =
+        koin.get<RouteRepository>()
 
-    private val findOptimalPathUseCase = koin.get<FindOptimalPathUseCase>()
+    private val findOptimalPathUseCase =
+        koin.get<FindOptimalPathUseCase>()
 
-    private val findFewestHopsRouteUseCase = koin.get<FindFewestHopsRouteUseCase>()
+    private val findFewestHopsRouteUseCase =
+        koin.get<FindFewestHopsRouteUseCase>()
 
-    private val analyzePackageDestinationDemandUseCase = koin.get<AnalyzePackageDestinationDemandUseCase>()
+    private val analyzePackageDestinationDemandUseCase =
+        koin.get<AnalyzePackageDestinationDemandUseCase>()
 
-    private val dispatchVehicleUseCase = koin.get<DispatchVehicleUseCase>()
+    private val dispatchVehicleUseCase =
+        koin.get<DispatchVehicleUseCase>()
 
-    private val weightOnlyOptimizer = koin.get<OptimizeCargoByWeightUseCase>()
+    private val weightOnlyOptimizer =
+        koin.get<OptimizeCargoByWeightUseCase>()
 
-    private val twoDimensionalOptimizer = koin.get<OptimizeCargoByWeightAndVolumeUseCase>()
+    private val twoDimensionalOptimizer =
+        koin.get<OptimizeCargoByWeightAndVolumeUseCase>()
 
-    private val classifyPackageSectorUseCase = koin.get<ClassifyPackageSectorUseCase>()
+    private val classifyPackageSectorUseCase =
+        koin.get<ClassifyPackageSectorUseCase>()
+
+    // Task 4: Telemetry dependencies
+    private val telemetryStreamingService =
+        koin.get<TelemetryStreamingService>()
+
+    private val trackActiveFleetUseCase =
+        koin.get<TrackActiveFleetUseCase>()
+
 
     suspend fun run() {
         refreshData()
         initializeRelationships()
         demoRepositories()
         demoAlgorithms()
+        startInteractiveCli()
     }
 
+
+
+    private suspend fun startInteractiveCli() {
+
+        val routeCommand = RouteCommand(
+            findOptimalPathUseCase = findOptimalPathUseCase
+        )
+
+        val classificationCommand = ClassificationCommand(
+            classifyPackageSectorUseCase = classifyPackageSectorUseCase
+        )
+
+        val fleetTrackingCommand = FleetTrackingCommand(
+            telemetryService = telemetryStreamingService,
+            trackActiveFleetUseCase = trackActiveFleetUseCase
+        )
+
+        val interactiveCli = InteractiveCli(
+            routeCommand = routeCommand,
+            classificationCommand = classificationCommand,
+            fleetTrackingCommand = fleetTrackingCommand
+        )
+
+        interactiveCli.start()
+    }
 
 
     private suspend fun refreshData() {
         println("\n=== Refreshing Data ===")
 
         coroutineScope {
-            val warehousesDeferred = async { warehouseRepository.refresh().getOrThrow() }
+            val warehousesDeferred = async {
+                warehouseRepository.refresh().getOrThrow()
+            }
 
-            val packagesDeferred = async { packageRepository.refresh().getOrThrow() }
+            val packagesDeferred = async {
+                packageRepository.refresh().getOrThrow()
+            }
+            val vehiclesDeferred = async {
+                vehicleRepository.refresh().getOrThrow()
+            }
 
-            val vehiclesDeferred = async { vehicleRepository.refresh().getOrThrow() }
-
-            val routesDeferred = async { routeRepository.refresh().getOrThrow() }
+            val routesDeferred = async {
+                routeRepository.refresh().getOrThrow()
+            }
 
             warehousesDeferred.await()
             packagesDeferred.await()
@@ -96,20 +162,33 @@ class Main(
         println("All repositories refreshed successfully.")
     }
 
+
     private suspend fun initializeRelationships() {
         println("\n=== Initializing Relationships ===")
 
         packageRepository.initializeCargoQueues()
-            .onSuccess { println("Cargo queues initialized.") }
-            .onFailure { println("Cargo queues failed: ${it.message}") }
+            .onSuccess {
+                println("Cargo queues initialized.")
+            }
+            .onFailure {
+                println("Cargo queues failed: ${it.message}")
+            }
 
         vehicleRepository.initializeStationedVehicles()
-            .onSuccess { println("Stationed vehicles initialized.") }
-            .onFailure { println("Stationed vehicles failed: ${it.message}") }
+            .onSuccess {
+                println("Stationed vehicles initialized.")
+            }
+            .onFailure {
+                println("Stationed vehicles failed: ${it.message}")
+            }
 
         routeRepository.initializeOutgoingRoutes()
-            .onSuccess { println("Outgoing routes initialized.") }
-            .onFailure { println("Outgoing routes failed: ${it.message}") }
+            .onSuccess {
+                println("Outgoing routes initialized.")
+            }
+            .onFailure {
+                println("Outgoing routes failed: ${it.message}")
+            }
     }
 
 
@@ -124,7 +203,8 @@ class Main(
     private suspend fun printWarehouses() {
         println("\n=== Warehouses ===")
 
-        warehouseRepository.findAll().onSuccess { warehouses ->
+        warehouseRepository.findAll()
+            .onSuccess { warehouses ->
                 println("Count: ${warehouses.size}")
 
                 warehouses.take(5).forEach { warehouse ->
@@ -140,10 +220,12 @@ class Main(
             }
     }
 
+
     private suspend fun printPackages() {
         println("\n=== Packages ===")
 
-        packageRepository.findAll().onSuccess { packages ->
+        packageRepository.findAll()
+            .onSuccess { packages ->
                 println("Count: ${packages.size}")
 
                 packages.take(5).forEach { logisticsPackage ->
@@ -166,7 +248,8 @@ class Main(
         println("\n=== Vehicles ===")
 
         vehicleRepository.findAll()
-            .onSuccess { vehicles -> println("Count: ${vehicles.size}")
+            .onSuccess { vehicles ->
+                println("Count: ${vehicles.size}")
 
                 vehicles.take(5).forEach { vehicle ->
                     println(
@@ -182,10 +265,12 @@ class Main(
             }
     }
 
+
     private suspend fun printRoutes() {
         println("\n=== Routes ===")
 
-        routeRepository.findAll().onSuccess { routes ->
+        routeRepository.findAll()
+            .onSuccess { routes ->
                 println("Count: ${routes.size}")
 
                 routes.take(5).forEach { route ->
@@ -202,6 +287,7 @@ class Main(
                 println("Failed: ${it.message}")
             }
     }
+
 
     private suspend fun demoAlgorithms() {
         val packages = packageRepository.findAll().getOrThrow()
@@ -226,7 +312,6 @@ class Main(
         demoDestinationDemand()
 
         demoCargoOptimizationComparison()
-
 
         dispatchVehicle()
 
@@ -287,7 +372,8 @@ class Main(
 
         val packages = packageRepository.findAll().getOrThrow()
 
-        val warehouse = analyzePackageDestinationDemandUseCase(packages)
+        val warehouse =
+            analyzePackageDestinationDemandUseCase(packages)
 
         if (warehouse != null) {
             println(
@@ -298,6 +384,7 @@ class Main(
             println("No package demand found.")
         }
     }
+
 
     private suspend fun demoCargoOptimizationComparison() {
         println("\n=== Cargo Optimization Comparison ===")
@@ -319,25 +406,47 @@ class Main(
         )
     }
 
+
     private suspend fun createDemoPackages(): List<Package>? {
         val warehouses = warehouseRepository.findAll().getOrThrow()
 
         if (warehouses.size < 2) {
-            println("Not enough warehouses available for cargo optimization demo.")
+            println(
+                "Not enough warehouses available for cargo optimization demo."
+            )
             return null
         }
+
         val originWarehouse = warehouses[0]
         val destinationWarehouse = warehouses[1]
-
         return listOf(
-            Package(id = "PKG-900001", weightByKg = 4.0, priority = "URGENT",
-                originWarehouse = originWarehouse, destinationWarehouse = destinationWarehouse, volumeM3 = 8.0),
-            Package(id = "PKG-900002", weightByKg = 6.0, priority = "URGENT",
-                originWarehouse = originWarehouse, destinationWarehouse = destinationWarehouse, volumeM3 = 5.0),
-            Package(id = "PKG-900003", weightByKg = 6.0, priority = "STANDARD",
-                originWarehouse = originWarehouse, destinationWarehouse = destinationWarehouse, volumeM3 = 2.0)
+            Package(
+                id = "PKG-900001",
+                weightByKg = 4.0,
+                priority = "URGENT",
+                originWarehouse = originWarehouse,
+                destinationWarehouse = destinationWarehouse,
+                volumeM3 = 8.0
+            ),
+            Package(
+                id = "PKG-900002",
+                weightByKg = 6.0,
+                priority = "URGENT",
+                originWarehouse = originWarehouse,
+                destinationWarehouse = destinationWarehouse,
+                volumeM3 = 5.0
+            ),
+            Package(
+                id = "PKG-900003",
+                weightByKg = 6.0,
+                priority = "STANDARD",
+                originWarehouse = originWarehouse,
+                destinationWarehouse = destinationWarehouse,
+                volumeM3 = 2.0
+            )
         )
     }
+
 
     private fun printOptimizationCapacities(
         weightCapacityKg: Double,
@@ -409,16 +518,22 @@ class Main(
         println("Total volume: $totalVolume m³")
     }
 
+
     private suspend fun dispatchVehicle() {
         println("\n=== Knapsack Cargo Dispatch ===")
+
         val packages = packageRepository.findAll().getOrThrow()
 
         if (packages.isEmpty()) {
             println("No packages available for dispatch.")
             return
         }
+
         val warehouseId = packages.first().originWarehouse.id
-        val vehicle = vehicleRepository.findAll().getOrThrow().firstOrNull()
+
+        val vehicle = vehicleRepository.findAll()
+            .getOrThrow()
+            .firstOrNull()
 
         if (vehicle == null) {
             println("No vehicle available for dispatch.")
@@ -439,8 +554,8 @@ class Main(
         printDispatchResult(result)
     }
 
-    private fun printDispatchResult(
-        result: Result<List<Package>>
+
+    private fun printDispatchResult(result: Result<List<Package>>
     ) {
         result
             .onSuccess { dispatchedPackages ->
@@ -448,7 +563,10 @@ class Main(
                     println("No packages were selected for dispatch.")
                     return@onSuccess
                 }
-                println("Knapsack selected ${dispatchedPackages.size} package(s):")
+
+                println(
+                    "Knapsack selected ${dispatchedPackages.size} package(s):"
+                )
 
                 dispatchedPackages.forEach { logisticsPackage ->
                     println(
@@ -459,8 +577,11 @@ class Main(
                     )
                 }
 
-                println("Successfully dispatched through BaseDispatchProcessor pipeline.")
-            }.onFailure {
+                println(
+                    "Successfully dispatched through BaseDispatchProcessor pipeline."
+                )
+            }
+            .onFailure {
                 println("Dispatch failed: ${it.message}")
             }
     }
@@ -485,10 +606,9 @@ class Main(
                 println("Predicted Sector: $predictedSector")
             }
             .onFailure { exception ->
-                println("Classification failed: ${exception.message}")
+                println(
+                    "Classification failed: ${exception.message}"
+                )
             }
     }
-
-
 }
-
