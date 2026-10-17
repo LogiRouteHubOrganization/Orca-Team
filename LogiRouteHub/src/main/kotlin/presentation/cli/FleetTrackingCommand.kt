@@ -11,14 +11,15 @@ import kotlinx.coroutines.launch
 
 class FleetTrackingCommand(
     private val telemetryService: TelemetryStreamingService,
-    private val trackActiveFleetUseCase: TrackActiveFleetUseCase
+    private val trackActiveFleetUseCase: TrackActiveFleetUseCase,
+    private val console: ConsoleIO
 ) {
 
     private var trackingJob: Job? = null
 
     fun start(scope: CoroutineScope) {
         if (trackingJob?.isActive == true) {
-            println("Fleet tracking is already running.")
+            console.println("Fleet tracking is already running.")
             return
         }
 
@@ -29,41 +30,39 @@ class FleetTrackingCommand(
             scope.coroutineContext + job
         )
 
-        println("Fleet tracking started.")
+        console.println("Fleet tracking started.")
 
         trackingScope.launch {
             try {
-                telemetryService.streamTelemetry()
-                    .collect { telemetry ->
-                        println()
-                        println("Vehicle: ${telemetry.vehicleId}")
-                        println("Latitude: ${telemetry.latitude}")
-                        println("Longitude: ${telemetry.longitude}")
-                        println("Speed: ${telemetry.speedKmh} km/h")
-                        println("Fuel: ${telemetry.fuelPercentage}%")
-                        println("Time: ${telemetry.timestamp}")
-                    }
+                telemetryService.streamTelemetry().collect { telemetry ->
+                    console.println()
+                    console.println("Vehicle: ${telemetry.vehicleId}")
+                    console.println("Latitude: ${telemetry.latitude}")
+                    console.println("Longitude: ${telemetry.longitude}")
+                    console.println("Speed: ${telemetry.speedKmh} km/h")
+                    console.println("Fuel: ${telemetry.fuelPercentage}%")
+                    console.println("Time: ${telemetry.timestamp}")
+                }
             } catch (error: CancellationException) {
                 throw error
             } catch (error: Exception) {
-                println("Telemetry error: ${error.message}")
+                console.println("Telemetry error: ${error.message}")
             }
         }
 
         trackingScope.launch {
             try {
-                trackActiveFleetUseCase()
-                    .collect { notification ->
-                        println()
-                        println("WARNING: Fleet delay detected!")
-                        println("Vehicle: ${notification.vehicleId}")
-                        println("Speed: ${notification.speedKmh} km/h")
-                        println("Detected at: ${notification.detectedAt}")
-                    }
+                trackActiveFleetUseCase().collect { notification ->
+                    console.println()
+                    console.println("WARNING: Fleet delay detected!")
+                    console.println("Vehicle: ${notification.vehicleId}")
+                    console.println("Speed: ${notification.speedKmh} km/h")
+                    console.println("Detected at: ${notification.detectedAt}")
+                }
             } catch (error: CancellationException) {
                 throw error
             } catch (error: Exception) {
-                println("Tracking error: ${error.message}")
+                console.println("Tracking error: ${error.message}")
             }
         }
     }
