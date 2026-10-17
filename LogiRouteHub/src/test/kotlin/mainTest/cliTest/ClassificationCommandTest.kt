@@ -1,4 +1,4 @@
-package mainTest.presentationTest.cliTest
+package mainTest.cliTest
 
 import domain.algorithm.knn.CargoFeatures
 import domain.usecase.ClassifyPackageSectorUseCase
@@ -12,8 +12,10 @@ import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import core.dispatcher.AppDispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import presentation.cli.ClassificationCommand
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class ClassificationCommandTest {
 
     private val useCase = mockk<ClassifyPackageSectorUseCase>()

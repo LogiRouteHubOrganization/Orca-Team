@@ -1,4 +1,4 @@
-package mainTest.presentationTest.cliTest
+package mainTest.cliTest
 
 import domain.model.Warehouse
 import domain.usecase.FindOptimalPathUseCase
@@ -11,8 +11,10 @@ import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import core.dispatcher.AppDispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import presentation.cli.RouteCommand
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class RouteCommandTest {
 
     private val findOptimalPathUseCase = mockk<FindOptimalPathUseCase>()

@@ -1,4 +1,4 @@
-package mainTest.presentationTest.cliTest
+package mainTest.cliTest
 
 import io.mockk.coEvery
 import io.mockk.coVerify
