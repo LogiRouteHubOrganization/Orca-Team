@@ -25,8 +25,7 @@ class DeletePackageUseCase(
                 Result.failure(
                     EntityValidationException(validationResult.errors)
                 )
-
-            else -> Result.failure(Exception("Invalid validation state"))
         }
     }
 }
+

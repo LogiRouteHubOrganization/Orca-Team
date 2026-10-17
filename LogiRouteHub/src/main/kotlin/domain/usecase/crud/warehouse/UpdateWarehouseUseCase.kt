@@ -40,10 +40,7 @@ class UpdateWarehouseUseCase(
             is ResultValidator.Invalid -> Result.failure(
                 EntityValidationException(validationResult.errors)
             )
-
-            else -> Result.failure(
-                IllegalArgumentException("Unhandled validation result state")
-            )
         }
     }
 }
+
