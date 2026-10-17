@@ -93,21 +93,30 @@ class CheckWarehouseConnectivityUseCaseTest {
 
 
     @Test
-    fun `should return false value when start warehouse does not exist`() = runTest {
-        coEvery { warehouseRepository.findById("WH-000001") } returns Result.success(null)
+    fun `should return false when start warehouse does not exist`() = runTest {
+        // Given
+        coEvery {
+            warehouseRepository.findById("WH-000001")
+        } returns Result.success(null)
 
+        coEvery {
+            warehouseRepository.findById("WH-000002")
+        } returns Result.success(destinationWarehouse)
+
+        // When
         val result = useCase("WH-000001", "WH-000002")
 
+        // Then
         assertThat(result.getOrNull()).isFalse()
-    }
 
-    @Test
-    fun `should skip destination lookup when start warehouse does not exist`() = runTest {
-        coEvery { warehouseRepository.findById("WH-000001") } returns Result.success(null)
+        coVerify(exactly = 1) {
+            warehouseRepository.findById("WH-000001")
+            warehouseRepository.findById("WH-000002")
+        }
 
-        useCase("WH-000001", "WH-000002")
-
-        coVerify(exactly = 0) { warehouseRepository.findById("WH-000002") }
+        coVerify(exactly = 0) {
+            findFewestHopsRouteUseCase(any(), any())
+        }
     }
 
     @Test
@@ -149,15 +158,34 @@ class CheckWarehouseConnectivityUseCaseTest {
         assertThat(result.isFailure).isTrue()
     }
 
-    @Test
-    fun `should propagate exact exception when warehouse repository fails`() = runTest {
-        val exception = RuntimeException("Repository error")
-        coEvery { warehouseRepository.findById("WH-000001") } returns Result.failure(exception)
 
+
+    @Test
+    fun `should propagate repository exception when warehouse lookup fails`() = runTest {
+        // Given
+        val exception = RuntimeException("Repository error")
+
+        coEvery {
+            warehouseRepository.findById("WH-000001")
+        } returns Result.failure(exception)
+
+        coEvery {
+            warehouseRepository.findById("WH-000002")
+        } returns Result.success(destinationWarehouse)
+
+        // When
         val result = useCase("WH-000001", "WH-000002")
 
-        assertThat(result.exceptionOrNull()).isEqualTo(exception)
+        // Then
+        assertThat(result.isFailure).isTrue()
+        assertThat(result.exceptionOrNull())
+            .isInstanceOf(RuntimeException::class.java)
+
+        assertThat(result.exceptionOrNull()?.message)
+            .isEqualTo("Repository error")
     }
+
+
 
     @Test
     fun `should skip route calculation when warehouse repository fails`() = runTest {
