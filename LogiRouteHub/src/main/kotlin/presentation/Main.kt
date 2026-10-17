@@ -3,6 +3,7 @@ package presentation
 import core.dispatcher.AppDispatchers
 import di.dispatcherModule
 import di.networkModule
+import di.presentationModule
 import di.repositoryModule
 import di.telemetryModule
 import di.useCaseModule
@@ -52,7 +53,8 @@ fun main(): Unit = runBlocking {
             validatorModule,
             useCaseModule,
             telemetryModule,
-            dispatcherModule
+            dispatcherModule,
+            presentationModule
         )
     }.koin
 
