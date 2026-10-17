@@ -1,6 +1,5 @@
 package presentation
 
-import core.dispatcher.AppDispatchers
 import di.dispatcherModule
 import di.networkModule
 import di.presentationModule
@@ -8,6 +7,7 @@ import di.repositoryModule
 import di.telemetryModule
 import di.useCaseModule
 import di.validatorModule
+import dispatcher.AppDispatchers
 
 import domain.repository.PackageRepository
 import domain.repository.RouteRepository
