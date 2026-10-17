@@ -2,24 +2,23 @@ package presentation.cli
 
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 
 class InteractiveCli(
     private val routeCommand: RouteCommand,
     private val classificationCommand: ClassificationCommand,
-    private val fleetTrackingCommand: FleetTrackingCommand
+    private val fleetTrackingCommand: FleetTrackingCommand,
+    private val console: ConsoleIO
 ) {
 
     suspend fun start() = coroutineScope {
         try {
-            for (command in generateSequence { true }) {
+            while (true) {
                 showMenu()
 
-                val choice = readChoice()
+                val choice = console.readLine()
 
                 if (choice == "4" || choice == null) {
                     break
@@ -30,7 +29,7 @@ class InteractiveCli(
                 } catch (error: CancellationException) {
                     throw error
                 } catch (error: Exception) {
-                    println("Command failed: ${error.message}")
+                    console.println("Command failed: ${error.message}")
                 }
             }
         } finally {
@@ -39,7 +38,7 @@ class InteractiveCli(
             }
         }
 
-        println("Goodbye!")
+        console.println("Goodbye!")
     }
 
     private suspend fun executeCommand(
@@ -52,25 +51,20 @@ class InteractiveCli(
             "3" -> fleetTrackingCommand.start(scope)
             "5" -> {
                 fleetTrackingCommand.stop()
-                println("Fleet tracking stopped.")
+                console.println("Fleet tracking stopped.")
             }
-            else -> println("Invalid choice.")
+            else -> console.println("Invalid choice.")
         }
     }
 
-    private suspend fun readChoice(): String? =
-        withContext(Dispatchers.IO) {
-            readlnOrNull()
-        }
-
     private fun showMenu() {
-        println()
-        println("========== LogiRouteHub ==========")
-        println("1. Calculate Route")
-        println("2. Classify Package Sector")
-        println("3. Start Fleet Tracking")
-        println("4. Exit")
-        println("5. Stop Fleet Tracking")
-        print("Enter your choice: ")
+        console.println()
+        console.println("========== LogiRouteHub ==========")
+        console.println("1. Calculate Route")
+        console.println("2. Classify Package Sector")
+        console.println("3. Start Fleet Tracking")
+        console.println("4. Exit")
+        console.println("5. Stop Fleet Tracking")
+        console.print("Enter your choice: ")
     }
 }
