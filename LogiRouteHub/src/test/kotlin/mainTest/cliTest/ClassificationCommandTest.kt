@@ -11,7 +11,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import core.dispatcher.AppDispatchers
+import dispatcher.AppDispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import presentation.cli.ClassificationCommand
 
