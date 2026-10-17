@@ -1,6 +1,6 @@
 package di
 
-import core.dispatcher.AppDispatchers
+import dispatcher.AppDispatchers
 import org.koin.dsl.module
 import presentation.cli.ClassificationCommand
 import presentation.cli.ConsoleIO

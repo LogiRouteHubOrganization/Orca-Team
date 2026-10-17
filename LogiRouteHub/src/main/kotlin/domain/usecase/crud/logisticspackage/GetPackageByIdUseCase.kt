@@ -13,8 +13,7 @@ class GetPackageByIdUseCase(
         id: String
     ): Result<Package?> {
 
-        return when (
-            val validationResult = IdValidator(
+        return when ( val validationResult = IdValidator(
                 field = "packageId",
                 allowedPrefixes = setOf("PKG-")
             ).validate(id)
@@ -26,11 +25,7 @@ class GetPackageByIdUseCase(
                 Result.failure(
                     EntityValidationException(validationResult.errors)
                 )
-
-            else ->
-                Result.failure(
-                    IllegalArgumentException("Unhandled validation result state")
-                )
         }
     }
 }
+

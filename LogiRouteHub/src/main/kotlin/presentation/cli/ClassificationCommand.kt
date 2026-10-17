@@ -1,6 +1,6 @@
 package presentation.cli
 
-import core.dispatcher.AppDispatchers
+import dispatcher.AppDispatchers
 import domain.algorithm.knn.CargoFeatures
 import domain.usecase.ClassifyPackageSectorUseCase
 import domain.validator.ResultValidator
