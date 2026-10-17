@@ -1,5 +1,6 @@
 package presentation
 
+import di.dispatcherModule
 import di.networkModule
 import di.repositoryModule
 import di.telemetryModule
@@ -46,7 +47,8 @@ fun main(): Unit = runBlocking {
             repositoryModule,
             validatorModule,
             useCaseModule,
-            telemetryModule
+            telemetryModule,
+            dispatcherModule
         )
     }.koin
 
