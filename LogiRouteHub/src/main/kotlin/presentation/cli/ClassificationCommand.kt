@@ -1,20 +1,47 @@
 package presentation.cli
 
+import core.dispatcher.AppDispatchers
 import domain.algorithm.knn.CargoFeatures
 import domain.usecase.ClassifyPackageSectorUseCase
-import kotlinx.coroutines.Dispatchers
+import domain.validator.ResultValidator
+import domain.validator.rule.LatitudeValidator
+import domain.validator.rule.LongitudeValidator
 import kotlinx.coroutines.withContext
 
 class ClassificationCommand(
-    private val classifyPackageSectorUseCase: ClassifyPackageSectorUseCase
+    private val classifyPackageSectorUseCase: ClassifyPackageSectorUseCase,
+    private val console: ConsoleIO,
+    private val dispatchers: AppDispatchers,
+    private val latitudeValidator: LatitudeValidator,
+    private val longitudeValidator: LongitudeValidator
 ) {
 
     suspend fun execute() {
-        println("\n===== Package Classification =====")
+        console.println("\n===== Package Classification =====")
 
-        val latitude = readNumber("Enter latitude: ") ?: return
-        val longitude = readNumber("Enter longitude: ") ?: return
-        val weight = readNumber("Enter weight (kg): ") ?: return
+        val latitude = readNumber("Enter latitude: ")
+            ?: return
+
+        if (latitudeValidator.validate(latitude) is ResultValidator.Invalid) {
+            console.println("Invalid latitude. It must be between -90 and 90.")
+            return
+        }
+
+        val longitude = readNumber("Enter longitude: ")
+            ?: return
+
+        if (longitudeValidator.validate(longitude) is ResultValidator.Invalid) {
+            console.println("Invalid longitude. It must be between -180 and 180.")
+            return
+        }
+
+        val weight = readNumber("Enter weight (kg): ")
+            ?: return
+
+        if (weight <= 0.0) {
+            console.println("Invalid weight. It must be greater than zero.")
+            return
+        }
 
         val cargo = CargoFeatures(
             latitude = latitude,
@@ -22,24 +49,28 @@ class ClassificationCommand(
             weightKg = weight
         )
 
-        classifyPackageSectorUseCase(cargo)
+        val result = withContext(dispatchers.computation) {
+            classifyPackageSectorUseCase(cargo)
+        }
+
+        result
             .onSuccess { sector ->
-                println("Predicted Sector: $sector")
+                console.println("Predicted Sector: $sector")
             }
             .onFailure { error ->
-                println("Classification failed: ${error.message}")
+                console.println("Classification failed: ${error.message}")
             }
     }
 
     private suspend fun readNumber(message: String): Double? {
-        print(message)
+        console.print(message)
 
-        val number = withContext(Dispatchers.IO) {
-            readlnOrNull()
-        }?.toDoubleOrNull()
+        val number = withContext(dispatchers.io) {
+            console.readLine()?.toDoubleOrNull()
+        }
 
         if (number == null || !number.isFinite()) {
-            println("Invalid number.")
+            console.println("Invalid number.")
             return null
         }
 
