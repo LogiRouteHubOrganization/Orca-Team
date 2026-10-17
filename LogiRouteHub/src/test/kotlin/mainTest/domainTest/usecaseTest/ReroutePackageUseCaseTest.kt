@@ -152,6 +152,11 @@ class ReroutePackageUseCaseTest {
         every { logisticsPackage.id } returns input.packageId
         every { newDestinationWarehouse.id } returns "WH-654321"
 
+        every {
+            logisticsPackage.copy(
+                destinationWarehouse = newDestinationWarehouse)
+        } returns reroutedPackage
+
         val updateModel = PackageUpdateModel(
             destinationWarehouseId = newDestinationWarehouse.id
         )
@@ -199,9 +204,10 @@ class ReroutePackageUseCaseTest {
 
         every {
             logisticsPackage.copy(
-                destinationWarehouse = newDestinationWarehouse
-            )
+                destinationWarehouse = newDestinationWarehouse)
         } returns reroutedPackage
+
+        every { reroutedPackage.id } returns input.packageId
 
         val updateModel = PackageUpdateModel(
             destinationWarehouseId = newDestinationWarehouse.id
@@ -268,3 +274,4 @@ class ReroutePackageUseCaseTest {
         }
     }
 }
+
