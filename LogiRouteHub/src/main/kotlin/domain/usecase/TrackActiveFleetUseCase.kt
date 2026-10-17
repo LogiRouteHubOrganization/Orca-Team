@@ -8,7 +8,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.transform
 import java.time.Duration
-import java.time.Instant
+import domain.model.request.DelayTrackingState
+import domain.model.request.VehicleTracking
+
 
 class TrackActiveFleetUseCase(
     private val telemetryStreamingService: TelemetryStreamingService,
@@ -33,7 +35,6 @@ class TrackActiveFleetUseCase(
     }
 
     operator fun invoke(): Flow<FleetDelayNotification> = flow {
-        // One state per collection, shared by all telemetry updates.
         val state = DelayTrackingState()
 
         telemetryStreamingService.streamTelemetry()
@@ -68,12 +69,7 @@ class TrackActiveFleetUseCase(
         telemetry: VehicleTelemetry,
         state: DelayTrackingState
     ): FleetDelayNotification? {
-        val tracking = getOrStartTracking(telemetry, state)
-
-        // A timestamp moving backwards starts a new tracking period.
-        if (tracking == null) {
-            return null
-        }
+        val tracking = getOrStartTracking(telemetry, state) ?: return null
 
         tracking.lastTimestamp = telemetry.timestamp
 
@@ -82,10 +78,7 @@ class TrackActiveFleetUseCase(
             telemetry.timestamp
         )
 
-        if (
-            duration < delayThreshold ||
-            tracking.notificationSent
-        ) {
+        if (duration < delayThreshold || tracking.notificationSent) {
             return null
         }
 
@@ -138,13 +131,6 @@ class TrackActiveFleetUseCase(
             detectedAt = timestamp
         )
 
-    private class DelayTrackingState {
-        val trackingByVehicle = mutableMapOf<String, VehicleTracking>()
-    }
-
-    private data class VehicleTracking(
-        val startedAt: Instant,
-        var lastTimestamp: Instant,
-        var notificationSent: Boolean = false
-    )
 }
+
+
