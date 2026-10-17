@@ -1,6 +1,6 @@
 package di
 
-import core.dispatcher.AppDispatchers
+import dispatcher.AppDispatchers
 import kotlinx.coroutines.Dispatchers
 import org.koin.dsl.module
 

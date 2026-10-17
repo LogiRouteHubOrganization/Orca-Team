@@ -1,6 +1,6 @@
 package presentation.cli
 
-import core.dispatcher.AppDispatchers
+import dispatcher.AppDispatchers
 import domain.usecase.FindOptimalPathUseCase
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
