@@ -17,41 +17,26 @@ import org.junit.jupiter.api.assertThrows
 
 class ExpressDispatchProcessorTest {
 
+    //private val originWarehouse = mockk<Warehouse>(relaxed = true)
+    //private val destinationWarehouse = mockk<Warehouse>(relaxed = true)
     private val processor = ExpressDispatchProcessor()
 
     @Test
     fun `should add urgent package to vehicle and move it to in transit`() {
         // Given
-        val logisticsPackage = mockk<Package>()
+        val logisticsPackage = mockk<Package>(relaxed = true)
         val vehicle = mockk<Vehicle>(relaxed = true)
 
-        every {
-            logisticsPackage.weightByKg
-        } returns 20.0
+        every { logisticsPackage.weightByKg } returns 20.0
+        every { logisticsPackage.id } returns "PKG-000001"
+        every { logisticsPackage.priority } returns "URGENT"
+        every { logisticsPackage.state } returns CreatedState()
 
-        every {
-            logisticsPackage.id
-        } returns "PKG-000001"
+        every { vehicle.maxCapacityKg } returns 100.0
+        every { vehicle.id } returns "TRK-000001"
 
-        every {
-            logisticsPackage.state
-        } returns CreatedState()
-
-        every {
-            logisticsPackage.state = any()
-        } just Runs
-
-        every {
-            vehicle.maxCapacityKg
-        } returns 100.0
-
-        every {
-            vehicle.id
-        } returns "TRK-000001"
-
-        every {
-            vehicle.addPackage(logisticsPackage)
-        } just Runs
+        every { logisticsPackage.assignToVehicle() } just Runs
+        every { logisticsPackage.markAsInTransit() } just Runs
 
         // When
         processor.processDispatch(
@@ -65,7 +50,11 @@ class ExpressDispatchProcessorTest {
         }
 
         verify(exactly = 1) {
-            logisticsPackage.state = any()
+            logisticsPackage.assignToVehicle()
+        }
+
+        verify(exactly = 1) {
+            logisticsPackage.markAsInTransit()
         }
     }
 
@@ -75,21 +64,13 @@ class ExpressDispatchProcessorTest {
         val logisticsPackage = mockk<Package>()
         val vehicle = mockk<Vehicle>()
 
-        every {
-            logisticsPackage.weightByKg
-        } returns 120.0
+        every { logisticsPackage.weightByKg } returns 120.0
 
-        every {
-            logisticsPackage.id
-        } returns "PKG-000001"
+        every { logisticsPackage.id } returns "PKG-000001"
 
-        every {
-            vehicle.maxCapacityKg
-        } returns 100.0
+        every { vehicle.maxCapacityKg } returns 100.0
 
-        every {
-            vehicle.id
-        } returns "TRK-000001"
+        every { vehicle.id } returns "TRK-000001"
 
         // When
         val exception = assertThrows<VehicleCapacityExceededException> {
