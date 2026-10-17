@@ -17,8 +17,6 @@ import org.junit.jupiter.api.assertThrows
 
 class ExpressDispatchProcessorTest {
 
-    //private val originWarehouse = mockk<Warehouse>(relaxed = true)
-    //private val destinationWarehouse = mockk<Warehouse>(relaxed = true)
     private val processor = ExpressDispatchProcessor()
 
     @Test
