@@ -1,5 +1,4 @@
-
-package mainTest.domainTest.validatorTest.telemetryTest
+package mainTest.domainTest.validatorTest.ruleTest
 
 import com.google.common.truth.Truth.assertThat
 import domain.validator.ErrorValidator
