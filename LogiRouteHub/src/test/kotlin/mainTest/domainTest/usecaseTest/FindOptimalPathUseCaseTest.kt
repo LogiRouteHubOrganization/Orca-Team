@@ -143,24 +143,24 @@ class FindOptimalPathUseCaseTest {
 
 
     @Test
-    fun `should choose shorter path when multiple paths exist`() = runTest {
+    fun `should choose path with shortest total distance when multiple paths exist`() = runTest {
+        // Given
         setupShorterPathScenario()
 
+        // When
         val result = useCase("WH-000001", "WH-000002")
 
+        // Then
         assertThat(result.getOrNull()).isEqualTo(
-            listOf(startWarehouse, destinationWarehouse)
+            listOf(
+                startWarehouse,
+                intermediateWarehouse,
+                destinationWarehouse
+            )
         )
     }
 
     private fun setupShorterPathScenario() {
-        val intermediateWarehouse = Warehouse(
-            id = "WH-000003",
-            name = "Intermediate Warehouse",
-            regionalZone = "Central",
-            latitude = 31.7,
-            longitude = 34.9
-        )
 
         startWarehouse.addRoute(Route("RT-000001", startWarehouse, destinationWarehouse, 20.0, 5))
         startWarehouse.addRoute(Route("RT-000002", startWarehouse, intermediateWarehouse, 5.0, 3))
@@ -177,6 +177,14 @@ class FindOptimalPathUseCaseTest {
             listOf(startWarehouse, intermediateWarehouse, destinationWarehouse)
         )
     }
+
+    private val intermediateWarehouse = Warehouse(
+        id = "WH-000003",
+        name = "Intermediate Warehouse",
+        regionalZone = "Central",
+        latitude = 31.7,
+        longitude = 34.9
+    )
 
     @Test
     fun `should return path containing all warehouses in correct order`() = runTest {
@@ -259,3 +267,5 @@ class FindOptimalPathUseCaseTest {
         coEvery { warehouseRepository.findAll() } returns Result.failure(exception)
     }
 }
+
+
