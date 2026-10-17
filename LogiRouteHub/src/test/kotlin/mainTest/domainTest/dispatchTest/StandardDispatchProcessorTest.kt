@@ -25,47 +25,32 @@ class StandardDispatchProcessorTest {
         val logisticsPackage = mockk<Package>()
         val vehicle = mockk<Vehicle>(relaxed = true)
 
-        every {
-            logisticsPackage.weightByKg
-        } returns 20.0
+        every { logisticsPackage.weightByKg } returns 20.0
 
-        every {
-            logisticsPackage.id
-        } returns "PKG-000001"
+        every { logisticsPackage.id } returns "PKG-000001"
 
-        every {
-            logisticsPackage.state
-        } returns CreatedState()
+        every { logisticsPackage.state } returns CreatedState()
 
-        every {
-            logisticsPackage.state = any()
-        } just Runs
+        every { logisticsPackage.state = any() } just Runs
 
-        every {
-            vehicle.maxCapacityKg
-        } returns 100.0
+        every { vehicle.maxCapacityKg } returns 100.0
 
-        every {
-            vehicle.id
-        } returns "TRK-000001"
+        every { vehicle.id } returns "TRK-000001"
 
-        every {
-            vehicle.addPackage(logisticsPackage)
-        } just Runs
+        every { vehicle.addPackage(logisticsPackage) } just Runs
+        every { logisticsPackage.assignToVehicle() } just Runs
+        every { logisticsPackage.markAsInTransit() } just Runs
 
         // When
         processor.processDispatch(
             logisticsPackage = logisticsPackage,
             vehicle = vehicle
         )
-
         // Then
         verify(exactly = 1) {
+            logisticsPackage.assignToVehicle()
+            logisticsPackage.markAsInTransit()
             vehicle.addPackage(logisticsPackage)
-        }
-
-        verify(exactly = 1) {
-            logisticsPackage.state = any()
         }
     }
 
@@ -75,37 +60,23 @@ class StandardDispatchProcessorTest {
         val logisticsPackage = mockk<Package>()
         val vehicle = mockk<Vehicle>(relaxed = true)
 
-        every {
-            logisticsPackage.weightByKg
-        } returns 15.0
+        every { logisticsPackage.weightByKg } returns 15.0
 
-        every {
-            logisticsPackage.id
-        } returns "PKG-000002"
+        every { logisticsPackage.id } returns "PKG-000002"
 
-        every {
-            logisticsPackage.priority
-        } returns "LOW"
+        every { logisticsPackage.priority } returns "LOW"
 
-        every {
-            logisticsPackage.state
-        } returns CreatedState()
+        every { logisticsPackage.state } returns CreatedState()
 
-        every {
-            logisticsPackage.state = any()
-        } just Runs
+        every { logisticsPackage.state = any() } just Runs
 
-        every {
-            vehicle.maxCapacityKg
-        } returns 100.0
+        every { vehicle.maxCapacityKg } returns 100.0
 
-        every {
-            vehicle.id
-        } returns "TRK-000001"
+        every { vehicle.id } returns "TRK-000001"
 
-        every {
-            vehicle.addPackage(logisticsPackage)
-        } just Runs
+        every { logisticsPackage.assignToVehicle() } just Runs
+        every { logisticsPackage.markAsInTransit() } just Runs
+        every { vehicle.addPackage(logisticsPackage) } just Runs
 
         // When
         processor.processDispatch(
@@ -116,84 +87,69 @@ class StandardDispatchProcessorTest {
         // Then
         verify(exactly = 1) {
             vehicle.addPackage(logisticsPackage)
+            logisticsPackage.assignToVehicle()
+            logisticsPackage.markAsInTransit()
+
         }
 
-        verify(exactly = 1) {
-            logisticsPackage.state = any()
-        }
-    }
+        @Test
+        fun `should throw invalid cargo exception when package weight is not positive`() {
+            // Given
+            val logisticsPackage = mockk<Package>()
+            val vehicle = mockk<Vehicle>()
 
-    @Test
-    fun `should throw capacity exception when package exceeds vehicle capacity`() {
-        // Given
-        val logisticsPackage = mockk<Package>()
-        val vehicle = mockk<Vehicle>()
+            every { logisticsPackage.weightByKg } returns 0.0
 
-        every {
-            logisticsPackage.weightByKg
-        } returns 120.0
+            every { logisticsPackage.id } returns "PKG-000001"
 
-        every {
-            logisticsPackage.id
-        } returns "PKG-000001"
+            every { vehicle.maxCapacityKg } returns 100.0
 
-        every {
-            vehicle.maxCapacityKg
-        } returns 100.0
+            // When
+            val exception = assertThrows<InvalidCargoException> {
+                processor.processDispatch(
+                    logisticsPackage = logisticsPackage,
+                    vehicle = vehicle
+                )
+            }
+            // Then
+            assertThat(exception.message)
+                .contains("must have a positive weight")
 
-        every {
-            vehicle.id
-        } returns "TRK-000001"
-
-        // When
-        val exception = assertThrows<VehicleCapacityExceededException> {
-            processor.processDispatch(
-                logisticsPackage = logisticsPackage,
-                vehicle = vehicle
-            )
+            verify(exactly = 0) {
+                vehicle.addPackage(any())
+            }
         }
 
-        // Then
-        assertThat(exception.message)
-            .contains("does not have enough capacity")
+        @Test
+        fun `should throw capacity exception when package exceeds vehicle capacity`() {
+            // Given
+            val logisticsPackage = mockk<Package>()
+            val vehicle = mockk<Vehicle>()
 
-        verify(exactly = 0) {
-            vehicle.addPackage(any())
-        }
-    }
+            every { logisticsPackage.weightByKg } returns 120.0
 
-    @Test
-    fun `should throw invalid cargo exception when package weight is not positive`() {
-        // Given
-        val logisticsPackage = mockk<Package>()
-        val vehicle = mockk<Vehicle>()
+            every { logisticsPackage.id } returns "PKG-000001"
 
-        every {
-            logisticsPackage.weightByKg
-        } returns 0.0
+            every { vehicle.maxCapacityKg } returns 100.0
 
-        every {
-            logisticsPackage.id
-        } returns "PKG-000001"
+            every { vehicle.id } returns "TRK-000001"
 
-        every {
-            vehicle.maxCapacityKg
-        } returns 100.0
+            // When
+            val exception = assertThrows<VehicleCapacityExceededException> {
+                processor.processDispatch(
+                    logisticsPackage = logisticsPackage,
+                    vehicle = vehicle
+                )
+            }
 
-        // When
-        val exception = assertThrows<InvalidCargoException> {
-            processor.processDispatch(
-                logisticsPackage = logisticsPackage,
-                vehicle = vehicle
-            )
-        }
+            // Then
+            assertThat(exception.message)
+                .contains("does not have enough capacity")
 
-        // Then
-        assertThat(exception.message)
-            .contains("must have a positive weight")
-
-        verify(exactly = 0) {
-            vehicle.addPackage(any())
+            verify(exactly = 0) {
+                vehicle.addPackage(any())
+            }
         }
     }
 }
+
