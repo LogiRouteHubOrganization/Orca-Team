@@ -65,9 +65,7 @@ class ClassificationCommand(
     private suspend fun readNumber(message: String): Double? {
         console.print(message)
 
-        val number = withContext(dispatchers.io) {
-            console.readLine()?.toDoubleOrNull()
-        }
+        val number = console.readLine()?.toDoubleOrNull()
 
         if (number == null || !number.isFinite()) {
             console.println("Invalid number.")

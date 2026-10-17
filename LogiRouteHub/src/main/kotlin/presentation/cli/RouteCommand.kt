@@ -59,9 +59,6 @@ class RouteCommand(
 
     private suspend fun readInput(message: String): String? {
         console.print(message)
-
-        return withContext(dispatchers.io) {
-            console.readLine()
-        }
+        return console.readLine()
     }
 }
