@@ -1,154 +1,129 @@
+
 package data.parser
 
 import data.dataholder.WarehouseRaw
 
 class WarehouseParser {
-    private val csvSeparator = ","
-    private val expectedColumnCount = 5
-    private val warehouseIdColumnIndex = 0
-    private val warehouseNameColumnIndex = 1
-    private val regionalZoneColumnIndex = 2
-    private val latitudeColumnIndex = 3
-    private val longitudeColumnIndex = 4
-    private val requiredIdDigits = 6
 
-    fun parseWarehouseRow(row: String): WarehouseRaw? {
-        val trimmedRow = row.trim()
+    private companion object {
+        const val CSV_SEPARATOR = ","
+        const val EXPECTED_COLUMN_COUNT = 5
+        const val WAREHOUSE_ID_INDEX = 0
+        const val WAREHOUSE_NAME_INDEX = 1
+        const val REGIONAL_ZONE_INDEX = 2
+        const val LATITUDE_INDEX = 3
+        const val LONGITUDE_INDEX = 4
+        const val REQUIRED_ID_DIGITS = 6
+    }
 
-        if (trimmedRow.isEmpty()) {
-            return null
+    fun parseWarehouseRow(
+        row: String
+    ): CsvRowParseResult<WarehouseRaw> {
+        val columns = row.trim().split(CSV_SEPARATOR)
+
+        if (columns.size != EXPECTED_COLUMN_COUNT) {
+            return CsvRowParseResult.Failure(
+                "Expected $EXPECTED_COLUMN_COUNT columns, " +
+                        "but found ${columns.size}."
+            )
         }
 
-        val columns = trimmedRow.split(csvSeparator)
+        val warehouseId =
+            normalizeIdentifier(columns[WAREHOUSE_ID_INDEX])
+        val warehouseName = columns[WAREHOUSE_NAME_INDEX].trim()
+        val regionalZone =
+            columns[REGIONAL_ZONE_INDEX].trim().uppercase()
 
-        if (hasInvalidColumnCount(columns)) {
-            println("Diagnostic Warning: Invalid warehouse column count -> '$row'")
-            return null
+        if (
+            warehouseId.isBlank() ||
+            warehouseName.isBlank() ||
+            regionalZone.isBlank()
+        ) {
+            return CsvRowParseResult.Failure(
+                "Warehouse ID, name, and regional zone must not be blank."
+            )
         }
 
-        return buildWarehouseFromColumns(
-            columns = columns,
-            originalRow = row
-        )
-    }
+        val latitudeResult =
+            parseCoordinate(columns[LATITUDE_INDEX], "latitude")
 
-    private fun hasInvalidColumnCount(columns: List<String>): Boolean {
-        return columns.size != expectedColumnCount
-    }
-
-    private fun buildWarehouseFromColumns(
-        columns: List<String>,
-        originalRow: String
-    ): WarehouseRaw? {
-        val warehouseId = normalizeIdentifier(columns[warehouseIdColumnIndex])
-        val warehouseName = columns[warehouseNameColumnIndex].trim()
-        val regionalZone = columns[regionalZoneColumnIndex].trim().uppercase()
-        val latitudeText = columns[latitudeColumnIndex].trim()
-        val longitudeText = columns[longitudeColumnIndex].trim()
-
-        if (hasEmptyWarehouseField(warehouseId, warehouseName, regionalZone, latitudeText, longitudeText)) {
-            println("Diagnostic Warning: Skipping row with empty fields -> '$originalRow'")
-            return null
+        if (latitudeResult is CsvRowParseResult.Failure) {
+            return latitudeResult
         }
 
-        return parseCoordinatesAndBuildWarehouse(
-            columns = columns,
-            originalRow = originalRow,
-            warehouseId = warehouseId,
-            warehouseName = warehouseName,
-            regionalZone = regionalZone
+        val latitude =
+            (latitudeResult as CsvRowParseResult.Success).value
+
+        val longitudeResult =
+            parseCoordinate(columns[LONGITUDE_INDEX], "longitude")
+
+        if (longitudeResult is CsvRowParseResult.Failure) {
+            return longitudeResult
+        }
+
+        val longitude =
+            (longitudeResult as CsvRowParseResult.Success).value
+
+        if (latitude !in -90.0..90.0) {
+            return CsvRowParseResult.Failure(
+                "Latitude must be between -90 and 90."
+            )
+        }
+
+        if (longitude !in -180.0..180.0) {
+            return CsvRowParseResult.Failure(
+                "Longitude must be between -180 and 180."
+            )
+        }
+
+        return CsvRowParseResult.Success(
+            WarehouseRaw(
+                warehouseId = warehouseId,
+                warehouseName = warehouseName,
+                regionalZone = regionalZone,
+                latitude = latitude,
+                longitude = longitude
+            )
         )
-    }
-
-    private fun parseCoordinatesAndBuildWarehouse(
-        columns: List<String>,
-        originalRow: String,
-        warehouseId: String,
-        warehouseName: String,
-        regionalZone: String
-    ): WarehouseRaw? {
-        val latitude = parseCoordinate(
-            coordinate = columns[latitudeColumnIndex].trim(),
-            coordinateName = "latitude",
-            originalRow = originalRow
-        ) ?: return null
-
-        val longitude = parseCoordinate(
-            coordinate = columns[longitudeColumnIndex].trim(),
-            coordinateName = "longitude",
-            originalRow = originalRow
-        ) ?: return null
-
-        return WarehouseRaw(
-            warehouseId = warehouseId,
-            warehouseName = warehouseName,
-            regionalZone = regionalZone,
-            latitude = latitude,
-            longitude = longitude
-        )
-    }
-
-    private fun hasEmptyWarehouseField(
-        warehouseId: String,
-        warehouseName: String,
-        regionalZone: String,
-        latitude: String,
-        longitude: String
-    ): Boolean {
-        return warehouseId.isEmpty() ||
-                warehouseName.isEmpty() ||
-                regionalZone.isEmpty() ||
-                latitude.isEmpty() ||
-                longitude.isEmpty()
     }
 
     private fun parseCoordinate(
-        coordinate: String,
-        coordinateName: String,
-        originalRow: String
-    ): Double? {
-        val coordinateValue = coordinate.trim().toDoubleOrNull()
+        value: String,
+        coordinateName: String
+    ): CsvRowParseResult<Double> {
+        val coordinate = value.trim().toDoubleOrNull()
 
-        if (coordinateValue == null) {
-            println("Diagnostic Warning: Invalid $coordinateName -> '$originalRow'")
-            return null
+        if (coordinate == null || !coordinate.isFinite()) {
+            return CsvRowParseResult.Failure(
+                "Invalid $coordinateName: '$value'."
+            )
         }
 
-        return coordinateValue
+        return CsvRowParseResult.Success(coordinate)
     }
 
-    private fun normalizeIdentifier(
-        identifier: String
-    ): String {
-        val normalizedIdentifier = identifier.trim().uppercase()
-        val identifierParts = normalizedIdentifier.split("-")
+    private fun normalizeIdentifier(identifier: String): String {
+        val normalized = identifier.trim().uppercase()
+        val parts = normalized.split("-")
 
-        if (identifierParts.size != 2) {
-            return normalizedIdentifier
+        if (parts.size != 2) return normalized
+
+        val prefix = parts[0]
+        val numericPart = parts[1]
+
+        if (prefix.isBlank() || numericPart.toIntOrNull() == null) {
+            return normalized
         }
 
-        val prefix = identifierParts[0]
-        val numericPart = identifierParts[1]
-
-        if (numericPart.toIntOrNull() == null) {
-            return normalizedIdentifier
-        }
-
-        val normalizedNumericPart = numericPart.padStart(
-            length = requiredIdDigits,
-            padChar = '0'
-        )
-
-        return "$prefix-$normalizedNumericPart"
+        return "$prefix-${numericPart.padStart(REQUIRED_ID_DIGITS, '0')}"
     }
 
-    fun toCsvRow(warehouse: WarehouseRaw): String {
-        return listOf(
+    fun toCsvRow(warehouse: WarehouseRaw): String =
+        listOf(
             warehouse.warehouseId,
             warehouse.warehouseName,
             warehouse.regionalZone,
             warehouse.latitude,
             warehouse.longitude
-        ).joinToString(csvSeparator)
-    }
+        ).joinToString(CSV_SEPARATOR)
 }

@@ -1,5 +1,6 @@
 package data.exception.local
 
 class LocalDataException(
-    message: String
-) : Exception(message)
+    message: String,
+    cause: Throwable? = null
+) : Exception(message, cause)

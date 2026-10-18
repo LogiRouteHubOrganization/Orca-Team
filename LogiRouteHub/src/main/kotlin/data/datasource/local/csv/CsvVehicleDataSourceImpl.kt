@@ -5,68 +5,66 @@ import data.dataholder.FleetRaw
 import data.datasource.local.LocalVehicleDataSource
 import data.exception.local.LocalDataException
 import data.parser.FleetParser
-import data.validation.LocalDataSourceValidator
-import kotlinx.coroutines.Dispatchers
+import dispatcher.AppDispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 
 class CsvVehicleDataSourceImpl(
     private val vehicleFile: File,
     private val fleetParser: FleetParser,
-    private val localDataSourceValidator: LocalDataSourceValidator
+    private val csvFileLoader: CsvFileLoader,
+    private val appDispatchers: AppDispatchers
 ) : LocalVehicleDataSource {
 
-    private val headerLineCount = 1
-
-    private val csvHeader =
-        "vehicleId,currentHubId,maxCapacityKg,costPerKm"
+    private companion object {
+        const val HEADER_LINE_COUNT = 1
+        const val CSV_HEADER =
+            "vehicleId,currentHubId,maxCapacityKg,costPerKm"
+    }
 
     override suspend fun loadVehicles(): List<FleetRaw> =
-        withContext(Dispatchers.IO) {
+        withContext(appDispatchers.io) {
             loadVehiclesFromCsv()
         }
 
     override suspend fun addVehicle(vehicle: FleetRaw) {
-        withContext(Dispatchers.IO) {
+        withContext(appDispatchers.io) {
             val vehicles = loadVehiclesFromCsv().toMutableList()
-
             vehicles.add(vehicle)
-
             writeVehiclesToCsv(vehicles)
         }
     }
 
     override suspend fun updateVehicle(vehicle: FleetRaw) {
-        withContext(Dispatchers.IO) {
+        withContext(appDispatchers.io) {
             val vehicles = loadVehiclesFromCsv().toMutableList()
 
-            val vehicleIndex = vehicles.indexOfFirst {
+            val index = vehicles.indexOfFirst {
                 it.vehicleId == vehicle.vehicleId
             }
 
-            if (vehicleIndex == -1) {
+            if (index == -1) {
                 throw LocalDataException(
-                    "Vehicle '${vehicle.vehicleId}' was not found in local data"
+                    "Vehicle '${vehicle.vehicleId}' was not found in local data."
                 )
             }
 
-            vehicles[vehicleIndex] = vehicle
-
+            vehicles[index] = vehicle
             writeVehiclesToCsv(vehicles)
         }
     }
 
     override suspend fun deleteVehicle(vehicleId: String) {
-        withContext(Dispatchers.IO) {
+        withContext(appDispatchers.io) {
             val vehicles = loadVehiclesFromCsv().toMutableList()
 
-            val wasRemoved = vehicles.removeIf {
+            val removed = vehicles.removeIf {
                 it.vehicleId == vehicleId
             }
 
-            if (!wasRemoved) {
+            if (!removed) {
                 throw LocalDataException(
-                    "Vehicle '$vehicleId' was not found in local data"
+                    "Vehicle '$vehicleId' was not found in local data."
                 )
             }
 
@@ -75,37 +73,23 @@ class CsvVehicleDataSourceImpl(
     }
 
     override suspend fun replaceVehicles(vehicles: List<FleetRaw>) {
-        withContext(Dispatchers.IO) {
+        withContext(appDispatchers.io) {
             writeVehiclesToCsv(vehicles)
         }
     }
 
-    private fun loadVehiclesFromCsv(): List<FleetRaw> {
-        localDataSourceValidator.validate(vehicleFile)
+    private fun loadVehiclesFromCsv(): List<FleetRaw> =
+        csvFileLoader.load(
+            file = vehicleFile,
+            parseRow = fleetParser::parseFleetRow,
+            headerLineCount = HEADER_LINE_COUNT
+        )
 
-        val lines = vehicleFile.readLines()
-
-        if (lines.size <= headerLineCount) {
-            throw LocalDataException(
-                "CSV file contains no data rows: ${vehicleFile.name}"
-            )
-        }
-
-        return lines
-            .drop(headerLineCount)
-            .mapNotNull(fleetParser::parseFleetRow)
-    }
-
-    private fun writeVehiclesToCsv(
-        vehicles: List<FleetRaw>
-    ) {
+    private fun writeVehiclesToCsv(vehicles: List<FleetRaw>) {
         val content = buildList {
-            add(csvHeader)
-
-            vehicles.forEach { vehicle ->
-                add(fleetParser.toCsvRow(vehicle))
-            }
-        }.joinToString("\n")
+            add(CSV_HEADER)
+            addAll(vehicles.map(fleetParser::toCsvRow))
+        }.joinToString(System.lineSeparator())
 
         vehicleFile.writeText(content)
     }
