@@ -5,31 +5,32 @@ import data.dataholder.LogisticsPackageRaw
 import data.datasource.local.LocalPackageDataSource
 import data.exception.local.LocalDataException
 import data.parser.PackageParser
-import data.validation.LocalDataSourceValidator
-import kotlinx.coroutines.Dispatchers
+import dispatcher.AppDispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 
 class CsvPackageDataSourceImpl(
     private val packageFile: File,
     private val packageParser: PackageParser,
-    private val localDataSourceValidator: LocalDataSourceValidator
+    private val csvFileLoader: CsvFileLoader,
+    private val appDispatchers: AppDispatchers
 ) : LocalPackageDataSource {
 
-    private val headerLineCount = 1
-
-    private val csvHeader =
-        "id,weight,originHubId,destinationHubId,priority"
+    private companion object {
+        const val HEADER_LINE_COUNT = 1
+        const val CSV_HEADER =
+            "id,weight,originHubId,destinationHubId,priority"
+    }
 
     override suspend fun loadPackages(): List<LogisticsPackageRaw> =
-        withContext(Dispatchers.IO) {
+        withContext(appDispatchers.io) {
             loadPackagesFromCsv()
         }
 
     override suspend fun addPackage(
         logisticsPackage: LogisticsPackageRaw
     ) {
-        withContext(Dispatchers.IO) {
+        withContext(appDispatchers.io) {
             val packages = loadPackagesFromCsv().toMutableList()
 
             packages.add(logisticsPackage)
@@ -41,7 +42,7 @@ class CsvPackageDataSourceImpl(
     override suspend fun updatePackage(
         logisticsPackage: LogisticsPackageRaw
     ) {
-        withContext(Dispatchers.IO) {
+        withContext(appDispatchers.io) {
             val packages = loadPackagesFromCsv().toMutableList()
 
             val index = packages.indexOfFirst {
@@ -61,7 +62,7 @@ class CsvPackageDataSourceImpl(
     }
 
     override suspend fun deletePackage(packageId: String) {
-        withContext(Dispatchers.IO) {
+        withContext(appDispatchers.io) {
             val packages = loadPackagesFromCsv().toMutableList()
 
             val removed = packages.removeIf {
@@ -73,6 +74,7 @@ class CsvPackageDataSourceImpl(
                     "Package not found: $packageId"
                 )
             }
+
             writePackagesToCsv(packages)
         }
     }
@@ -80,26 +82,17 @@ class CsvPackageDataSourceImpl(
     override suspend fun replacePackages(
         packages: List<LogisticsPackageRaw>
     ) {
-        withContext(Dispatchers.IO) {
+        withContext(appDispatchers.io) {
             writePackagesToCsv(packages)
         }
     }
 
-    private fun loadPackagesFromCsv(): List<LogisticsPackageRaw> {
-        localDataSourceValidator.validate(packageFile)
-
-        val packageRows = packageFile.readLines()
-
-        if (packageRows.size <= headerLineCount) {
-            throw LocalDataException(
-                "CSV file contains no data rows: ${packageFile.name}"
-            )
-        }
-
-        return packageRows
-            .drop(headerLineCount)
-            .mapNotNull(packageParser::parsePackageRow)
-    }
+    private fun loadPackagesFromCsv(): List<LogisticsPackageRaw> =
+        csvFileLoader.load(
+            file = packageFile,
+            parseRow = packageParser::parsePackageRow,
+            headerLineCount = HEADER_LINE_COUNT
+        )
 
     private fun writePackagesToCsv(
         packages: List<LogisticsPackageRaw>
@@ -107,7 +100,7 @@ class CsvPackageDataSourceImpl(
         val rows = packages.map(packageParser::toCsvRow)
 
         val content = buildList {
-            add(csvHeader)
+            add(CSV_HEADER)
             addAll(rows)
         }.joinToString(System.lineSeparator())
 
