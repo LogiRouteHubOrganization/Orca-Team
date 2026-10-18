@@ -1,12 +1,12 @@
-package domain.model
+package domain.model.request
 
 import domain.exception.EntityValidationException
 import domain.validator.ResultValidator
+import domain.validator.rule.FuelPercentageValidator
 import domain.validator.rule.IdValidator
 import domain.validator.rule.LatitudeValidator
 import domain.validator.rule.LongitudeValidator
 import domain.validator.rule.NonNegativeNumberValidator
-import domain.validator.rule.FuelPercentageValidator
 import java.time.Instant
 
 data class VehicleTelemetry(

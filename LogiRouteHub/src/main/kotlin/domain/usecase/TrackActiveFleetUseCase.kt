@@ -1,12 +1,11 @@
 
 package domain.usecase
 
-import domain.model.VehicleTelemetry
+import domain.model.request.VehicleTelemetry
 import domain.model.request.FleetDelayNotification
 import domain.service.TelemetryStreamingService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.transform
 import java.time.Duration
 import domain.model.request.DelayTrackingState
 import domain.model.request.VehicleTracking
@@ -38,13 +37,10 @@ class TrackActiveFleetUseCase(
         val state = DelayTrackingState()
 
         telemetryStreamingService.streamTelemetry()
-            .transform { telemetry ->
+            .collect { telemetry ->
                 processTelemetry(telemetry, state)?.let { notification ->
                     emit(notification)
                 }
-            }
-            .collect { notification ->
-                emit(notification)
             }
     }
 
