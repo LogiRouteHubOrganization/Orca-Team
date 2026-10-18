@@ -7,7 +7,7 @@ import di.repositoryModule
 import di.telemetryModule
 import di.useCaseModule
 import di.validatorModule
-import dispatcher.AppDispatchers
+
 
 import domain.repository.PackageRepository
 import domain.repository.RouteRepository
@@ -27,12 +27,7 @@ import domain.model.Package
 import domain.model.request.DispatchVehicleRequest
 import domain.algorithm.knn.CargoFeatures
 import domain.service.TelemetryStreamingService
-import domain.validator.rule.LatitudeValidator
-import domain.validator.rule.LongitudeValidator
 
-import presentation.cli.RouteCommand
-import presentation.cli.ClassificationCommand
-import presentation.cli.FleetTrackingCommand
 import presentation.cli.InteractiveCli
 
 import kotlinx.coroutines.runBlocking
@@ -41,7 +36,7 @@ import kotlinx.coroutines.coroutineScope
 
 import org.koin.core.Koin
 import org.koin.core.context.startKoin
-import presentation.cli.ConsoleIO
+
 
 
 fun main(): Unit = runBlocking {
@@ -116,36 +111,8 @@ class Main(
     }
 
 
-
     private suspend fun startInteractiveCli() {
-        val routeCommand = RouteCommand(
-            findOptimalPathUseCase = findOptimalPathUseCase,
-            console = koin.get<ConsoleIO>(),
-            dispatchers = koin.get<AppDispatchers>()
-        )
-
-        val classificationCommand = ClassificationCommand(
-            classifyPackageSectorUseCase = classifyPackageSectorUseCase,
-            console = koin.get<ConsoleIO>(),
-            dispatchers = koin.get<AppDispatchers>(),
-            latitudeValidator = koin.get<LatitudeValidator>(),
-            longitudeValidator = koin.get<LongitudeValidator>()
-        )
-
-        val fleetTrackingCommand = FleetTrackingCommand(
-            telemetryService = telemetryStreamingService,
-            trackActiveFleetUseCase = trackActiveFleetUseCase,
-            console = koin.get<ConsoleIO>()
-        )
-
-        val interactiveCli = InteractiveCli(
-            routeCommand = routeCommand,
-            classificationCommand = classificationCommand,
-            fleetTrackingCommand = fleetTrackingCommand,
-            console = koin.get<ConsoleIO>()
-        )
-
-        interactiveCli.start()
+        koin.get<InteractiveCli>().start()
     }
 
     private suspend fun refreshData() {
