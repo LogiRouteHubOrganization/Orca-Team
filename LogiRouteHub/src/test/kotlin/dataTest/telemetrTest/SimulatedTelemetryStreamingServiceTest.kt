@@ -2,7 +2,7 @@ package dataTest.telemetrTest
 
 import com.google.common.truth.Truth
 import data.telemetry.SimulatedTelemetryStreamingService
-import domain.model.VehicleTelemetry
+import domain.model.request.VehicleTelemetry
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest

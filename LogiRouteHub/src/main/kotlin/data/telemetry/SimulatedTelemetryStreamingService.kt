@@ -1,7 +1,7 @@
 
 package data.telemetry
 
-import domain.model.VehicleTelemetry
+import domain.model.request.VehicleTelemetry
 import domain.service.TelemetryStreamingService
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow

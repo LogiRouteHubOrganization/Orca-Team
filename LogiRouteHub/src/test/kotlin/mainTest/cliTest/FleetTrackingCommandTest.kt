@@ -1,6 +1,6 @@
 package mainTest.cliTest
 
-import domain.model.VehicleTelemetry
+import domain.model.request.VehicleTelemetry
 import domain.model.request.FleetDelayNotification
 import domain.service.TelemetryStreamingService
 import domain.usecase.TrackActiveFleetUseCase

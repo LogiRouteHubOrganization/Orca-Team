@@ -2,7 +2,7 @@
 package mainTest.domainTest.usecaseTest
 
 import com.google.common.truth.Truth.assertThat
-import domain.model.VehicleTelemetry
+import domain.model.request.VehicleTelemetry
 import domain.model.request.FleetDelayNotification
 import domain.service.TelemetryStreamingService
 import domain.usecase.TrackActiveFleetUseCase
