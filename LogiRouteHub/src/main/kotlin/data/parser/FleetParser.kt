@@ -1,166 +1,120 @@
+
 package data.parser
 
 import data.dataholder.FleetRaw
 
-
 class FleetParser {
 
-    private val csvSeparator = ","
-    private val expectedColumnCount = 4
-    private val vehicleIdColumnIndex = 0
-    private val currentHubIdColumnIndex = 1
-    private val maxCapacityColumnIndex = 2
-    private val costPerKmColumnIndex = 3
-    private val requiredIdDigits = 6
+    private companion object {
+        const val CSV_SEPARATOR = ","
+        const val EXPECTED_COLUMN_COUNT = 4
+        const val VEHICLE_ID_INDEX = 0
+        const val CURRENT_HUB_ID_INDEX = 1
+        const val MAX_CAPACITY_INDEX = 2
+        const val COST_PER_KM_INDEX = 3
+        const val REQUIRED_ID_DIGITS = 6
+    }
 
     fun parseFleetRow(
-        fleetCsvRow: String
-    ): FleetRaw? {
+        row: String
+    ): CsvRowParseResult<FleetRaw> {
+        val columns = row.split(CSV_SEPARATOR).map(String::trim)
 
-        val columns = fleetCsvRow.split(csvSeparator)
-
-        if (hasInvalidColumnCount(columns)) {
-            printInvalidFleetRowWarning(fleetCsvRow)
-            return null
-        }
-
-        val vehicleId = normalizeIdentifier(
-            columns[vehicleIdColumnIndex]
-        )
-
-        val currentHubId = normalizeIdentifier(
-            columns[currentHubIdColumnIndex]
-        )
-
-        if (hasEmptyRequiredField(
-                vehicleId,
-                currentHubId
+        if (columns.size != EXPECTED_COLUMN_COUNT) {
+            return CsvRowParseResult.Failure(
+                "Expected $EXPECTED_COLUMN_COUNT columns, " +
+                        "but found ${columns.size}."
             )
-        ) {
-            printEmptyFleetFieldWarning(fleetCsvRow)
-            return null
         }
 
-        val maxCapacityKg = parseMaxCapacityKg(
-            columns[maxCapacityColumnIndex],
-            fleetCsvRow
-        ) ?: return null
+        val vehicleId = normalizeIdentifier(columns[VEHICLE_ID_INDEX])
+        val currentHubId =
+            normalizeIdentifier(columns[CURRENT_HUB_ID_INDEX])
 
-        val costPerKm = parseCostPerKm(
-            columns[costPerKmColumnIndex],
-            fleetCsvRow
-        ) ?: return null
+        if (vehicleId.isBlank() || currentHubId.isBlank()) {
+            return CsvRowParseResult.Failure(
+                "Vehicle ID and current hub ID must not be blank."
+            )
+        }
 
-        return FleetRaw(
-            vehicleId = vehicleId,
-            currentHubId = currentHubId,
-            maxCapacityKg = maxCapacityKg,
-            costPerKm = costPerKm
+        val capacityResult =
+            parseMaxCapacityKg(columns[MAX_CAPACITY_INDEX])
+
+        if (capacityResult is CsvRowParseResult.Failure) {
+            return capacityResult
+        }
+
+        val maxCapacityKg =
+            (capacityResult as CsvRowParseResult.Success).value
+
+        val costResult = parseCostPerKm(columns[COST_PER_KM_INDEX])
+
+        if (costResult is CsvRowParseResult.Failure) {
+            return costResult
+        }
+
+        val costPerKm =
+            (costResult as CsvRowParseResult.Success).value
+
+        return CsvRowParseResult.Success(
+            FleetRaw(
+                vehicleId = vehicleId,
+                currentHubId = currentHubId,
+                maxCapacityKg = maxCapacityKg,
+                costPerKm = costPerKm
+            )
         )
-    }
-
-    private fun hasInvalidColumnCount(
-        columns: List<String>
-    ): Boolean {
-        return columns.size != expectedColumnCount
-    }
-
-    private fun hasEmptyRequiredField(
-        vehicleId: String,
-        currentHubId: String
-    ): Boolean {
-        return vehicleId.isEmpty() ||
-                currentHubId.isEmpty()
     }
 
     private fun parseMaxCapacityKg(
-        capacity: String,
-        fleetCsvRow: String
-    ): Double? {
+        value: String
+    ): CsvRowParseResult<Double> {
+        val capacity = value.toDoubleOrNull()
 
-        val maxCapacityKg = capacity
-            .trim()
-            .toDoubleOrNull()
-
-        if (maxCapacityKg == null || maxCapacityKg <= 0) {
-            println(
-                "Warning: Invalid vehicle capacity -> $fleetCsvRow"
+        if (capacity == null || !capacity.isFinite() || capacity <= 0.0) {
+            return CsvRowParseResult.Failure(
+                "Vehicle capacity must be a finite positive number."
             )
-            return null
         }
 
-        return maxCapacityKg
+        return CsvRowParseResult.Success(capacity)
     }
 
     private fun parseCostPerKm(
-        cost: String,
-        fleetCsvRow: String
-    ): Double? {
+        value: String
+    ): CsvRowParseResult<Double> {
+        val cost = value.toDoubleOrNull()
 
-        val costPerKm = cost
-            .trim()
-            .toDoubleOrNull()
-
-        if (costPerKm == null || costPerKm <= 0) {
-            println(
-                "Warning: Invalid vehicle cost -> $fleetCsvRow"
+        if (cost == null || !cost.isFinite() || cost <= 0.0) {
+            return CsvRowParseResult.Failure(
+                "Vehicle cost per kilometer must be a finite positive number."
             )
-            return null
         }
 
-        return costPerKm
+        return CsvRowParseResult.Success(cost)
     }
 
-    private fun normalizeIdentifier(
-        identifier: String
-    ): String {
+    private fun normalizeIdentifier(identifier: String): String {
+        val normalized = identifier.trim().uppercase()
+        val parts = normalized.split("-")
 
-        val normalizedIdentifier = identifier
-            .trim()
-            .uppercase()
+        if (parts.size != 2) return normalized
 
-        val identifierParts = normalizedIdentifier.split("-")
+        val prefix = parts[0]
+        val numericPart = parts[1]
 
-        if (identifierParts.size != 2) {
-            return normalizedIdentifier
+        if (prefix.isBlank() || numericPart.toIntOrNull() == null) {
+            return normalized
         }
 
-        val prefix = identifierParts[0]
-        val numericPart = identifierParts[1]
-
-        if (numericPart.toIntOrNull() == null) {
-            return normalizedIdentifier
-        }
-
-        val normalizedNumericPart = numericPart.padStart(
-            length = requiredIdDigits,
-            padChar = '0'
-        )
-
-        return "$prefix-$normalizedNumericPart"
+        return "$prefix-${numericPart.padStart(REQUIRED_ID_DIGITS, '0')}"
     }
 
-    private fun printInvalidFleetRowWarning(
-        fleetCsvRow: String
-    ) {
-        println(
-            "Warning: Invalid fleet row -> $fleetCsvRow"
-        )
-    }
-
-    private fun printEmptyFleetFieldWarning(
-        fleetCsvRow: String
-    ) {
-        println(
-            "Warning: Empty required fleet field -> $fleetCsvRow"
-        )
-    }
-    fun toCsvRow(vehicle: FleetRaw): String {
-        return listOf(
+    fun toCsvRow(vehicle: FleetRaw): String =
+        listOf(
             vehicle.vehicleId,
             vehicle.currentHubId,
             vehicle.maxCapacityKg,
             vehicle.costPerKm
-        ).joinToString(csvSeparator)
-    }
+        ).joinToString(CSV_SEPARATOR)
 }
