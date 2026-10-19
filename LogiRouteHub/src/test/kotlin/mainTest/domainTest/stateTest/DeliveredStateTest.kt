@@ -12,9 +12,12 @@ class DeliveredStateTest {
         // Given
         val state = DeliveredState()
 
-        // When & Then
+        // When
+        val transitionCall = { state.assignToVehicle() }
+
+        // Then
         assertThrows<InvalidShipmentStateTransitionException> {
-            state.assignToVehicle()
+            transitionCall()
         }
     }
 
@@ -23,9 +26,12 @@ class DeliveredStateTest {
         // Given
         val state = DeliveredState()
 
-        // When & Then
+        // When
+        val transitionCall = { state.markAsInTransit() }
+
+        // Then
         assertThrows<InvalidShipmentStateTransitionException> {
-            state.markAsInTransit()
+            transitionCall()
         }
     }
 
@@ -34,9 +40,12 @@ class DeliveredStateTest {
         // Given
         val state = DeliveredState()
 
-        // When & Then
+        // When
+        val transitionCall = { state.markAsDelivered() }
+
+        // Then
         assertThrows<InvalidShipmentStateTransitionException> {
-            state.markAsDelivered()
+            transitionCall()
         }
     }
 
@@ -45,9 +54,13 @@ class DeliveredStateTest {
         // Given
         val state = DeliveredState()
 
-        // When & Then
+        // When
+        val transitionCall = { state.deliveryFailed() }
+
+        // Then
         assertThrows<InvalidShipmentStateTransitionException> {
-            state.deliveryFailed()
+            transitionCall()
         }
     }
 }
+

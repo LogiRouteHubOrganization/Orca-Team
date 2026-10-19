@@ -6,3 +6,4 @@ data class RouteUpdateModel(
     val distanceKm: Double? = null,
     val typicalDelayMin: Int? = null
 )
+

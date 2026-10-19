@@ -1,6 +1,5 @@
 package mainTest.domainTest.usecaseTest.crudTest.routeTest
 
-
 import com.google.common.truth.Truth.assertThat
 import domain.exception.EntityValidationException
 import domain.model.Route
@@ -19,172 +18,60 @@ import org.junit.jupiter.api.Test
 
 class UpdateRouteUseCaseTest {
 
+    private val routeRepository = mockk<RouteRepository>()
+    private val routeValidator = mockk<UpdateRouteValidator>()
+    private val useCase = UpdateRouteUseCase(routeRepository, routeValidator)
+
     @Test
     fun `returns updated route when validation and repository update succeed`() = runTest {
-
-        // Given
-        val routeRepository = mockk<RouteRepository>()
-        val routeValidator = mockk<UpdateRouteValidator>()
-
         val routeId = "RT-000001"
-
-        val updateModel = RouteUpdateModel(
-            distanceKm = 20.0
-        )
-
+        val updateModel = RouteUpdateModel(distanceKm = 20.0)
         val route = createTestRoute()
 
-        every {
-            routeValidator(
-                routeId = routeId,
-                updateModel = updateModel
-            )
-        } returns ResultValidator.Valid
+        every { routeValidator(routeId, updateModel) } returns ResultValidator.Valid
+        coEvery { routeRepository.update(routeId, updateModel) } returns Result.success(route)
 
-        coEvery {
-            routeRepository.update(
-                routeId = routeId,
-                updateModel = updateModel
-            )
-        } returns Result.success(route)
+        val result = useCase(routeId, updateModel)
 
-        val useCase = UpdateRouteUseCase(
-            routeRepository,
-            routeValidator
-        )
-
-        // When
-        val result = useCase(
-            routeId,
-            updateModel
-        )
-
-        // Then
         assertThat(result.isSuccess).isTrue()
         assertThat(result.getOrNull()).isEqualTo(route)
 
-        coVerify(exactly = 1) {
-            routeValidator(
-                routeId = routeId,
-                updateModel = updateModel
-            )
-        }
-
-        coVerify(exactly = 1) {
-            routeRepository.update(
-                routeId = routeId,
-                updateModel = updateModel
-            )
-        }
+        coVerify(exactly = 1) { routeValidator(routeId, updateModel) }
+        coVerify(exactly = 1) { routeRepository.update(routeId, updateModel) }
     }
 
     @Test
     fun `returns validation failure when validation fails`() = runTest {
-
-        // Given
-        val routeRepository = mockk<RouteRepository>()
-        val routeValidator = mockk<UpdateRouteValidator>()
-
         val routeId = "WRONG-001"
+        val updateModel = RouteUpdateModel(distanceKm = 20.0)
 
-        val updateModel = RouteUpdateModel(
-            distanceKm = 20.0
-        )
+        every { routeValidator(routeId, updateModel) } returns ResultValidator.Invalid(emptyList())
 
-        every {
-            routeValidator(
-                routeId = routeId,
-                updateModel = updateModel
-            )
-        } returns ResultValidator.Invalid(emptyList())
+        val result = useCase(routeId, updateModel)
 
-        val useCase = UpdateRouteUseCase(
-            routeRepository,
-            routeValidator
-        )
-
-        // When
-        val result = useCase(
-            routeId,
-            updateModel
-        )
-
-        // Then
         assertThat(result.isFailure).isTrue()
-        assertThat(result.exceptionOrNull())
-            .isInstanceOf(EntityValidationException::class.java)
+        assertThat(result.exceptionOrNull()).isInstanceOf(EntityValidationException::class.java)
 
-        coVerify(exactly = 1) {
-            routeValidator(
-                routeId = routeId,
-                updateModel = updateModel
-            )
-        }
-
-        coVerify(exactly = 0) {
-            routeRepository.update(
-                routeId = routeId,
-                updateModel = updateModel
-            )
-        }
+        coVerify(exactly = 1) { routeValidator(routeId, updateModel) }
+        coVerify(exactly = 0) { routeRepository.update(any(), any()) }
     }
 
     @Test
     fun `returns failure when repository update fails`() = runTest {
-
-        // Given
-        val routeRepository = mockk<RouteRepository>()
-        val routeValidator = mockk<UpdateRouteValidator>()
-
         val routeId = "RT-000001"
-
-        val updateModel = RouteUpdateModel(
-            distanceKm = 20.0
-        )
-
+        val updateModel = RouteUpdateModel(distanceKm = 20.0)
         val exception = RuntimeException("Failed to update route")
 
-        every {
-            routeValidator(
-                routeId = routeId,
-                updateModel = updateModel
-            )
-        } returns ResultValidator.Valid
+        every { routeValidator(routeId, updateModel) } returns ResultValidator.Valid
+        coEvery { routeRepository.update(routeId, updateModel) } returns Result.failure(exception)
 
-        coEvery {
-            routeRepository.update(
-                routeId = routeId,
-                updateModel = updateModel
-            )
-        } returns Result.failure(exception)
-        val useCase = UpdateRouteUseCase(
-            routeRepository,
-            routeValidator
-        )
+        val result = useCase(routeId, updateModel)
 
-        // When
-        val result = useCase(
-            routeId,
-            updateModel
-        )
-
-        // Then
         assertThat(result.isFailure).isTrue()
         assertThat(result.exceptionOrNull()).isEqualTo(exception)
 
-        coVerify(exactly = 1) {
-            routeValidator(
-                routeId = routeId,
-                updateModel = updateModel
-            )
-        }
-
-        coVerify(exactly = 1) {
-            routeRepository.update(
-                routeId = routeId,
-                updateModel = updateModel
-            )
-        }
+        coVerify(exactly = 1) { routeValidator(routeId, updateModel) }
+        coVerify(exactly = 1) { routeRepository.update(routeId, updateModel) }
     }
 
     private fun createWarehouse(id: String): Warehouse {

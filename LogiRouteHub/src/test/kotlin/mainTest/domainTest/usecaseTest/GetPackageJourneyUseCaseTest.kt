@@ -319,3 +319,4 @@ class GetPackageJourneyUseCaseTest {
         val logisticsPackage: Package
     )
 }
+

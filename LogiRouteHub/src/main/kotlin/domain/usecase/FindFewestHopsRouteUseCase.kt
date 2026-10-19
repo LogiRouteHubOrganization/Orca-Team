@@ -61,33 +61,7 @@ class FindFewestHopsRouteUseCase(
             ?: return emptyList()
 
         val remainingQueue = ArrayDeque(state.queue.drop(1))
-
-        val nextState = currentWarehouse.outgoingRoutes
-            .fold(
-                LeastHopRouterState(
-                    queue = remainingQueue,
-                    visitedWarehouseIds = state.visitedWarehouseIds,
-                    previousWarehouseById = state.previousWarehouseById
-                )
-            ) { currentState, route ->
-
-                val nextWarehouse = route.destinationWarehouse
-
-                if (nextWarehouse.id in currentState.visitedWarehouseIds) {
-                    currentState
-                } else {
-                    currentState.copy(
-                        queue = ArrayDeque(
-                            currentState.queue + nextWarehouse
-                        ),
-                        visitedWarehouseIds =
-                            currentState.visitedWarehouseIds + nextWarehouse.id,
-                        previousWarehouseById =
-                            currentState.previousWarehouseById +
-                                    (nextWarehouse.id to currentWarehouse)
-                    )
-                }
-            }
+        val nextState = processOutgoingRoutes(currentWarehouse, remainingQueue, state)
 
         return if (destinationWarehouse.id in nextState.visitedWarehouseIds) {
             buildWarehousePath(
@@ -101,6 +75,32 @@ class FindFewestHopsRouteUseCase(
                 startWarehouse = startWarehouse,
                 destinationWarehouse = destinationWarehouse
             )
+        }
+    }
+
+    private fun processOutgoingRoutes(
+        currentWarehouse: Warehouse,
+        remainingQueue: ArrayDeque<Warehouse>,
+        state: LeastHopRouterState
+    ): LeastHopRouterState {
+        return currentWarehouse.outgoingRoutes.fold(
+            LeastHopRouterState(
+                queue = remainingQueue,
+                visitedWarehouseIds = state.visitedWarehouseIds,
+                previousWarehouseById = state.previousWarehouseById
+            )
+        ) { currentState, route ->
+            val nextWarehouse = route.destinationWarehouse
+
+            if (nextWarehouse.id in currentState.visitedWarehouseIds) {
+                currentState
+            } else {
+                currentState.copy(
+                    queue = ArrayDeque(currentState.queue + nextWarehouse),
+                    visitedWarehouseIds = currentState.visitedWarehouseIds + nextWarehouse.id,
+                    previousWarehouseById = currentState.previousWarehouseById + (nextWarehouse.id to currentWarehouse)
+                )
+            }
         }
     }
 
@@ -134,5 +134,4 @@ class FindFewestHopsRouteUseCase(
             path = emptyList()
         )
     }
-
 }

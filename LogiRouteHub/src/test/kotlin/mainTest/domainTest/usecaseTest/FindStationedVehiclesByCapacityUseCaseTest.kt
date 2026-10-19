@@ -227,3 +227,4 @@ class FindStationedVehiclesByCapacityUseCaseTest {
         assertThat(result.exceptionOrNull()).isSameInstanceAs(exception)
     }
 }
+

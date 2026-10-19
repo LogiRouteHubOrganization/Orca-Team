@@ -169,3 +169,4 @@ class RecommendVehicleByCapacityAndCostUseCaseTest {
         assertThat(result.exceptionOrNull()).isSameInstanceAs(exception)
     }
 }
+
