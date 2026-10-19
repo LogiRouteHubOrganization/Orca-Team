@@ -1,16 +1,14 @@
 package data.repository
 
 import data.datasource.local.LocalVehicleDataSource
-import data.exception.local.LocalDataException
-import data.exception.local.toDomainException
-import data.exception.remote.toDomainException
-import data.mapper.VehicleMapper
 import data.datasource.remote.RemoteVehicleDataSource
+import data.extension.mapLocalDataException
+import data.extension.mapRepositoryException
+import data.extension.runCatchingCancellable
+import data.mapper.VehicleMapper
 import data.remote.mapper.toCreateDto
 import data.remote.mapper.toRaw
 import data.remote.mapper.toUpdateDto
-import data.extension.runCatchingCancellable
-import data.extension.recoverCatchingCancellable
 import domain.exception.ResourceNotFoundException
 import domain.model.Vehicle
 import domain.model.updateinput.VehicleUpdateModel
@@ -23,6 +21,10 @@ class VehicleRepositoryImpl(
     private val vehicleMapper: VehicleMapper,
     private val warehouseRepository: WarehouseRepository
 ) : VehicleRepository {
+
+    private companion object {
+        const val INDEX_NOT_FOUND = -1
+    }
 
     private val vehicles = mutableListOf<Vehicle>()
     private var isLoaded = false
@@ -72,6 +74,7 @@ class VehicleRepositoryImpl(
 
         createdVehicle
     }.mapRepositoryException(
+        resourceType = "Vehicle",
         resourceId = vehicle.id
     )
 
@@ -102,7 +105,10 @@ class VehicleRepositoryImpl(
 
         vehicles.replaceAll { if (it.id == vehicleId) updatedVehicle else it }
         updatedVehicle
-    }.mapRepositoryException(resourceId = vehicleId)
+    }.mapRepositoryException(
+        resourceType = "Vehicle",
+        resourceId = vehicleId
+    )
 
     override suspend fun delete(
         vehicleId: String
@@ -125,6 +131,7 @@ class VehicleRepositoryImpl(
 
             Unit
         }.mapRepositoryException(
+            resourceType = "Vehicle",
             resourceId = vehicleId
         )
 
@@ -139,13 +146,11 @@ class VehicleRepositoryImpl(
             vehicleDataSource.replaceVehicles(
                 localVehicles
             )
-        }.recoverCatchingCancellable { exception ->
-            throw exception.toDomainException(
-                resourceType = "Vehicle"
-            )
-        }
+        }.mapRepositoryException(
+            resourceType = "Vehicle"
+        )
 
-    override suspend fun initializeStationedVehicles(): Result<Unit> = runCatchingCancellable  {
+    override suspend fun initializeStationedVehicles(): Result<Unit> = runCatchingCancellable {
         loadLocalVehicles()
     }.mapLocalDataException()
 
@@ -188,7 +193,6 @@ class VehicleRepositoryImpl(
         updatedVehicle: Vehicle
     ) {
         val previousWarehouse = previousVehicle.currentWarehouse
-
         val newWarehouse = updatedVehicle.currentWarehouse
 
         if (previousWarehouse.id == newWarehouse.id) {
@@ -198,45 +202,15 @@ class VehicleRepositoryImpl(
                     vehicle.id == previousVehicle.id
                 }
 
-            if (vehicleIndex != -1) {
+            if (vehicleIndex != INDEX_NOT_FOUND) {
                 previousWarehouse.updateVehicleAtIndex(
                     vehicleIndex,
                     updatedVehicle
                 )
             }
-
             return
         }
-
         previousWarehouse.removeVehicle(previousVehicle)
         newWarehouse.addVehicle(updatedVehicle)
-    }
-
-    private fun <T> Result<T>.mapLocalDataException(): Result<T> {
-        return recoverCatchingCancellable { throwable ->
-            throw when (throwable) {
-                is LocalDataException ->
-                    throwable.toDomainException()
-
-                else -> throwable
-            }
-        }
-    }
-
-    private fun <T> Result<T>.mapRepositoryException(
-        resourceId: String
-    ): Result<T> {
-        return recoverCatchingCancellable { exception ->
-            throw when (exception) {
-                is LocalDataException ->
-                    exception.toDomainException()
-
-                else ->
-                    exception.toDomainException(
-                        resourceType = "Vehicle",
-                        resourceId = resourceId
-                    )
-            }
-        }
     }
 }
