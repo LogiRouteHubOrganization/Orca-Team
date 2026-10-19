@@ -1,13 +1,12 @@
+
 package data.repository
 
 import data.datasource.local.LocalWarehouseDataSource
-import data.exception.local.LocalDataException
-import data.exception.local.toDomainException
-import data.exception.remote.toDomainException
-import data.mapper.WarehouseMapper
 import data.datasource.remote.RemoteWarehouseDataSource
-import data.extension.recoverCatchingCancellable
+import data.extension.mapLocalDataException
+import data.extension.mapRepositoryException
 import data.extension.runCatchingCancellable
+import data.mapper.WarehouseMapper
 import data.remote.mapper.toCreateDto
 import data.remote.mapper.toRaw
 import data.remote.mapper.toUpdateDto
@@ -21,23 +20,20 @@ class WarehouseRepositoryImpl(
     private val warehouseRemoteDataSource: RemoteWarehouseDataSource,
     private val warehouseMapper: WarehouseMapper
 ) : WarehouseRepository {
+
     private val warehouses = mutableListOf<Warehouse>()
     private var isLoaded = false
-
 
     override suspend fun findAll(): Result<List<Warehouse>> =
         runCatchingCancellable {
             loadLocalWarehouses().toList()
         }.mapLocalDataException()
 
-
     override suspend fun findById(
         warehouseId: String
     ): Result<Warehouse?> =
         runCatchingCancellable {
-            loadLocalWarehouses().find {
-                it.id == warehouseId
-            }
+            loadLocalWarehouses().find { it.id == warehouseId }
         }.mapLocalDataException()
 
     override suspend fun add(
@@ -47,21 +43,22 @@ class WarehouseRepositoryImpl(
             loadLocalWarehouses()
 
             val createdDto = warehouseRemoteDataSource.createWarehouse(
-                    warehouse.toCreateDto()
-                )
+                warehouse.toCreateDto()
+            )
 
             val createdRaw = createdDto.toRaw()
 
             warehouseDataSource.addWarehouse(createdRaw)
 
             val createdWarehouse = warehouseMapper.mapToDomainModel(
-                    createdRaw
-                )
+                createdRaw
+            )
 
             warehouses.add(createdWarehouse)
 
             createdWarehouse
         }.mapRepositoryException(
+            resourceType = "Warehouse",
             resourceId = warehouse.id
         )
 
@@ -69,62 +66,65 @@ class WarehouseRepositoryImpl(
         warehouseId: String,
         updateModel: WarehouseUpdateModel
     ): Result<Warehouse> = runCatchingCancellable {
-            loadLocalWarehouses()
-            val updatedDto = warehouseRemoteDataSource.updateWarehouse(
-                    id = warehouseId,
-                    warehouseRequest = updateModel.toUpdateDto()
-                )
+        loadLocalWarehouses()
 
-            warehouseDataSource.updateWarehouse(
-                updatedDto.toRaw()
-            )
-
-            val existingWarehouse = warehouses.find {
-                    it.id == warehouseId
-                } ?: throw ResourceNotFoundException.WarehouseNotFound(
-                    warehouseId
-                )
-
-            existingWarehouse.updateDetails(
-                name = updatedDto.name,
-                regionalZone = updatedDto.regionalZone,
-                latitude = updatedDto.latitude,
-                longitude = updatedDto.longitude
-            )
-
-            existingWarehouse
-        }.mapRepositoryException(
-            resourceId = warehouseId
+        val updatedDto = warehouseRemoteDataSource.updateWarehouse(
+            id = warehouseId,
+            warehouseRequest = updateModel.toUpdateDto()
         )
+
+        warehouseDataSource.updateWarehouse(updatedDto.toRaw())
+
+        val existingWarehouse = warehouses.find {
+            it.id == warehouseId
+        } ?: throw ResourceNotFoundException.WarehouseNotFound(
+            warehouseId
+        )
+
+        existingWarehouse.updateDetails(
+            name = updatedDto.name,
+            regionalZone = updatedDto.regionalZone,
+            latitude = updatedDto.latitude,
+            longitude = updatedDto.longitude
+        )
+
+        existingWarehouse
+    }.mapRepositoryException(
+        resourceType = "Warehouse",
+        resourceId = warehouseId
+    )
 
     override suspend fun delete(
         warehouseId: String
     ): Result<Unit> =
         runCatchingCancellable {
             loadLocalWarehouses()
-            warehouseRemoteDataSource.deleteWarehouse(
-                warehouseId
-            )
+
+            warehouseRemoteDataSource.deleteWarehouse(warehouseId)
+
             warehouseDataSource.deleteWarehouse(warehouseId)
 
             val warehouse = warehouses.find {
-                    it.id == warehouseId
-                } ?: throw ResourceNotFoundException.WarehouseNotFound(
-                    warehouseId
-                )
+                it.id == warehouseId
+            } ?: throw ResourceNotFoundException.WarehouseNotFound(
+                warehouseId
+            )
 
             warehouses.remove(warehouse)
 
             Unit
         }.mapRepositoryException(
+            resourceType = "Warehouse",
             resourceId = warehouseId
         )
 
     override suspend fun refresh(): Result<Unit> =
         runCatchingCancellable {
-            val remoteWarehouses = warehouseRemoteDataSource.getAllWarehouses()
+            val remoteWarehouses =
+                warehouseRemoteDataSource.getAllWarehouses()
 
-            val localWarehouses = remoteWarehouses.map { warehouseDto ->
+            val localWarehouses =
+                remoteWarehouses.map { warehouseDto ->
                     warehouseDto.toRaw()
                 }
 
@@ -133,13 +133,14 @@ class WarehouseRepositoryImpl(
             )
 
             reloadLocalWarehouses()
-        }.mapRepositoryException()
+        }.mapRepositoryException(
+            resourceType = "Warehouse"
+        )
 
     private suspend fun loadLocalWarehouses(): List<Warehouse> {
         if (!isLoaded) {
             reloadLocalWarehouses()
         }
-
         return warehouses
     }
 
@@ -153,51 +154,4 @@ class WarehouseRepositoryImpl(
 
         isLoaded = true
     }
-
-    private suspend fun findLocalWarehouseOrThrow(
-        warehouseId: String
-    ): Warehouse {
-        return loadLocalWarehouses().find {
-            it.id == warehouseId
-        } ?: throw ResourceNotFoundException.WarehouseNotFound(
-            warehouseId
-        )
-    }
-
-    private fun <T> Result<T>.mapLocalDataException(): Result<T> {
-        return recoverCatchingCancellable { throwable ->
-            throw when (throwable) {
-                is LocalDataException ->
-                    throwable.toDomainException()
-
-                else -> throwable
-            }
-        }
-    }
-
-
-    private fun <T> Result<T>.mapRepositoryException(
-        resourceId: String? = null
-    ): Result<T> {
-        return recoverCatchingCancellable { throwable ->
-            throw when (throwable) {
-                is LocalDataException ->
-                    throwable.toDomainException()
-
-                else -> {
-                    if (resourceId != null) {
-                        throwable.toDomainException(
-                            resourceType = "Warehouse",
-                            resourceId = resourceId
-                        )
-                    } else {
-                        throwable.toDomainException(
-                            resourceType = "Warehouse"
-                        )
-                    }
-                }
-            }
-        }
-    }
-
 }

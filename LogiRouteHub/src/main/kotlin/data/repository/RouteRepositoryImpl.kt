@@ -1,16 +1,17 @@
+
 package data.repository
 
 import data.datasource.local.LocalRouteDataSource
-import data.exception.local.LocalDataException
-import data.exception.local.toDomainException
-import data.exception.remote.toDomainException
-import data.mapper.RouteMapper
 import data.datasource.remote.RemoteRouteDataSource
+import data.extension.mapLocalDataException
+import data.extension.mapRepositoryException
+import data.extension.recoverCatchingCancellable
+import data.extension.runCatchingCancellable
+import data.mapper.RouteMapper
 import data.remote.mapper.toCreateDto
 import data.remote.mapper.toRaw
 import data.remote.mapper.toUpdateDto
-import data.extension.runCatchingCancellable
-import data.extension.recoverCatchingCancellable
+import data.exception.remote.toDomainException
 import domain.exception.ResourceNotFoundException
 import domain.model.Route
 import domain.model.updateinput.RouteUpdateModel
@@ -84,6 +85,7 @@ class RouteRepositoryImpl(
 
             createdRoute
         }.mapRepositoryException(
+            resourceType = "Route",
             resourceId = route.id
         )
 
@@ -96,18 +98,24 @@ class RouteRepositoryImpl(
         val previousRoute = routes.find { it.id == routeId }
             ?: throw ResourceNotFoundException.RouteNotFound(routeId)
 
-        val updatedRaw = routeRemoteDataSource.updateRoute(
-            id = routeId,
-            routeRequest = updateModel.toUpdateDto()
+        val updatedRaw = routeRemoteDataSource.updateRoute(id = routeId, routeRequest = updateModel.toUpdateDto()
         ).toRaw()
 
         routeDataSource.updateRoute(updatedRaw)
 
-        val originWarehouse = warehouseRepository.findById(updatedRaw.originHubId).getOrThrow()
-            ?: throw ResourceNotFoundException.WarehouseNotFound(updatedRaw.originHubId)
+        val originWarehouse = warehouseRepository
+            .findById(updatedRaw.originHubId)
+            .getOrThrow()
+            ?: throw ResourceNotFoundException.WarehouseNotFound(
+                updatedRaw.originHubId
+            )
 
-        val destinationWarehouse = warehouseRepository.findById(updatedRaw.destinationHubId).getOrThrow()
-            ?: throw ResourceNotFoundException.WarehouseNotFound(updatedRaw.destinationHubId)
+        val destinationWarehouse = warehouseRepository
+            .findById(updatedRaw.destinationHubId)
+            .getOrThrow()
+            ?: throw ResourceNotFoundException.WarehouseNotFound(
+                updatedRaw.destinationHubId
+            )
 
         val updatedRoute = routeMapper.mapToDomainModel(
             rawRoute = updatedRaw,
@@ -116,10 +124,9 @@ class RouteRepositoryImpl(
         )
 
         updateRouteRelations(previousRoute = previousRoute, updatedRoute = updatedRoute)
-
         routes.replaceAll { if (it.id == routeId) updatedRoute else it }
-        updatedRoute
-    }.mapRepositoryException(resourceId = routeId)
+
+        updatedRoute }.mapRepositoryException(resourceType = "Route", resourceId = routeId)
 
     override suspend fun delete(
         routeId: String
@@ -128,12 +135,9 @@ class RouteRepositoryImpl(
 
         val route = routes.find { currentRoute ->
             currentRoute.id == routeId
-        } ?: throw ResourceNotFoundException.RouteNotFound(
-            routeId
-        )
+        } ?: throw ResourceNotFoundException.RouteNotFound(routeId)
 
         routeRemoteDataSource.deleteRoute(routeId)
-
         routeDataSource.deleteRoute(routeId)
 
         route.originWarehouse.removeRoute(route)
@@ -141,6 +145,7 @@ class RouteRepositoryImpl(
 
         Unit
     }.mapRepositoryException(
+        resourceType = "Route",
         resourceId = routeId
     )
 
@@ -168,14 +173,11 @@ class RouteRepositoryImpl(
         if (isLoaded) {
             return
         }
-
         val rawRoutes = routeDataSource.loadRoutes()
 
         rawRoutes.forEach { rawRoute ->
-
             val originWarehouse = warehouseRepository
-                .findById(rawRoute.originHubId)
-                .getOrThrow()
+                .findById(rawRoute.originHubId).getOrThrow()
 
             if (originWarehouse == null) {
                 println(
@@ -185,10 +187,8 @@ class RouteRepositoryImpl(
                 )
                 return@forEach
             }
-
             val destinationWarehouse = warehouseRepository
-                .findById(rawRoute.destinationHubId)
-                .getOrThrow()
+                .findById(rawRoute.destinationHubId).getOrThrow()
 
             if (destinationWarehouse == null) {
                 println(
@@ -204,11 +204,9 @@ class RouteRepositoryImpl(
                 originWarehouse = originWarehouse,
                 destinationWarehouse = destinationWarehouse
             )
-
             routes.add(route)
             originWarehouse.addRoute(route)
         }
-
         isLoaded = true
     }
 
@@ -216,58 +214,22 @@ class RouteRepositoryImpl(
         previousRoute: Route,
         updatedRoute: Route
     ) {
-        val previousOriginWarehouse =
-            previousRoute.originWarehouse
+        val previousOriginWarehouse = previousRoute.originWarehouse
 
-        val newOriginWarehouse =
-            updatedRoute.originWarehouse
+        val newOriginWarehouse = updatedRoute.originWarehouse
 
         if (previousOriginWarehouse.id == newOriginWarehouse.id) {
-
-            val routeIndex =
-                previousOriginWarehouse.outgoingRoutes
-                    .indexOfFirst { route ->
-                        route.id == previousRoute.id
-                    }
-
+            val routeIndex = previousOriginWarehouse.outgoingRoutes
+                    .indexOfFirst { route -> route.id == previousRoute.id }
             if (routeIndex != -1) {
                 previousOriginWarehouse.updateRouteAtIndex(
                     routeIndex,
                     updatedRoute
                 )
             }
-
             return
         }
-
         previousOriginWarehouse.removeRoute(previousRoute)
         newOriginWarehouse.addRoute(updatedRoute)
-    }
-
-    private fun <T> Result<T>.mapLocalDataException(): Result<T> {
-        return recoverCatchingCancellable { throwable ->
-            throw when (throwable) {
-                is LocalDataException ->
-                    throwable.toDomainException()
-
-                else -> throwable
-            }
-        }
-    }
-
-    private fun <T> Result<T>.mapRepositoryException(
-        resourceId: String
-    ): Result<T> {
-        return recoverCatchingCancellable { exception ->
-            throw when (exception) {
-                is LocalDataException -> exception.toDomainException()
-
-                else ->
-                    exception.toDomainException(
-                        resourceType = "Route",
-                        resourceId = resourceId
-                    )
-            }
-        }
     }
 }

@@ -1,16 +1,17 @@
+
 package data.repository
 
 import data.datasource.local.LocalVehicleDataSource
-import data.exception.local.LocalDataException
-import data.exception.local.toDomainException
-import data.exception.remote.toDomainException
-import data.mapper.VehicleMapper
 import data.datasource.remote.RemoteVehicleDataSource
+import data.exception.remote.toDomainException
+import data.extension.mapLocalDataException
+import data.extension.mapRepositoryException
+import data.extension.recoverCatchingCancellable
+import data.extension.runCatchingCancellable
+import data.mapper.VehicleMapper
 import data.remote.mapper.toCreateDto
 import data.remote.mapper.toRaw
 import data.remote.mapper.toUpdateDto
-import data.extension.runCatchingCancellable
-import data.extension.recoverCatchingCancellable
 import domain.exception.ResourceNotFoundException
 import domain.model.Vehicle
 import domain.model.updateinput.VehicleUpdateModel
@@ -37,6 +38,7 @@ class VehicleRepositoryImpl(
         vehicleId: String
     ): Result<Vehicle?> = runCatchingCancellable {
         loadLocalVehicles()
+
         vehicles.find { vehicle ->
             vehicle.id == vehicleId
         }
@@ -72,6 +74,7 @@ class VehicleRepositoryImpl(
 
         createdVehicle
     }.mapRepositoryException(
+        resourceType = "Vehicle",
         resourceId = vehicle.id
     )
 
@@ -91,18 +94,30 @@ class VehicleRepositoryImpl(
 
         vehicleDataSource.updateVehicle(updatedRaw)
 
-        val newWarehouse = warehouseRepository.findById(updatedRaw.currentHubId).getOrThrow()
-            ?: throw ResourceNotFoundException.WarehouseNotFound(updatedRaw.currentHubId)
+        val newWarehouse = warehouseRepository
+            .findById(updatedRaw.currentHubId)
+            .getOrThrow()
+            ?: throw ResourceNotFoundException.WarehouseNotFound(
+                updatedRaw.currentHubId
+            )
 
-        val updatedVehicle = vehicleMapper.mapToDomainModel(updatedRaw, newWarehouse).apply {
-            restoreAssignedPackages(previousVehicle.assignedPackages)
-        }
+        val updatedVehicle = vehicleMapper
+            .mapToDomainModel(updatedRaw, newWarehouse)
+            .apply {
+                restoreAssignedPackages(previousVehicle.assignedPackages)
+            }
 
         updateVehicleRelations(previousVehicle = previousVehicle, updatedVehicle = updatedVehicle)
 
-        vehicles.replaceAll { if (it.id == vehicleId) updatedVehicle else it }
+        vehicles.replaceAll {
+            if (it.id == vehicleId) updatedVehicle else it
+        }
+
         updatedVehicle
-    }.mapRepositoryException(resourceId = vehicleId)
+    }.mapRepositoryException(
+        resourceType = "Vehicle",
+        resourceId = vehicleId
+    )
 
     override suspend fun delete(
         vehicleId: String
@@ -117,16 +132,13 @@ class VehicleRepositoryImpl(
             )
 
             vehicleRemoteDataSource.deleteVehicle(vehicleId)
-
             vehicleDataSource.deleteVehicle(vehicleId)
 
             vehicle.currentWarehouse.removeVehicle(vehicle)
             vehicles.remove(vehicle)
 
             Unit
-        }.mapRepositoryException(
-            resourceId = vehicleId
-        )
+        }.mapRepositoryException(resourceType = "Vehicle", resourceId = vehicleId)
 
     override suspend fun refresh(): Result<Unit> =
         runCatchingCancellable {
@@ -136,28 +148,25 @@ class VehicleRepositoryImpl(
                 vehicleDto.toRaw()
             }
 
-            vehicleDataSource.replaceVehicles(
-                localVehicles
-            )
+            vehicleDataSource.replaceVehicles(localVehicles)
         }.recoverCatchingCancellable { exception ->
             throw exception.toDomainException(
                 resourceType = "Vehicle"
             )
         }
 
-    override suspend fun initializeStationedVehicles(): Result<Unit> = runCatchingCancellable  {
-        loadLocalVehicles()
-    }.mapLocalDataException()
+    override suspend fun initializeStationedVehicles(): Result<Unit> =
+        runCatchingCancellable {
+            loadLocalVehicles()
+        }.mapLocalDataException()
 
     private suspend fun loadLocalVehicles() {
         if (isLoaded) {
             return
         }
-
         val rawVehicles = vehicleDataSource.loadVehicles()
 
         rawVehicles.forEach { rawVehicle ->
-
             val currentWarehouse = warehouseRepository
                 .findById(rawVehicle.currentHubId)
                 .getOrThrow()
@@ -170,7 +179,6 @@ class VehicleRepositoryImpl(
                 )
                 return@forEach
             }
-
             val vehicle = vehicleMapper.mapToDomainModel(
                 rawVehicle = rawVehicle,
                 currentWarehouse = currentWarehouse
@@ -188,11 +196,9 @@ class VehicleRepositoryImpl(
         updatedVehicle: Vehicle
     ) {
         val previousWarehouse = previousVehicle.currentWarehouse
-
         val newWarehouse = updatedVehicle.currentWarehouse
 
         if (previousWarehouse.id == newWarehouse.id) {
-
             val vehicleIndex = previousWarehouse.stationedVehicles
                 .indexOfFirst { vehicle ->
                     vehicle.id == previousVehicle.id
@@ -204,39 +210,9 @@ class VehicleRepositoryImpl(
                     updatedVehicle
                 )
             }
-
             return
         }
-
         previousWarehouse.removeVehicle(previousVehicle)
         newWarehouse.addVehicle(updatedVehicle)
-    }
-
-    private fun <T> Result<T>.mapLocalDataException(): Result<T> {
-        return recoverCatchingCancellable { throwable ->
-            throw when (throwable) {
-                is LocalDataException ->
-                    throwable.toDomainException()
-
-                else -> throwable
-            }
-        }
-    }
-
-    private fun <T> Result<T>.mapRepositoryException(
-        resourceId: String
-    ): Result<T> {
-        return recoverCatchingCancellable { exception ->
-            throw when (exception) {
-                is LocalDataException ->
-                    exception.toDomainException()
-
-                else ->
-                    exception.toDomainException(
-                        resourceType = "Vehicle",
-                        resourceId = resourceId
-                    )
-            }
-        }
     }
 }
