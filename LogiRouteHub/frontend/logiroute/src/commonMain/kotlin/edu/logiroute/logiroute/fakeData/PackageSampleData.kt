@@ -20,5 +20,21 @@ object PackageSampleData {
         destinationWarehouse = WarehouseSampleData.warehouse2
     )
 
-    val AllPackage = listOf(package1, package2)
+    val package3 = Package(
+        id = "PKG-000019",
+        weightByKg = 50000.50,
+        priority = "STANDARD",
+        originWarehouse = WarehouseSampleData.warehouse12,
+        destinationWarehouse = WarehouseSampleData.warehouse22
+    )
+    val package4 = Package(
+        id = "PKG-000020",
+        weightByKg = 160500.0,
+        priority = "URGENT",
+        originWarehouse = WarehouseSampleData.warehouse15,
+        destinationWarehouse = WarehouseSampleData.warehouse35
+    )
+
+
+    val AllPackage = listOf(package1, package2,package3,package4)
 }
