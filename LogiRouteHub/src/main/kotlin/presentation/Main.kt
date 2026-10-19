@@ -305,10 +305,7 @@ class Main(
         val weightCapacityKg = 10.0
         val volumeCapacityM3 = 10.0
 
-        printOptimizationCapacities(
-            weightCapacityKg = weightCapacityKg,
-            volumeCapacityM3 = volumeCapacityM3
-        )
+        printOptimizationCapacities(weightCapacityKg = weightCapacityKg, volumeCapacityM3 = volumeCapacityM3)
 
         compareOptimizers(
             packages = demoPackages,
@@ -489,4 +486,7 @@ class Main(
 
 
 }
+
+
+
 
