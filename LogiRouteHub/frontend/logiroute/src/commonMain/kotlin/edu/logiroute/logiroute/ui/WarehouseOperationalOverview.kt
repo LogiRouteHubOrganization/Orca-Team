@@ -57,7 +57,8 @@ fun WarehouseOperationalOverview(
             }
             //هينا شو اللي صار انو الحين بدي اعمل اكثر من خلفة لجوال ولاب يعني الحين انا اول اشي حطيت للاب وحددت لكل واحدة من الكومبوز اللي عندي مقدار معين من الاحداثايات يعني الحين الكومبوز الاول مثلا 40 في مية من شاشة والشاشة الثانية او الكومبوز القاني حطلي انم 60 ف هين انا حددت القيمة اما لما كتبت الس هادي يعني لو ما حددت القيمة او معيار اللي بتكون اكبر منوا  اما لما كتبت الس هادي يعني انو  لجوال وقيمة محددة انها كلها
             WarehouseSummaryCard(warehouse = warehouse)
-            if(maxWidth >= 840.dp){
+
+            if(this@BoxWithConstraints.maxWidth >= 840.dp){
                 Row(Modifier
                     .fillMaxSize(),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)

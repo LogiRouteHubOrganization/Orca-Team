@@ -67,13 +67,9 @@ fun main() = application {
         title = "LogiRoute - Warehouse Operational Overview Previews"
     ) {
 
-        // 1. لاختبار الحمل الزائد والبانر:
+
         WarehouseOverloadedPreview()
 
-        // 2. أو لاختبار البيانات الضخمة وتجربة السكرول:
-         WarehouseHeavyDataPreview()
 
-        // 3. أو لاختبار الحالة الصفرية:
-         WarehouseZeroStatePreview()
     }
 }
