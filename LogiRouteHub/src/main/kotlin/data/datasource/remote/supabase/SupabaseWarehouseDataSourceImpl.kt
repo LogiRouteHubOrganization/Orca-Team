@@ -1,7 +1,7 @@
-
 package data.datasource.remote.supabase
 
 import data.datasource.remote.RemoteWarehouseDataSource
+import data.remote.circuitbreaker.CircuitBreaker
 import data.remote.dto.response.WarehouseDto
 import data.remote.dto.request.WarehouseCreateRequestDto
 import data.remote.dto.request.WarehouseUpdateRequestDto
@@ -9,81 +9,92 @@ import data.remote.utils.safeApiCall
 import data.remote.retry.RetryableRemoteDatasource
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import dispatcher.AppDispatchers
 
 class SupabaseWarehouseDataSourceImpl(
     private val client: SupabaseClient,
-    private val retryTemplate: RetryableRemoteDatasource
+    private val retryTemplate: RetryableRemoteDatasource,
+    private val circuitBreaker: CircuitBreaker,
+    private val appDispatchers: AppDispatchers
 ) : RemoteWarehouseDataSource {
 
     private val tableName = "warehouses"
 
     override suspend fun getAllWarehouses(): List<WarehouseDto> =
-        withContext(Dispatchers.IO) {
-            val result = retryTemplate.execute(operationName = "GetAllWarehouses") {
-                safeApiCall {
-                    client.from(tableName).select().decodeList<WarehouseDto>()
+        withContext(appDispatchers.io) {
+            circuitBreaker.execute {
+                val result = retryTemplate.execute(operationName = "GetAllWarehouses") {
+                    safeApiCall {
+                        client.from(tableName).select().decodeList<WarehouseDto>()
+                    }
                 }
+                result.getOrThrow()
             }
-            result.getOrThrow()
         }
 
     override suspend fun getWarehouseById(
         id: String
-    ): WarehouseDto? = withContext(Dispatchers.IO) {
-        val result = retryTemplate.execute(operationName = "GetWarehouseById") {
-            safeApiCall {
-                client.from(tableName).select {
+    ): WarehouseDto? = withContext(appDispatchers.io) {
+        circuitBreaker.execute {
+            val result = retryTemplate.execute(operationName = "GetWarehouseById") {
+                safeApiCall {
+                    client.from(tableName).select {
                         filter { eq("id", id) }
                     }.decodeSingleOrNull<WarehouseDto>()
+                }
             }
+            result.getOrThrow()
         }
-        result.getOrThrow()
     }
 
     override suspend fun createWarehouse(
         warehouseRequest: WarehouseCreateRequestDto
-    ): WarehouseDto = withContext(Dispatchers.IO) {
-        val result = retryTemplate.execute(
-            operationName = "CreateWarehouse"
-        ) {
-            safeApiCall {
-                client.from(tableName).insert(warehouseRequest) {
+    ): WarehouseDto = withContext(appDispatchers.io) {
+        circuitBreaker.execute {
+            val result = retryTemplate.execute(
+                operationName = "CreateWarehouse"
+            ) {
+                safeApiCall {
+                    client.from(tableName).insert(warehouseRequest) {
                         select()
                     }.decodeSingle<WarehouseDto>()
+                }
             }
+            result.getOrThrow()
         }
-        result.getOrThrow()
     }
 
     override suspend fun updateWarehouse(
         id: String,
         warehouseRequest: WarehouseUpdateRequestDto
-    ): WarehouseDto = withContext(Dispatchers.IO) {
-        val result = retryTemplate.execute(operationName = "UpdateWarehouse") {
-            safeApiCall {
-                client.from(tableName).update(warehouseRequest) {
+    ): WarehouseDto = withContext(appDispatchers.io) {
+        circuitBreaker.execute {
+            val result = retryTemplate.execute(operationName = "UpdateWarehouse") {
+                safeApiCall {
+                    client.from(tableName).update(warehouseRequest) {
                         filter { eq("id", id) }
                         select()
                     }
-                    .decodeSingle<WarehouseDto>()
-            }
-        }
-
-        result.getOrThrow()
-    }
-
-    override suspend fun deleteWarehouse(id: String) {
-        withContext(Dispatchers.IO) {
-            val result = retryTemplate.execute(operationName = "DeleteWarehouse") {
-                safeApiCall {
-                    client.from(tableName).delete {
-                            filter { eq("id", id) }
-                        }
+                        .decodeSingle<WarehouseDto>()
                 }
             }
             result.getOrThrow()
+        }
+    }
+
+    override suspend fun deleteWarehouse(id: String) {
+        withContext(appDispatchers.io){
+            circuitBreaker.execute {
+                val result = retryTemplate.execute(operationName = "DeleteWarehouse") {
+                    safeApiCall {
+                        client.from(tableName).delete {
+                            filter { eq("id", id) }
+                        }
+                    }
+                }
+                result.getOrThrow()
+            }
         }
     }
 }
