@@ -41,6 +41,18 @@ class PackageRepositoryImpl(
         val createdDto = packageRemoteDataSource.createPackage(
             logisticsPackage.toCreateDto()
         )
+        packageDataSource.addPackage(
+            createdDto.toRaw()
+        )
+
+        rebuildCargoQueues()
+        findLocalPackageOrThrow(
+            createdDto.id
+        )
+    }.mapRepositoryException(
+        resourceType = "Package",
+        resourceId = logisticsPackage.id
+    )
 
         packageDataSource.addPackage(createdDto.toRaw())
 
@@ -99,6 +111,14 @@ class PackageRepositoryImpl(
                 localPackages
             )
         }.mapRepositoryException(resourceType = "Package")
+        }.mapRepositoryException(
+            resourceType = "Package"
+        )
+
+    override suspend fun initializeCargoQueues(): Result<Unit> =
+        runCatchingCancellable {
+            rebuildCargoQueues()
+        }.mapLocalDataException()
 
     private suspend fun loadLocalPackages(): List<Package> {
         val rawPackages = packageDataSource.loadPackages()

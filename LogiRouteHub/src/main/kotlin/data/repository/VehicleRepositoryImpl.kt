@@ -3,10 +3,8 @@ package data.repository
 
 import data.datasource.local.LocalVehicleDataSource
 import data.datasource.remote.RemoteVehicleDataSource
-import data.exception.remote.toDomainException
 import data.extension.mapLocalDataException
 import data.extension.mapRepositoryException
-import data.extension.recoverCatchingCancellable
 import data.extension.runCatchingCancellable
 import data.mapper.VehicleMapper
 import data.remote.mapper.toCreateDto
@@ -24,6 +22,10 @@ class VehicleRepositoryImpl(
     private val vehicleMapper: VehicleMapper,
     private val warehouseRepository: WarehouseRepository
 ) : VehicleRepository {
+
+    private companion object {
+        const val INDEX_NOT_FOUND = -1
+    }
 
     private val vehicles = mutableListOf<Vehicle>()
     private var isLoaded = false
@@ -148,17 +150,16 @@ class VehicleRepositoryImpl(
                 vehicleDto.toRaw()
             }
 
-            vehicleDataSource.replaceVehicles(localVehicles)
-        }.recoverCatchingCancellable { exception ->
-            throw exception.toDomainException(
-                resourceType = "Vehicle"
+            vehicleDataSource.replaceVehicles(
+                localVehicles
             )
-        }
+        }.mapRepositoryException(
+            resourceType = "Vehicle"
+        )
 
-    override suspend fun initializeStationedVehicles(): Result<Unit> =
-        runCatchingCancellable {
-            loadLocalVehicles()
-        }.mapLocalDataException()
+    override suspend fun initializeStationedVehicles(): Result<Unit> = runCatchingCancellable {
+        loadLocalVehicles()
+    }.mapLocalDataException()
 
     private suspend fun loadLocalVehicles() {
         if (isLoaded) {
@@ -204,7 +205,7 @@ class VehicleRepositoryImpl(
                     vehicle.id == previousVehicle.id
                 }
 
-            if (vehicleIndex != -1) {
+            if (vehicleIndex != INDEX_NOT_FOUND) {
                 previousWarehouse.updateVehicleAtIndex(
                     vehicleIndex,
                     updatedVehicle

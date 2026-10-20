@@ -5,13 +5,11 @@ import data.datasource.local.LocalRouteDataSource
 import data.datasource.remote.RemoteRouteDataSource
 import data.extension.mapLocalDataException
 import data.extension.mapRepositoryException
-import data.extension.recoverCatchingCancellable
 import data.extension.runCatchingCancellable
 import data.mapper.RouteMapper
 import data.remote.mapper.toCreateDto
 import data.remote.mapper.toRaw
 import data.remote.mapper.toUpdateDto
-import data.exception.remote.toDomainException
 import domain.exception.ResourceNotFoundException
 import domain.model.Route
 import domain.model.updateinput.RouteUpdateModel
@@ -25,6 +23,11 @@ class RouteRepositoryImpl(
     private val warehouseRepository: WarehouseRepository
 ) : RouteRepository {
 
+
+    private companion object {
+        const val INDEX_NOT_FOUND = -1
+    }
+
     private val routes = mutableListOf<Route>()
     private var isLoaded = false
 
@@ -34,9 +37,7 @@ class RouteRepositoryImpl(
         runCatchingCancellable {
             loadLocalRoutes()
 
-            routes.find { route ->
-                route.id == routeId
-            }
+            routes.find { route -> route.id == routeId }
         }.mapLocalDataException()
 
     override suspend fun findAll(): Result<List<Route>> =
@@ -158,11 +159,9 @@ class RouteRepositoryImpl(
             }
 
             routeDataSource.replaceRoutes(localRoutes)
-        }.recoverCatchingCancellable { exception ->
-            throw exception.toDomainException(
-                resourceType = "Route"
-            )
-        }
+        }.mapRepositoryException(
+            resourceType = "Route"
+        )
 
     override suspend fun initializeOutgoingRoutes(): Result<Unit> =
         runCatchingCancellable {
@@ -219,9 +218,14 @@ class RouteRepositoryImpl(
         val newOriginWarehouse = updatedRoute.originWarehouse
 
         if (previousOriginWarehouse.id == newOriginWarehouse.id) {
-            val routeIndex = previousOriginWarehouse.outgoingRoutes
-                    .indexOfFirst { route -> route.id == previousRoute.id }
-            if (routeIndex != -1) {
+
+            val routeIndex =
+                previousOriginWarehouse.outgoingRoutes
+                    .indexOfFirst { route ->
+                        route.id == previousRoute.id
+                    }
+
+            if (routeIndex != INDEX_NOT_FOUND) {
                 previousOriginWarehouse.updateRouteAtIndex(
                     routeIndex,
                     updatedRoute
@@ -233,3 +237,4 @@ class RouteRepositoryImpl(
         newOriginWarehouse.addRoute(updatedRoute)
     }
 }
+
