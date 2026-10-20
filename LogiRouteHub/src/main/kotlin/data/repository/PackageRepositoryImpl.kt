@@ -1,3 +1,4 @@
+
 package data.repository
 
 import data.datasource.local.LocalPackageDataSource
@@ -31,9 +32,7 @@ class PackageRepositoryImpl(
         packageId: String
     ): Result<Package?> =
         runCatchingCancellable {
-            loadLocalPackages().find {
-                it.id == packageId
-            }
+            loadLocalPackages().find { it.id == packageId }
         }.mapLocalDataException()
 
     override suspend fun add(
@@ -50,6 +49,16 @@ class PackageRepositoryImpl(
         findLocalPackageOrThrow(
             createdDto.id
         )
+    }.mapRepositoryException(
+        resourceType = "Package",
+        resourceId = logisticsPackage.id
+    )
+
+        packageDataSource.addPackage(createdDto.toRaw())
+
+        rebuildCargoQueues()
+
+        findLocalPackageOrThrow(createdDto.id)
     }.mapRepositoryException(
         resourceType = "Package",
         resourceId = logisticsPackage.id
@@ -80,18 +89,13 @@ class PackageRepositoryImpl(
         packageId: String
     ): Result<Unit> =
         runCatchingCancellable {
-            packageRemoteDataSource.deletePackage(
-                packageId
-            )
-            packageDataSource.deletePackage(
-                packageId
-            )
+            packageRemoteDataSource.deletePackage(packageId)
+
+            packageDataSource.deletePackage(packageId)
+
             rebuildCargoQueues()
             Unit
-        }.mapRepositoryException(
-            resourceType = "Package",
-            resourceId = packageId
-        )
+        }.mapRepositoryException(resourceType = "Package", resourceId = packageId)
 
     override suspend fun refresh(): Result<Unit> =
         runCatchingCancellable {
@@ -106,6 +110,7 @@ class PackageRepositoryImpl(
             packageDataSource.replacePackages(
                 localPackages
             )
+        }.mapRepositoryException(resourceType = "Package")
         }.mapRepositoryException(
             resourceType = "Package"
         )
@@ -132,8 +137,10 @@ class PackageRepositoryImpl(
                 )
                 continue
             }
+
             val destinationWarehouse = warehouseRepository
-                .findById(rawPackage.destinationHubId).getOrThrow()
+                .findById(rawPackage.destinationHubId)
+                .getOrThrow()
 
             if (destinationWarehouse == null) {
                 println(
@@ -143,6 +150,7 @@ class PackageRepositoryImpl(
                 )
                 continue
             }
+
             val logisticsPackage = packageMapper.mapToDomainModel(
                 rawPackage = rawPackage,
                 originWarehouse = originWarehouse,
@@ -150,6 +158,7 @@ class PackageRepositoryImpl(
             )
             packages.add(logisticsPackage)
         }
+
         return packages
     }
 
@@ -163,6 +172,11 @@ class PackageRepositoryImpl(
         )
     }
 
+    override suspend fun initializeCargoQueues(): Result<Unit> =
+        runCatchingCancellable {
+            rebuildCargoQueues()
+        }.mapLocalDataException()
+
     private suspend fun rebuildCargoQueues() {
         val warehouses = warehouseRepository.findAll().getOrThrow()
         val packages = loadLocalPackages()
@@ -172,10 +186,7 @@ class PackageRepositoryImpl(
                 packages.filter { logisticsPackage ->
                     logisticsPackage.originWarehouse.id == warehouse.id
                 }
-
-            warehouse.restoreCargoQueue(
-                warehousePackages
-            )
+            warehouse.restoreCargoQueue(warehousePackages)
         }
     }
 }

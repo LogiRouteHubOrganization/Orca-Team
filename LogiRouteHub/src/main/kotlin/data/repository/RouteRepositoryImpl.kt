@@ -1,3 +1,4 @@
+
 package data.repository
 
 import data.datasource.local.LocalRouteDataSource
@@ -98,18 +99,24 @@ class RouteRepositoryImpl(
         val previousRoute = routes.find { it.id == routeId }
             ?: throw ResourceNotFoundException.RouteNotFound(routeId)
 
-        val updatedRaw = routeRemoteDataSource.updateRoute(
-            id = routeId,
-            routeRequest = updateModel.toUpdateDto()
+        val updatedRaw = routeRemoteDataSource.updateRoute(id = routeId, routeRequest = updateModel.toUpdateDto()
         ).toRaw()
 
         routeDataSource.updateRoute(updatedRaw)
 
-        val originWarehouse = warehouseRepository.findById(updatedRaw.originHubId).getOrThrow()
-            ?: throw ResourceNotFoundException.WarehouseNotFound(updatedRaw.originHubId)
+        val originWarehouse = warehouseRepository
+            .findById(updatedRaw.originHubId)
+            .getOrThrow()
+            ?: throw ResourceNotFoundException.WarehouseNotFound(
+                updatedRaw.originHubId
+            )
 
-        val destinationWarehouse = warehouseRepository.findById(updatedRaw.destinationHubId).getOrThrow()
-            ?: throw ResourceNotFoundException.WarehouseNotFound(updatedRaw.destinationHubId)
+        val destinationWarehouse = warehouseRepository
+            .findById(updatedRaw.destinationHubId)
+            .getOrThrow()
+            ?: throw ResourceNotFoundException.WarehouseNotFound(
+                updatedRaw.destinationHubId
+            )
 
         val updatedRoute = routeMapper.mapToDomainModel(
             rawRoute = updatedRaw,
@@ -118,13 +125,9 @@ class RouteRepositoryImpl(
         )
 
         updateRouteRelations(previousRoute = previousRoute, updatedRoute = updatedRoute)
-
         routes.replaceAll { if (it.id == routeId) updatedRoute else it }
-        updatedRoute
-    }.mapRepositoryException(
-        resourceType = "Route",
-        resourceId = routeId
-    )
+
+        updatedRoute }.mapRepositoryException(resourceType = "Route", resourceId = routeId)
 
     override suspend fun delete(
         routeId: String
@@ -133,12 +136,9 @@ class RouteRepositoryImpl(
 
         val route = routes.find { currentRoute ->
             currentRoute.id == routeId
-        } ?: throw ResourceNotFoundException.RouteNotFound(
-            routeId
-        )
+        } ?: throw ResourceNotFoundException.RouteNotFound(routeId)
 
         routeRemoteDataSource.deleteRoute(routeId)
-
         routeDataSource.deleteRoute(routeId)
 
         route.originWarehouse.removeRoute(route)
@@ -172,14 +172,11 @@ class RouteRepositoryImpl(
         if (isLoaded) {
             return
         }
-
         val rawRoutes = routeDataSource.loadRoutes()
 
         rawRoutes.forEach { rawRoute ->
-
             val originWarehouse = warehouseRepository
-                .findById(rawRoute.originHubId)
-                .getOrThrow()
+                .findById(rawRoute.originHubId).getOrThrow()
 
             if (originWarehouse == null) {
                 println(
@@ -189,10 +186,8 @@ class RouteRepositoryImpl(
                 )
                 return@forEach
             }
-
             val destinationWarehouse = warehouseRepository
-                .findById(rawRoute.destinationHubId)
-                .getOrThrow()
+                .findById(rawRoute.destinationHubId).getOrThrow()
 
             if (destinationWarehouse == null) {
                 println(
@@ -208,11 +203,9 @@ class RouteRepositoryImpl(
                 originWarehouse = originWarehouse,
                 destinationWarehouse = destinationWarehouse
             )
-
             routes.add(route)
             originWarehouse.addRoute(route)
         }
-
         isLoaded = true
     }
 
@@ -220,11 +213,9 @@ class RouteRepositoryImpl(
         previousRoute: Route,
         updatedRoute: Route
     ) {
-        val previousOriginWarehouse =
-            previousRoute.originWarehouse
+        val previousOriginWarehouse = previousRoute.originWarehouse
 
-        val newOriginWarehouse =
-            updatedRoute.originWarehouse
+        val newOriginWarehouse = updatedRoute.originWarehouse
 
         if (previousOriginWarehouse.id == newOriginWarehouse.id) {
 
@@ -242,7 +233,6 @@ class RouteRepositoryImpl(
             }
             return
         }
-
         previousOriginWarehouse.removeRoute(previousRoute)
         newOriginWarehouse.addRoute(updatedRoute)
     }

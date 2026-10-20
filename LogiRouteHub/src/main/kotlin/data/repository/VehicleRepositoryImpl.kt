@@ -1,3 +1,4 @@
+
 package data.repository
 
 import data.datasource.local.LocalVehicleDataSource
@@ -39,6 +40,7 @@ class VehicleRepositoryImpl(
         vehicleId: String
     ): Result<Vehicle?> = runCatchingCancellable {
         loadLocalVehicles()
+
         vehicles.find { vehicle ->
             vehicle.id == vehicleId
         }
@@ -94,16 +96,25 @@ class VehicleRepositoryImpl(
 
         vehicleDataSource.updateVehicle(updatedRaw)
 
-        val newWarehouse = warehouseRepository.findById(updatedRaw.currentHubId).getOrThrow()
-            ?: throw ResourceNotFoundException.WarehouseNotFound(updatedRaw.currentHubId)
+        val newWarehouse = warehouseRepository
+            .findById(updatedRaw.currentHubId)
+            .getOrThrow()
+            ?: throw ResourceNotFoundException.WarehouseNotFound(
+                updatedRaw.currentHubId
+            )
 
-        val updatedVehicle = vehicleMapper.mapToDomainModel(updatedRaw, newWarehouse).apply {
-            restoreAssignedPackages(previousVehicle.assignedPackages)
-        }
+        val updatedVehicle = vehicleMapper
+            .mapToDomainModel(updatedRaw, newWarehouse)
+            .apply {
+                restoreAssignedPackages(previousVehicle.assignedPackages)
+            }
 
         updateVehicleRelations(previousVehicle = previousVehicle, updatedVehicle = updatedVehicle)
 
-        vehicles.replaceAll { if (it.id == vehicleId) updatedVehicle else it }
+        vehicles.replaceAll {
+            if (it.id == vehicleId) updatedVehicle else it
+        }
+
         updatedVehicle
     }.mapRepositoryException(
         resourceType = "Vehicle",
@@ -123,17 +134,13 @@ class VehicleRepositoryImpl(
             )
 
             vehicleRemoteDataSource.deleteVehicle(vehicleId)
-
             vehicleDataSource.deleteVehicle(vehicleId)
 
             vehicle.currentWarehouse.removeVehicle(vehicle)
             vehicles.remove(vehicle)
 
             Unit
-        }.mapRepositoryException(
-            resourceType = "Vehicle",
-            resourceId = vehicleId
-        )
+        }.mapRepositoryException(resourceType = "Vehicle", resourceId = vehicleId)
 
     override suspend fun refresh(): Result<Unit> =
         runCatchingCancellable {
@@ -158,11 +165,9 @@ class VehicleRepositoryImpl(
         if (isLoaded) {
             return
         }
-
         val rawVehicles = vehicleDataSource.loadVehicles()
 
         rawVehicles.forEach { rawVehicle ->
-
             val currentWarehouse = warehouseRepository
                 .findById(rawVehicle.currentHubId)
                 .getOrThrow()
@@ -175,7 +180,6 @@ class VehicleRepositoryImpl(
                 )
                 return@forEach
             }
-
             val vehicle = vehicleMapper.mapToDomainModel(
                 rawVehicle = rawVehicle,
                 currentWarehouse = currentWarehouse
@@ -196,7 +200,6 @@ class VehicleRepositoryImpl(
         val newWarehouse = updatedVehicle.currentWarehouse
 
         if (previousWarehouse.id == newWarehouse.id) {
-
             val vehicleIndex = previousWarehouse.stationedVehicles
                 .indexOfFirst { vehicle ->
                     vehicle.id == previousVehicle.id

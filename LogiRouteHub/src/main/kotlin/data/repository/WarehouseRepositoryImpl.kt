@@ -1,3 +1,4 @@
+
 package data.repository
 
 import data.datasource.local.LocalWarehouseDataSource
@@ -19,6 +20,7 @@ class WarehouseRepositoryImpl(
     private val warehouseRemoteDataSource: RemoteWarehouseDataSource,
     private val warehouseMapper: WarehouseMapper
 ) : WarehouseRepository {
+
     private val warehouses = mutableListOf<Warehouse>()
     private var isLoaded = false
 
@@ -31,9 +33,7 @@ class WarehouseRepositoryImpl(
         warehouseId: String
     ): Result<Warehouse?> =
         runCatchingCancellable {
-            loadLocalWarehouses().find {
-                it.id == warehouseId
-            }
+            loadLocalWarehouses().find { it.id == warehouseId }
         }.mapLocalDataException()
 
     override suspend fun add(
@@ -67,14 +67,13 @@ class WarehouseRepositoryImpl(
         updateModel: WarehouseUpdateModel
     ): Result<Warehouse> = runCatchingCancellable {
         loadLocalWarehouses()
+
         val updatedDto = warehouseRemoteDataSource.updateWarehouse(
             id = warehouseId,
             warehouseRequest = updateModel.toUpdateDto()
         )
 
-        warehouseDataSource.updateWarehouse(
-            updatedDto.toRaw()
-        )
+        warehouseDataSource.updateWarehouse(updatedDto.toRaw())
 
         val existingWarehouse = warehouses.find {
             it.id == warehouseId
@@ -100,9 +99,9 @@ class WarehouseRepositoryImpl(
     ): Result<Unit> =
         runCatchingCancellable {
             loadLocalWarehouses()
-            warehouseRemoteDataSource.deleteWarehouse(
-                warehouseId
-            )
+
+            warehouseRemoteDataSource.deleteWarehouse(warehouseId)
+
             warehouseDataSource.deleteWarehouse(warehouseId)
 
             val warehouse = warehouses.find {
@@ -121,11 +120,13 @@ class WarehouseRepositoryImpl(
 
     override suspend fun refresh(): Result<Unit> =
         runCatchingCancellable {
-            val remoteWarehouses = warehouseRemoteDataSource.getAllWarehouses()
+            val remoteWarehouses =
+                warehouseRemoteDataSource.getAllWarehouses()
 
-            val localWarehouses = remoteWarehouses.map { warehouseDto ->
-                warehouseDto.toRaw()
-            }
+            val localWarehouses =
+                remoteWarehouses.map { warehouseDto ->
+                    warehouseDto.toRaw()
+                }
 
             warehouseDataSource.replaceWarehouses(
                 localWarehouses
