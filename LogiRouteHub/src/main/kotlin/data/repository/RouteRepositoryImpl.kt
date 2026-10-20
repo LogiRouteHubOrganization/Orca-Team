@@ -1,16 +1,14 @@
 package data.repository
 
 import data.datasource.local.LocalRouteDataSource
-import data.exception.local.LocalDataException
-import data.exception.local.toDomainException
-import data.exception.remote.toDomainException
-import data.mapper.RouteMapper
 import data.datasource.remote.RemoteRouteDataSource
+import data.extension.mapLocalDataException
+import data.extension.mapRepositoryException
+import data.extension.runCatchingCancellable
+import data.mapper.RouteMapper
 import data.remote.mapper.toCreateDto
 import data.remote.mapper.toRaw
 import data.remote.mapper.toUpdateDto
-import data.extension.runCatchingCancellable
-import data.extension.recoverCatchingCancellable
 import domain.exception.ResourceNotFoundException
 import domain.model.Route
 import domain.model.updateinput.RouteUpdateModel
@@ -24,6 +22,11 @@ class RouteRepositoryImpl(
     private val warehouseRepository: WarehouseRepository
 ) : RouteRepository {
 
+
+    private companion object {
+        const val INDEX_NOT_FOUND = -1
+    }
+
     private val routes = mutableListOf<Route>()
     private var isLoaded = false
 
@@ -33,9 +36,7 @@ class RouteRepositoryImpl(
         runCatchingCancellable {
             loadLocalRoutes()
 
-            routes.find { route ->
-                route.id == routeId
-            }
+            routes.find { route -> route.id == routeId }
         }.mapLocalDataException()
 
     override suspend fun findAll(): Result<List<Route>> =
@@ -84,6 +85,7 @@ class RouteRepositoryImpl(
 
             createdRoute
         }.mapRepositoryException(
+            resourceType = "Route",
             resourceId = route.id
         )
 
@@ -119,7 +121,10 @@ class RouteRepositoryImpl(
 
         routes.replaceAll { if (it.id == routeId) updatedRoute else it }
         updatedRoute
-    }.mapRepositoryException(resourceId = routeId)
+    }.mapRepositoryException(
+        resourceType = "Route",
+        resourceId = routeId
+    )
 
     override suspend fun delete(
         routeId: String
@@ -141,6 +146,7 @@ class RouteRepositoryImpl(
 
         Unit
     }.mapRepositoryException(
+        resourceType = "Route",
         resourceId = routeId
     )
 
@@ -153,11 +159,9 @@ class RouteRepositoryImpl(
             }
 
             routeDataSource.replaceRoutes(localRoutes)
-        }.recoverCatchingCancellable { exception ->
-            throw exception.toDomainException(
-                resourceType = "Route"
-            )
-        }
+        }.mapRepositoryException(
+            resourceType = "Route"
+        )
 
     override suspend fun initializeOutgoingRoutes(): Result<Unit> =
         runCatchingCancellable {
@@ -230,44 +234,17 @@ class RouteRepositoryImpl(
                         route.id == previousRoute.id
                     }
 
-            if (routeIndex != -1) {
+            if (routeIndex != INDEX_NOT_FOUND) {
                 previousOriginWarehouse.updateRouteAtIndex(
                     routeIndex,
                     updatedRoute
                 )
             }
-
             return
         }
 
         previousOriginWarehouse.removeRoute(previousRoute)
         newOriginWarehouse.addRoute(updatedRoute)
     }
-
-    private fun <T> Result<T>.mapLocalDataException(): Result<T> {
-        return recoverCatchingCancellable { throwable ->
-            throw when (throwable) {
-                is LocalDataException ->
-                    throwable.toDomainException()
-
-                else -> throwable
-            }
-        }
-    }
-
-    private fun <T> Result<T>.mapRepositoryException(
-        resourceId: String
-    ): Result<T> {
-        return recoverCatchingCancellable { exception ->
-            throw when (exception) {
-                is LocalDataException -> exception.toDomainException()
-
-                else ->
-                    exception.toDomainException(
-                        resourceType = "Route",
-                        resourceId = resourceId
-                    )
-            }
-        }
-    }
 }
+
