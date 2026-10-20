@@ -2,15 +2,12 @@ package data.remote.retry
 
 class RetryLogger {
 
-    fun logAttempt(
-        operationName: String,
-        currentAttempt: Int,
-        totalAttempts: Int
-    ) {
-        println(
-            "[RETRY] $operationName - Attempt " +
-                    "$currentAttempt/$totalAttempts"
-        )
+    private fun logMessage(message: String) {
+        println("[RETRY] $message")
+    }
+
+    fun logAttempt(operationName: String, currentAttempt: Int, totalAttempts: Int) {
+        logMessage("$operationName - Attempt $currentAttempt/$totalAttempts")
     }
 
     fun logRetryableFailure(
@@ -20,14 +17,8 @@ class RetryLogger {
         exception: Throwable,
         delayMs: Long
     ) {
-        println(
-            "[RETRY] $operationName - Retryable failure on attempt " +
-                    "$currentAttempt/$totalAttempts: ${exception.message}"
-        )
-
-        println(
-            "[RETRY] $operationName - Backoff delay: ${delayMs}ms"
-        )
+        logMessage("$operationName - Retryable failure on attempt $currentAttempt/$totalAttempts: ${exception.message}")
+        logMessage("$operationName - Backoff delay: ${delayMs}ms")
     }
 
     fun logNonRetryableFailure(
@@ -36,21 +27,11 @@ class RetryLogger {
         totalAttempts: Int,
         exception: Throwable
     ) {
-        println(
-            "[RETRY] $operationName - Non-retryable failure on attempt " +
-                    "$currentAttempt/$totalAttempts: ${exception.message}"
-        )
+        logMessage("$operationName - Non-retryable failure on attempt $currentAttempt/$totalAttempts: ${exception.message}")
     }
 
-    fun logFinalSuccess(
-        operationName: String,
-        currentAttempt: Int,
-        totalAttempts: Int
-    ) {
-        println(
-            "[RETRY] $operationName - Final success on attempt " +
-                    "$currentAttempt/$totalAttempts"
-        )
+    fun logFinalSuccess(operationName: String, currentAttempt: Int, totalAttempts: Int) {
+        logMessage("$operationName - Final success on attempt $currentAttempt/$totalAttempts")
     }
 
     fun logFinalFailure(
@@ -59,10 +40,7 @@ class RetryLogger {
         totalAttempts: Int,
         exception: Throwable
     ) {
-        println(
-            "[RETRY] $operationName - Final failure after " +
-                    "$currentAttempt/$totalAttempts attempts: " +
-                    "${exception.message}"
-        )
+        logMessage("$operationName - Final failure after $currentAttempt/$totalAttempts attempts: ${exception.message}")
     }
 }
+
