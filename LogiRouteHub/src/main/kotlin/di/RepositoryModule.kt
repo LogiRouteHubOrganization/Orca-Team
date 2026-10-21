@@ -139,28 +139,36 @@ val repositoryModule = module {
     single<RemoteWarehouseDataSource> {
         SupabaseWarehouseDataSourceImpl(
             client = get(),
-            retryTemplate = get()
+            retryTemplate = get(),
+            circuitBreaker = get(),
+            appDispatchers = get()
         )
     }
 
     single<RemotePackageDataSource> {
         SupabasePackageDataSourceImpl(
             client = get(),
-            retryTemplate = get()
+            retryTemplate = get(),
+            circuitBreaker = get(),
+            appDispatchers = get()
         )
     }
 
     single<RemoteVehicleDataSource> {
         SupabaseVehicleDataSourceImpl(
             client = get(),
-            retryTemplate = get()
+            retryTemplate = get(),
+            circuitBreaker = get(),
+            appDispatchers = get()
         )
     }
 
     single<RemoteRouteDataSource> {
         SupabaseRouteDataSourceImpl(
             client = get(),
-            retryTemplate = get()
+            retryTemplate = get(),
+            circuitBreaker = get(),
+            appDispatchers = get()
         )
     }
 
