@@ -1,6 +1,8 @@
 package data.remote.ratelimit
 
 import java.util.concurrent.atomic.AtomicReference
+import kotlinx.coroutines.delay
+import kotlin.math.ceil
 
 class RateLimiter(
     private val maxBucketCapacity: Int,
@@ -68,7 +70,37 @@ class RateLimiter(
         }
     }
 
+    suspend fun acquire() {
+        while (!tryAcquire()) {
+            delay(calculateWaitMillis())
+        }
+    }
+
+    private fun calculateWaitMillis(): Long {
+        val current = state.get()
+        val now = nanoTimeSource.nanoTime()
+
+        val elapsedNanos =
+            (now - current.lastRefillNanos).coerceAtLeast(0L)
+
+        val refilledTokens = (
+                current.tokens +
+                        elapsedNanos.toDouble() / NANOS_PER_SECOND *
+                        refillRatePerSecond
+                ).coerceAtMost(maxBucketCapacity.toDouble())
+
+        val missingTokens = (1.0 - refilledTokens).coerceAtLeast(0.0)
+
+        val waitNanos =
+            missingTokens / refillRatePerSecond * NANOS_PER_SECOND
+
+        return ceil(waitNanos / NANOS_PER_MILLISECOND)
+            .toLong()
+            .coerceAtLeast(1L)
+    }
+
     private companion object {
         const val NANOS_PER_SECOND = 1_000_000_000.0
+        const val NANOS_PER_MILLISECOND = 1_000_000.0
     }
 }
