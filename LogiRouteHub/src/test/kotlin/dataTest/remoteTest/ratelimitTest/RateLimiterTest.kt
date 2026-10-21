@@ -38,6 +38,20 @@ class RateLimiterTest {
         assertFalse(rateLimiter.tryAcquire())
     }
 
+    @Test
+    fun `should refill a token after sufficient elapsed time`() {
+        val clock = FakeNanoTimeSource()
+        val rateLimiter = createRateLimiter(clock)
+
+        repeat(2) {
+            rateLimiter.tryAcquire()
+        }
+
+        clock.advanceBy(200_000_000L)
+
+        assertTrue(rateLimiter.tryAcquire())
+    }
+
     private fun createRateLimiter(
         clock: FakeNanoTimeSource = FakeNanoTimeSource()
     ) = RateLimiter(
