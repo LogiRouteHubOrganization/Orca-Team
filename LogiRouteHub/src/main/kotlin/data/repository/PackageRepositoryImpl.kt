@@ -1,4 +1,3 @@
-
 package data.repository
 
 import data.datasource.local.LocalPackageDataSource
@@ -54,71 +53,47 @@ class PackageRepositoryImpl(
         resourceId = logisticsPackage.id
     )
 
-        packageDataSource.addPackage(createdDto.toRaw())
-
-        rebuildCargoQueues()
-
-        findLocalPackageOrThrow(createdDto.id)
-    }.mapRepositoryException(
-        resourceType = "Package",
-        resourceId = logisticsPackage.id
-    )
-
     override suspend fun update(
         packageId: String,
         updateModel: PackageUpdateModel
-    ): Result<Package> = runCatchingCancellable {
-        val updatedDto = packageRemoteDataSource.updatePackage(
-            id = packageId,
-            packageRequest = updateModel.toUpdateDto()
+    ): Result<Package> =
+        runCatchingCancellable {
+            val updatedDto = packageRemoteDataSource.updatePackage(
+                id = packageId,
+                packageRequest = updateModel.toUpdateDto()
+            )
+
+            packageDataSource.updatePackage(updatedDto.toRaw())
+            rebuildCargoQueues()
+            findLocalPackageOrThrow(packageId)
+        }.mapRepositoryException(
+            resourceType = "Package",
+            resourceId = packageId
         )
-
-        packageDataSource.updatePackage(
-            updatedDto.toRaw()
-        )
-
-        rebuildCargoQueues()
-
-        findLocalPackageOrThrow(packageId)
-    }.mapRepositoryException(
-        resourceType = "Package",
-        resourceId = packageId
-    )
 
     override suspend fun delete(
         packageId: String
     ): Result<Unit> =
         runCatchingCancellable {
             packageRemoteDataSource.deletePackage(packageId)
-
             packageDataSource.deletePackage(packageId)
-
             rebuildCargoQueues()
             Unit
-        }.mapRepositoryException(resourceType = "Package", resourceId = packageId)
+        }.mapRepositoryException(
+            resourceType = "Package",
+            resourceId = packageId
+        )
 
     override suspend fun refresh(): Result<Unit> =
         runCatchingCancellable {
-            val remotePackages =
-                packageRemoteDataSource.getAllPackages()
+            val remotePackages = packageRemoteDataSource.getAllPackages()
+            val localPackages = remotePackages.map { it.toRaw() }
 
-            val localPackages =
-                remotePackages.map { packageDto ->
-                    packageDto.toRaw()
-                }
-
-            packageDataSource.replacePackages(
-                localPackages
-            )
-        }.mapRepositoryException(resourceType = "Package")
+            packageDataSource.replacePackages(localPackages)
+            rebuildCargoQueues()
         }.mapRepositoryException(
             resourceType = "Package"
         )
-
-    override suspend fun initializeCargoQueues(): Result<Unit> =
-        runCatchingCancellable {
-            rebuildCargoQueues()
-        }.mapLocalDataException()
 
     private suspend fun loadLocalPackages(): List<Package> {
         val rawPackages = packageDataSource.loadPackages()
