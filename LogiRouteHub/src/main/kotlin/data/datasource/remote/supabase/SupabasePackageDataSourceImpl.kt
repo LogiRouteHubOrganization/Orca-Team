@@ -11,12 +11,14 @@ import dispatcher.AppDispatchers
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.withContext
+import data.remote.ratelimit.RateLimiter
 
 class SupabasePackageDataSourceImpl(
     private val client: SupabaseClient,
     private val retryTemplate: RetryableRemoteDatasource,
     private val circuitBreaker: CircuitBreaker,
-    private val appDispatchers: AppDispatchers
+    private val appDispatchers: AppDispatchers,
+    private val rateLimiter: RateLimiter
 ) : RemotePackageDataSource {
 
     private val tableName = "packages"
@@ -25,7 +27,9 @@ class SupabasePackageDataSourceImpl(
         withContext(appDispatchers.io) {
 
             circuitBreaker.execute {
-                val result = retryTemplate.execute(operationName = "GetAllPackages") {
+                val result = retryTemplate.execute(
+                    operationName = "GetAllPackages") {
+                    rateLimiter.acquire()
                     safeApiCall { client.from(tableName).select().decodeList<PackageDto>() }
                 }
                 result.getOrThrow()
@@ -35,7 +39,9 @@ class SupabasePackageDataSourceImpl(
     override suspend fun getPackageById(id: String): PackageDto? =
         withContext(appDispatchers.io) {
             circuitBreaker.execute {
-                val result = retryTemplate.execute(operationName = "GetPackageById") {
+                val result = retryTemplate.execute(
+                    operationName = "GetPackageById") {
+                    rateLimiter.acquire()
                     safeApiCall {
                         client.from(tableName).select {
                             filter { eq("id", id) }
@@ -51,6 +57,7 @@ class SupabasePackageDataSourceImpl(
     ): PackageDto =withContext(appDispatchers.io) {
         circuitBreaker.execute {
             val result = retryTemplate.execute(operationName = "CreatePackage") {
+                rateLimiter.acquire()
                 safeApiCall {
                     client.from(tableName).insert(packageRequest) { select() }.decodeSingle<PackageDto>()
                 }
@@ -65,6 +72,7 @@ class SupabasePackageDataSourceImpl(
     ): PackageDto =withContext(appDispatchers.io) {
         circuitBreaker.execute {
             val result = retryTemplate.execute(operationName = "UpdatePackage") {
+                rateLimiter.acquire()
                 safeApiCall {
                     client.from(tableName).update(packageRequest) {
                         filter { eq("id", id) }
@@ -80,6 +88,7 @@ class SupabasePackageDataSourceImpl(
         withContext(appDispatchers.io) {
             circuitBreaker.execute {
                 val result = retryTemplate.execute(operationName = "DeletePackage") {
+                    rateLimiter.acquire()
                     safeApiCall {
                         client.from(tableName).delete {
                             filter { eq("id", id) }

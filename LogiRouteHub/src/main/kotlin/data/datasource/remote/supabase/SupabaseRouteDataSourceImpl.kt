@@ -5,6 +5,7 @@ import data.remote.circuitbreaker.CircuitBreaker
 import data.remote.dto.response.RouteDto
 import data.remote.dto.request.RouteCreateRequestDto
 import data.remote.dto.request.RouteUpdateRequestDto
+import data.remote.ratelimit.RateLimiter
 import data.remote.utils.safeApiCall
 import data.remote.retry.RetryableRemoteDatasource
 import io.github.jan.supabase.SupabaseClient
@@ -16,7 +17,8 @@ class SupabaseRouteDataSourceImpl(
     private val client: SupabaseClient,
     private val retryTemplate: RetryableRemoteDatasource,
     private val circuitBreaker: CircuitBreaker,
-    private val appDispatchers: AppDispatchers
+    private val appDispatchers: AppDispatchers,
+    private val rateLimiter: RateLimiter
 ) : RemoteRouteDataSource {
 
     private val tableName = "routes"
@@ -24,6 +26,7 @@ class SupabaseRouteDataSourceImpl(
     override suspend fun getAllRoutes(): List<RouteDto> = withContext(appDispatchers.io) {
         circuitBreaker.execute {
             val result = retryTemplate.execute(operationName = "GetAllRoutes") {
+                rateLimiter.acquire()
                 safeApiCall { client.from(tableName).select().decodeList<RouteDto>() }
             }
             result.getOrThrow()
@@ -33,6 +36,7 @@ class SupabaseRouteDataSourceImpl(
     override suspend fun getRouteById(id: String): RouteDto? = withContext(appDispatchers.io) {
         circuitBreaker.execute {
             val result = retryTemplate.execute(operationName = "GetRouteById") {
+                rateLimiter.acquire()
                 safeApiCall {
                     client.from(tableName).select {
                         filter { eq("id", id) }
@@ -48,6 +52,7 @@ class SupabaseRouteDataSourceImpl(
     ): RouteDto = withContext(appDispatchers.io) {
         circuitBreaker.execute {
             val result = retryTemplate.execute(operationName = "CreateRoute") {
+                rateLimiter.acquire()
                 safeApiCall {
                     client.from(tableName).insert(routeRequest) { select() }.decodeSingle<RouteDto>()
                 }
@@ -62,6 +67,7 @@ class SupabaseRouteDataSourceImpl(
     ): RouteDto = withContext(appDispatchers.io) {
         circuitBreaker.execute {
             val result = retryTemplate.execute(operationName = "UpdateRoute") {
+                rateLimiter.acquire()
                 safeApiCall {
                     client.from(tableName).update(routeRequest) {
                         filter { eq("id", id) }
@@ -77,6 +83,7 @@ class SupabaseRouteDataSourceImpl(
         withContext(appDispatchers.io) {
             circuitBreaker.execute {
                 val result = retryTemplate.execute(operationName = "DeleteRoute") {
+                    rateLimiter.acquire()
                     safeApiCall {
                         client.from(tableName).delete {
                             filter { eq("id", id) }
