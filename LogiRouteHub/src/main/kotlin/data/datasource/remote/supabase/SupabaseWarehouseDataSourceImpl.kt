@@ -5,6 +5,7 @@ import data.remote.circuitbreaker.CircuitBreaker
 import data.remote.dto.response.WarehouseDto
 import data.remote.dto.request.WarehouseCreateRequestDto
 import data.remote.dto.request.WarehouseUpdateRequestDto
+import data.remote.ratelimit.RateLimiter
 import data.remote.utils.safeApiCall
 import data.remote.retry.RetryableRemoteDatasource
 import io.github.jan.supabase.SupabaseClient
@@ -16,7 +17,8 @@ class SupabaseWarehouseDataSourceImpl(
     private val client: SupabaseClient,
     private val retryTemplate: RetryableRemoteDatasource,
     private val circuitBreaker: CircuitBreaker,
-    private val appDispatchers: AppDispatchers
+    private val appDispatchers: AppDispatchers,
+    private val rateLimiter: RateLimiter
 ) : RemoteWarehouseDataSource {
 
     private val tableName = "warehouses"
@@ -25,6 +27,7 @@ class SupabaseWarehouseDataSourceImpl(
         withContext(appDispatchers.io) {
             circuitBreaker.execute {
                 val result = retryTemplate.execute(operationName = "GetAllWarehouses") {
+                    rateLimiter.acquire()
                     safeApiCall {
                         client.from(tableName).select().decodeList<WarehouseDto>()
                     }
@@ -38,6 +41,7 @@ class SupabaseWarehouseDataSourceImpl(
     ): WarehouseDto? = withContext(appDispatchers.io) {
         circuitBreaker.execute {
             val result = retryTemplate.execute(operationName = "GetWarehouseById") {
+                rateLimiter.acquire()
                 safeApiCall {
                     client.from(tableName).select {
                         filter { eq("id", id) }
@@ -55,6 +59,7 @@ class SupabaseWarehouseDataSourceImpl(
             val result = retryTemplate.execute(
                 operationName = "CreateWarehouse"
             ) {
+                rateLimiter.acquire()
                 safeApiCall {
                     client.from(tableName).insert(warehouseRequest) {
                         select()
@@ -71,6 +76,7 @@ class SupabaseWarehouseDataSourceImpl(
     ): WarehouseDto = withContext(appDispatchers.io) {
         circuitBreaker.execute {
             val result = retryTemplate.execute(operationName = "UpdateWarehouse") {
+                rateLimiter.acquire()
                 safeApiCall {
                     client.from(tableName).update(warehouseRequest) {
                         filter { eq("id", id) }
@@ -87,6 +93,7 @@ class SupabaseWarehouseDataSourceImpl(
         withContext(appDispatchers.io){
             circuitBreaker.execute {
                 val result = retryTemplate.execute(operationName = "DeleteWarehouse") {
+                    rateLimiter.acquire()
                     safeApiCall {
                         client.from(tableName).delete {
                             filter { eq("id", id) }

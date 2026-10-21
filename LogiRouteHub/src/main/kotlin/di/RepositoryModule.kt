@@ -35,6 +35,7 @@ import domain.repository.PackageRepository
 import domain.repository.RouteRepository
 import domain.repository.VehicleRepository
 import domain.repository.WarehouseRepository
+import data.remote.ratelimit.RateLimiter
 
 import org.koin.dsl.module
 
@@ -136,34 +137,46 @@ val repositoryModule = module {
         )
     }
 
+
     single<RemoteWarehouseDataSource> {
         SupabaseWarehouseDataSourceImpl(
             client = get(),
-            retryTemplate = get()
+            retryTemplate = get(),
+            circuitBreaker = get(),
+            appDispatchers = get(),
+            rateLimiter = get()
         )
     }
 
     single<RemotePackageDataSource> {
         SupabasePackageDataSourceImpl(
             client = get(),
-            retryTemplate = get()
+            retryTemplate = get(),
+            circuitBreaker = get(),
+            appDispatchers = get(),
+            rateLimiter = get()
         )
     }
 
     single<RemoteVehicleDataSource> {
         SupabaseVehicleDataSourceImpl(
             client = get(),
-            retryTemplate = get()
+            retryTemplate = get(),
+            circuitBreaker = get(),
+            appDispatchers = get(),
+            rateLimiter = get()
         )
     }
 
     single<RemoteRouteDataSource> {
         SupabaseRouteDataSourceImpl(
             client = get(),
-            retryTemplate = get()
+            retryTemplate = get(),
+            circuitBreaker = get(),
+            appDispatchers = get(),
+            rateLimiter = get()
         )
     }
-
 
     single<WarehouseRepository> {
         WarehouseRepositoryImpl(

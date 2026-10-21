@@ -1,5 +1,7 @@
+
 package di
 
+import data.remote.ratelimit.RateLimiter
 import data.remote.retry.RetryableRemoteDatasource
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.createSupabaseClient
@@ -11,16 +13,22 @@ import java.io.File
 import java.util.Properties
 
 val networkModule = module {
-
     single<SupabaseClient> {
         val supabaseSpecs = loadSupabaseCredentials()
-        di.createSupabaseClient(supabaseSpecs)
+        createSupabaseClient(supabaseSpecs)
     }
 
     single {
         RetryableRemoteDatasource()
     }
+
+    single {
+        RateLimiter(
+            maxBucketCapacity = 10,
+            refillRatePerSecond = 5.0
+        )
     }
+}
 
 private fun createSupabaseClient(
     supabaseCredentials: SupabaseCredentials
@@ -73,9 +81,8 @@ private fun loadSupabaseCredentials(): SupabaseCredentials {
         supabaseKey = supabaseKey
     )
 }
+
 private data class SupabaseCredentials(
     val supabaseUrl: String,
     val supabaseKey: String
 )
-
-
