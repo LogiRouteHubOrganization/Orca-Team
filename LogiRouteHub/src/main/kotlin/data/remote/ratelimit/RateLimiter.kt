@@ -1,37 +1,71 @@
 package data.remote.ratelimit
 
+import java.util.concurrent.atomic.AtomicReference
 
 class RateLimiter(
     private val maxBucketCapacity: Int,
     private val refillRatePerSecond: Double,
     private val nanoTimeSource: NanoTimeSource = SystemNanoTimeSource
 ) {
-    private var tokens = maxBucketCapacity.toDouble()
-    private var lastRefillNanos = nanoTimeSource.nanoTime()
+
+    private data class BucketState(
+        val tokens: Double,
+        val lastRefillNanos: Long
+    )
+
+    private val state: AtomicReference<BucketState>
 
     init {
-        require(maxBucketCapacity > 0)
-        require(refillRatePerSecond.isFinite() && refillRatePerSecond > 0.0)
+        require(maxBucketCapacity > 0) {
+            "Bucket capacity must be greater than zero."
+        }
+        require(refillRatePerSecond.isFinite() && refillRatePerSecond > 0.0) {
+            "Refill rate must be finite and greater than zero."
+        }
+
+        state = AtomicReference(
+            BucketState(
+                tokens = maxBucketCapacity.toDouble(),
+                lastRefillNanos = nanoTimeSource.nanoTime()
+            )
+        )
     }
 
     fun tryAcquire(): Boolean {
-        refillTokens()
+        while (true) {
+            val current = state.get()
+            val now = nanoTimeSource.nanoTime()
 
-        if (tokens < 1.0) return false
+            val elapsedNanos =
+                (now - current.lastRefillNanos).coerceAtLeast(0L)
 
-        tokens -= 1.0
-        return true
-    }
+            val refilledTokens = (
+                    current.tokens +
+                            elapsedNanos.toDouble() / NANOS_PER_SECOND *
+                            refillRatePerSecond
+                    ).coerceAtMost(maxBucketCapacity.toDouble())
 
-    private fun refillTokens() {
-        val now = nanoTimeSource.nanoTime()
-        val elapsedNanos = (now - lastRefillNanos).coerceAtLeast(0L)
+            val availableState = BucketState(
+                tokens = refilledTokens,
+                lastRefillNanos = now
+            )
 
-        val tokensToAdd =
-            elapsedNanos.toDouble() / NANOS_PER_SECOND * refillRatePerSecond
+            if (refilledTokens < 1.0) {
+                if (state.compareAndSet(current, availableState)) {
+                    return false
+                }
 
-        tokens = (tokens + tokensToAdd).coerceAtMost(maxBucketCapacity.toDouble())
-        lastRefillNanos = now
+                continue
+            }
+
+            val updatedState = availableState.copy(
+                tokens = refilledTokens - 1.0
+            )
+
+            if (state.compareAndSet(current, updatedState)) {
+                return true
+            }
+        }
     }
 
     private companion object {
