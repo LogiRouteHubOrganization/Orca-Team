@@ -1,3 +1,4 @@
+
 package data.remote.ratelimit
 
 import java.util.concurrent.atomic.AtomicReference
@@ -21,7 +22,11 @@ class RateLimiter(
         require(maxBucketCapacity > 0) {
             "Bucket capacity must be greater than zero."
         }
-        require(refillRatePerSecond.isFinite() && refillRatePerSecond > 0.0) {
+
+        require(
+            refillRatePerSecond.isFinite() &&
+                    refillRatePerSecond > ZERO_TOKENS
+        ) {
             "Refill rate must be finite and greater than zero."
         }
 
@@ -39,7 +44,8 @@ class RateLimiter(
             val now = nanoTimeSource.nanoTime()
 
             val elapsedNanos =
-                (now - current.lastRefillNanos).coerceAtLeast(0L)
+                (now - current.lastRefillNanos)
+                    .coerceAtLeast(ZERO_NANOS)
 
             val refilledTokens = (
                     current.tokens +
@@ -52,7 +58,7 @@ class RateLimiter(
                 lastRefillNanos = now
             )
 
-            if (refilledTokens < 1.0) {
+            if (refilledTokens < ONE_TOKEN) {
                 if (state.compareAndSet(current, availableState)) {
                     return false
                 }
@@ -61,7 +67,7 @@ class RateLimiter(
             }
 
             val updatedState = availableState.copy(
-                tokens = refilledTokens - 1.0
+                tokens = refilledTokens - ONE_TOKEN
             )
 
             if (state.compareAndSet(current, updatedState)) {
@@ -81,7 +87,8 @@ class RateLimiter(
         val now = nanoTimeSource.nanoTime()
 
         val elapsedNanos =
-            (now - current.lastRefillNanos).coerceAtLeast(0L)
+            (now - current.lastRefillNanos)
+                .coerceAtLeast(ZERO_NANOS)
 
         val refilledTokens = (
                 current.tokens +
@@ -89,17 +96,25 @@ class RateLimiter(
                         refillRatePerSecond
                 ).coerceAtMost(maxBucketCapacity.toDouble())
 
-        val missingTokens = (1.0 - refilledTokens).coerceAtLeast(0.0)
+        val missingTokens =
+            (ONE_TOKEN - refilledTokens)
+                .coerceAtLeast(ZERO_TOKENS)
 
         val waitNanos =
-            missingTokens / refillRatePerSecond * NANOS_PER_SECOND
+            missingTokens / refillRatePerSecond *
+                    NANOS_PER_SECOND
 
         return ceil(waitNanos / NANOS_PER_MILLISECOND)
             .toLong()
-            .coerceAtLeast(1L)
+            .coerceAtLeast(MIN_WAIT_MILLIS)
     }
 
     private companion object {
+        const val ZERO_NANOS = 0L
+        const val ZERO_TOKENS = 0.0
+        const val ONE_TOKEN = 1.0
+        const val MIN_WAIT_MILLIS = 1L
+
         const val NANOS_PER_SECOND = 1_000_000_000.0
         const val NANOS_PER_MILLISECOND = 1_000_000.0
     }
