@@ -1,0 +1,48 @@
+package dataTest.remoteTest.ratelimitTest
+
+import data.remote.ratelimit.NanoTimeSource
+import data.remote.ratelimit.RateLimiter
+import org.junit.jupiter.api.Test
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
+
+class RateLimiterTest {
+
+    private class FakeNanoTimeSource(
+        var currentTimeNanos: Long = 0L
+    ) : NanoTimeSource {
+
+        override fun nanoTime(): Long = currentTimeNanos
+
+        fun advanceBy(nanos: Long) {
+            require(nanos >= 0L)
+            currentTimeNanos += nanos
+        }
+    }
+
+    @Test
+    fun `should allow acquiring a token when bucket is full`() {
+        val rateLimiter = createRateLimiter()
+
+        assertTrue(rateLimiter.tryAcquire())
+    }
+
+    @Test
+    fun `should reject acquiring a token when bucket is empty`() {
+        val rateLimiter = createRateLimiter()
+
+        repeat(2) {
+            rateLimiter.tryAcquire()
+        }
+
+        assertFalse(rateLimiter.tryAcquire())
+    }
+
+    private fun createRateLimiter(
+        clock: FakeNanoTimeSource = FakeNanoTimeSource()
+    ) = RateLimiter(
+        maxBucketCapacity = 2,
+        refillRatePerSecond = 5.0,
+        nanoTimeSource = clock
+    )
+}
