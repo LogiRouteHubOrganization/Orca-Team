@@ -52,6 +52,20 @@ class RateLimiterTest {
         assertTrue(rateLimiter.tryAcquire())
     }
 
+    @Test
+    fun `should not exceed maximum bucket capacity after elapsed time`() {
+        val clock = FakeNanoTimeSource()
+        val rateLimiter = createRateLimiter(clock)
+
+        clock.advanceBy(10_000_000_000L)
+
+        repeat(2) {
+            rateLimiter.tryAcquire()
+        }
+
+        assertFalse(rateLimiter.tryAcquire())
+    }
+
     private fun createRateLimiter(
         clock: FakeNanoTimeSource = FakeNanoTimeSource()
     ) = RateLimiter(
