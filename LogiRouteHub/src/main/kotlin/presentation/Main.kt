@@ -116,16 +116,16 @@ class Main(
         println("\n=== Warehouses ===")
 
         warehouseRepository.findAll().onSuccess { warehouses ->
-                println("Count: ${warehouses.size}")
+            println("Count: ${warehouses.size}")
 
-                warehouses.take(5).forEach { warehouse ->
-                    println(
-                        "${warehouse.id}, ${warehouse.name}, " +
-                                "${warehouse.regionalZone}, " +
-                                "${warehouse.latitude}, ${warehouse.longitude}"
-                    )
-                }
+            warehouses.take(5).forEach { warehouse ->
+                println(
+                    "${warehouse.id}, ${warehouse.name}, " +
+                            "${warehouse.regionalZone}, " +
+                            "${warehouse.latitude}, ${warehouse.longitude}"
+                )
             }
+        }
             .onFailure {
                 println("Failed: ${it.message}")
             }
@@ -135,18 +135,18 @@ class Main(
         println("\n=== Packages ===")
 
         packageRepository.findAll().onSuccess { packages ->
-                println("Count: ${packages.size}")
+            println("Count: ${packages.size}")
 
-                packages.take(5).forEach { logisticsPackage ->
-                    println(
-                        "${logisticsPackage.id}, " +
-                                "${logisticsPackage.weightByKg} kg, " +
-                                "${logisticsPackage.priority}, " +
-                                "${logisticsPackage.originWarehouse.id} -> " +
-                                logisticsPackage.destinationWarehouse.id
-                    )
-                }
+            packages.take(5).forEach { logisticsPackage ->
+                println(
+                    "${logisticsPackage.id}, " +
+                            "${logisticsPackage.weightByKg} kg, " +
+                            "${logisticsPackage.priority}, " +
+                            "${logisticsPackage.originWarehouse.id} -> " +
+                            logisticsPackage.destinationWarehouse.id
+                )
             }
+        }
             .onFailure {
                 println("Failed: ${it.message}")
             }
@@ -157,7 +157,8 @@ class Main(
         println("\n=== Vehicles ===")
 
         vehicleRepository.findAll()
-            .onSuccess { vehicles -> println("Count: ${vehicles.size}")
+            .onSuccess { vehicles ->
+                println("Count: ${vehicles.size}")
 
                 vehicles.take(5).forEach { vehicle ->
                     println(
@@ -177,18 +178,18 @@ class Main(
         println("\n=== Routes ===")
 
         routeRepository.findAll().onSuccess { routes ->
-                println("Count: ${routes.size}")
+            println("Count: ${routes.size}")
 
-                routes.take(5).forEach { route ->
-                    println(
-                        "${route.id}, " +
-                                "${route.originWarehouse.id} -> " +
-                                "${route.destinationWarehouse.id}, " +
-                                "${route.distanceKm} km, " +
-                                "${route.typicalDelayMin} min"
-                    )
-                }
+            routes.take(5).forEach { route ->
+                println(
+                    "${route.id}, " +
+                            "${route.originWarehouse.id} -> " +
+                            "${route.destinationWarehouse.id}, " +
+                            "${route.distanceKm} km, " +
+                            "${route.typicalDelayMin} min"
+                )
             }
+        }
             .onFailure {
                 println("Failed: ${it.message}")
             }
@@ -319,12 +320,18 @@ class Main(
         val destinationWarehouse = warehouses[1]
 
         return listOf(
-            Package(id = "PKG-900001", weightByKg = 4.0, priority = "URGENT",
-                originWarehouse = originWarehouse, destinationWarehouse = destinationWarehouse, volumeM3 = 8.0),
-            Package(id = "PKG-900002", weightByKg = 6.0, priority = "URGENT",
-                originWarehouse = originWarehouse, destinationWarehouse = destinationWarehouse, volumeM3 = 5.0),
-            Package(id = "PKG-900003", weightByKg = 6.0, priority = "STANDARD",
-                originWarehouse = originWarehouse, destinationWarehouse = destinationWarehouse, volumeM3 = 2.0)
+            Package(
+                id = "PKG-900001", weightByKg = 4.0, priority = "URGENT",
+                originWarehouse = originWarehouse, destinationWarehouse = destinationWarehouse, volumeM3 = 8.0
+            ),
+            Package(
+                id = "PKG-900002", weightByKg = 6.0, priority = "URGENT",
+                originWarehouse = originWarehouse, destinationWarehouse = destinationWarehouse, volumeM3 = 5.0
+            ),
+            Package(
+                id = "PKG-900003", weightByKg = 6.0, priority = "STANDARD",
+                originWarehouse = originWarehouse, destinationWarehouse = destinationWarehouse, volumeM3 = 2.0
+            )
         )
     }
 
@@ -453,5 +460,6 @@ class Main(
                 println("Dispatch failed: ${it.message}")
             }
     }
-}
 
+
+}
