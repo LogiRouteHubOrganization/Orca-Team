@@ -5,6 +5,7 @@ import data.remote.ratelimit.RateLimiter
 import org.junit.jupiter.api.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlinx.coroutines.runBlocking
 
 class RateLimiterTest {
 
@@ -62,6 +63,20 @@ class RateLimiterTest {
         repeat(2) {
             rateLimiter.tryAcquire()
         }
+
+        assertFalse(rateLimiter.tryAcquire())
+    }
+
+    @Test
+    fun `should wait until a token becomes available`() = runBlocking {
+        val rateLimiter = RateLimiter(
+            maxBucketCapacity = 1,
+            refillRatePerSecond = 100.0
+        )
+
+        rateLimiter.tryAcquire()
+
+        rateLimiter.acquire()
 
         assertFalse(rateLimiter.tryAcquire())
     }
