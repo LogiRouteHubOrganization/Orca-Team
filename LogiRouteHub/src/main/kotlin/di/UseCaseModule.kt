@@ -53,6 +53,9 @@ import domain.usecase.OptimizeCargoByWeightUseCase
 import domain.usecase.OptimizeCargoByWeightAndVolumeUseCase
 import domain.usecase.TrackActiveFleetUseCase
 import org.koin.dsl.module
+import data.telemetry.SimulatedTelemetryStreamingService
+import domain.service.TelemetryStreamingService
+
 
 val useCaseModule = module {
 
@@ -366,5 +369,8 @@ val useCaseModule = module {
         TrackActiveFleetUseCase(
             telemetryStreamingService = get()
         )
+    }
+    single<TelemetryStreamingService> {
+        SimulatedTelemetryStreamingService()
     }
 }

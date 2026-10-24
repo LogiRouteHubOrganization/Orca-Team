@@ -3,6 +3,7 @@ package di
 
 import data.remote.ratelimit.RateLimiter
 import data.remote.retry.RetryableRemoteDatasource
+import data.remote.circuitbreaker.CircuitBreaker
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
@@ -16,6 +17,9 @@ val networkModule = module {
     single<SupabaseClient> {
         val supabaseSpecs = loadSupabaseCredentials()
         createSupabaseClient(supabaseSpecs)
+    }
+    single {
+        CircuitBreaker()
     }
 
     single {

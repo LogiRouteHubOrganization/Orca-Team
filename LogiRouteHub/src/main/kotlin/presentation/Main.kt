@@ -4,7 +4,6 @@ import di.dispatcherModule
 import di.networkModule
 import di.presentationModule
 import di.repositoryModule
-import di.telemetryModule
 import di.useCaseModule
 import di.validatorModule
 
@@ -47,7 +46,6 @@ fun main(): Unit = runBlocking {
             repositoryModule,
             validatorModule,
             useCaseModule,
-            telemetryModule,
             dispatcherModule,
             presentationModule
         )
