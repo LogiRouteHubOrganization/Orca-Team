@@ -25,6 +25,7 @@ import edu.logiroute.logiroute.theme.InkBlack
 import edu.logiroute.logiroute.theme.TextSecondary
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.width
 import edu.logiroute.logiroute.fakeData.PackageSampleData
 
 private data class BadgeColors(val background :Color,val text :Color )

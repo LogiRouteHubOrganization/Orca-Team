@@ -18,6 +18,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.application
+import androidx.compose.ui.window.rememberWindowState
+import edu.logiroute.logiroute.fakeData.PackageSampleData.package3
+import edu.logiroute.logiroute.fakeData.VehicleSampleData.vehicle11
+import logiroutehub.frontend.logiroute.generated.resources.Res
+import logiroutehub.frontend.logiroute.generated.resources.byteloom_logo
+import org.jetbrains.compose.resources.painterResource
+import edu.logiroute.logiroute.fakeData.WarehouseSampleData
 
 @Composable
 fun WarehouseOperationalOverview(
@@ -43,7 +52,6 @@ fun WarehouseOperationalOverview(
                 Box (
                     modifier = Modifier
                         .clip(RoundedCornerShape(4.dp))
-                        .background(WarningAmber)
                         .padding(horizontal = 6.dp, vertical = 2.dp)
                 ){
                     BasicText(
@@ -93,10 +101,21 @@ fun WarehouseOperationalOverview(
             }
         }
     }
-
-
-
-
-
-
 }
+
+fun main() = application {
+    val testWarehouse = WarehouseSampleData.warehouse12.apply {
+        addPackage(package3)
+        addVehicle(vehicle11)
+    }
+
+    Window(
+        onCloseRequest = ::exitApplication,
+        title = "ByteBloom LogiRoute",
+        resizable = true,
+        icon = painterResource(Res.drawable.byteloom_logo)
+    ) {
+        WarehouseOperationalOverview(testWarehouse)
+    }
+}
+

@@ -69,9 +69,9 @@ object VehicleSampleData {
 
     val vehicle10 = Vehicle(
         id = "TRK-000010",
-        maxCapacityKg = 13500.0,
+        maxCapacityKg = 1.0,
         costPerKm = 3.1,
-        currentWarehouse = WarehouseSampleData.warehouse10
+        currentWarehouse = WarehouseSampleData.warehouse22
     )
 
     val vehicle11 = Vehicle(
@@ -85,7 +85,7 @@ object VehicleSampleData {
         id = "TRK-000012",
         maxCapacityKg = 16000.0,
         costPerKm = 3.8,
-        currentWarehouse = WarehouseSampleData.warehouse15
+        currentWarehouse = WarehouseSampleData.warehouse50
     )
 
     val AllVehicle = listOf(

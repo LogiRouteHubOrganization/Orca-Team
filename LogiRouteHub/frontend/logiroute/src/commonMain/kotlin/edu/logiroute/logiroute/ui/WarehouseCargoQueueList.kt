@@ -26,6 +26,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.application
+import androidx.compose.ui.window.rememberWindowState
+import edu.logiroute.logiroute.fakeData.PackageSampleData
+import edu.logiroute.logiroute.fakeData.WarehouseSampleData
+import logiroutehub.frontend.logiroute.generated.resources.Res
+import logiroutehub.frontend.logiroute.generated.resources.byteloom_logo
+import org.jetbrains.compose.resources.painterResource
 
 
 @Composable
@@ -60,7 +70,7 @@ fun WarehouseCargoQueueList (
                 stickyHeader(priority) {
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
+                            .clip(RoundedCornerShape(12.dp))
                             .fillMaxWidth()
                             .background(color = InkBlack)
                             .drawBehind {
@@ -102,9 +112,19 @@ fun WarehouseCargoQueueList (
                         Column {
                             BasicText(
                                 text = packageItem.destinationWarehouse.name,
+                                style = TextStyle(
+                                    fontWeight = FontWeight.Bold,
+                                    textAlign = TextAlign.Center,
+                                    fontSize = 12.sp
+                                )
                             )
                             BasicText(
-                                text = "${packageItem.weightByKg} kg"
+                                text = "${packageItem.weightByKg} kg",
+                                style = TextStyle(
+                                    fontWeight = FontWeight.Bold,
+                                    textAlign = TextAlign.Center,
+                                    fontSize = 12.sp
+                                )
                             )
                         }
                     }
@@ -113,3 +133,18 @@ fun WarehouseCargoQueueList (
             }
         }
     }
+
+fun main() = application {
+    val windowState = rememberWindowState(width = 1200.dp, height = 800.dp)
+
+    Window(
+        onCloseRequest = ::exitApplication,
+        title = "ByteBloom LogiRoute",
+        resizable = true,
+        icon = painterResource(Res.drawable.byteloom_logo)
+    ) {
+        WarehouseCargoQueueList(PackageSampleData.AllPackage)
+    }
+}
+
+

@@ -15,7 +15,7 @@ object WarehouseSampleData {
     val warehouse9 = Warehouse("WH-000009", "Nuseirat Parcel Center", "CENTRAL", 31.4489, 34.3912)
     val warehouse10 = Warehouse("WH-000010", "Al-Bureij Storage Hub", "CENTRAL", 31.4398, 34.4025)
     val warehouse11 = Warehouse("WH-000011", "Al-Maghazi Routing Facility", "CENTRAL", 31.4231, 34.3821)
-    val warehouse12 = Warehouse("WH-000012", "Al-Zawayda Cargo Shed", "CENTRAL", 31.4305, 34.3644)
+    val warehouse12 = Warehouse("WH-000012", "Al-Zawayda Cargo Shed", "CENTRAL", 31.4305, 34.3644,)
     val warehouse13 = Warehouse("WH-000013", "Bani Suheila Logistics Park", "SOUTH", 31.3411, 34.3312)
     val warehouse14 = Warehouse("WH-000014", "Abasan al-Kabira Depot", "SOUTH", 31.3289, 34.3489)
     val warehouse15 = Warehouse("WH-000015", "Khuza'a Outbound Center", "SOUTH", 31.3102, 34.3654)

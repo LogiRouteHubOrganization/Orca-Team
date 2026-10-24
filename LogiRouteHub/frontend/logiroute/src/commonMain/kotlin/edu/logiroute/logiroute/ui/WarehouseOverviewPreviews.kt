@@ -1,45 +1,50 @@
 package edu.logiroute.logiroute.presentation.preview
 
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import edu.logiroute.logiroute.ui.WarehouseOperationalOverview
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
-import androidx.compose.ui.window.rememberWindowState
+import edu.logiroute.logiroute.fakeData.PackageSampleData.package31
+import edu.logiroute.logiroute.fakeData.VehicleSampleData.vehicle12
 import edu.logiroute.logiroute.fakeData.WarehouseSampleData
+import logiroutehub.frontend.logiroute.generated.resources.Res
+import logiroutehub.frontend.logiroute.generated.resources.byteloom_logo
+import org.jetbrains.compose.resources.painterResource
+import edu.logiroute.logiroute.fakeData.PackageSampleData.package3
+import edu.logiroute.logiroute.fakeData.VehicleSampleData.vehicle11
 
-private val JetBlack = Color(0xFF0D141C)
 
 @Preview
 @Composable
 fun WarehouseHeavyDataPreview() {
-    val heavyWarehouse = WarehouseSampleData.warehouse12
-
+    val testWarehouse1 = WarehouseSampleData.warehouse50.apply {
+        addPackage(package31)
+        addVehicle(vehicle12) }
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(JetBlack)
     ) {
-        WarehouseOperationalOverview(warehouse = heavyWarehouse)
+        WarehouseOperationalOverview(warehouse = testWarehouse1)
     }
 }
 
 @Preview
 @Composable
 fun WarehouseOverloadedPreview() {
-    val overloadedWarehouse = WarehouseSampleData.warehouse15
+
+    val overloadedWarehouse2 = WarehouseSampleData.warehouse12.apply {
+        addPackage(package3)
+        addVehicle(vehicle11)
+    }
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(JetBlack)
     ) {
-        WarehouseOperationalOverview(warehouse = overloadedWarehouse)
+        WarehouseOperationalOverview(warehouse = overloadedWarehouse2)
     }
 }
 
@@ -47,28 +52,28 @@ fun WarehouseOverloadedPreview() {
 @Preview
 @Composable
 fun WarehouseZeroStatePreview() {
-    val emptyWarehouse = WarehouseSampleData.warehouse50
+    val emptyWarehouse =  WarehouseSampleData.warehouse22.apply {}
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(JetBlack)
     ) {
         WarehouseOperationalOverview(warehouse = emptyWarehouse)
     }
 }
 
 fun main() = application {
-    val windowState = rememberWindowState(width = 1200.dp, height = 800.dp)
 
     Window(
         onCloseRequest = ::exitApplication,
-        state = windowState,
-        title = "LogiRoute - Warehouse Operational Overview Previews"
+        title = "ByteBloom LogiRoute",
+        resizable = true,
+        icon = painterResource(Res.drawable.byteloom_logo)
     ) {
 
-
+        //WarehouseHeavyDataPreview()
         WarehouseOverloadedPreview()
+        //WarehouseZeroStatePreview()
 
 
     }
