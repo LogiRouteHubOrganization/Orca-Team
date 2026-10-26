@@ -51,6 +51,7 @@ import domain.usecase.crud.warehouse.GetWarehouseByIdUseCase
 import domain.usecase.crud.warehouse.UpdateWarehouseUseCase
 import domain.usecase.OptimizeCargoByWeightUseCase
 import domain.usecase.OptimizeCargoByWeightAndVolumeUseCase
+import domain.usecase.OptimizeRoute2OptUseCase
 import domain.usecase.TrackActiveFleetUseCase
 import org.koin.dsl.module
 import data.telemetry.SimulatedTelemetryStreamingService
@@ -372,5 +373,9 @@ val useCaseModule = module {
     }
     single<TelemetryStreamingService> {
         SimulatedTelemetryStreamingService()
+    }
+
+    factory {
+        OptimizeRoute2OptUseCase()
     }
 }
