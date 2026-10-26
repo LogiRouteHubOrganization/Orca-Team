@@ -14,6 +14,7 @@ import domain.repository.RouteRepository
 import domain.repository.VehicleRepository
 import domain.repository.WarehouseRepository
 
+import domain.usecase.DebouncedTelemetryQueryUseCase
 import domain.usecase.AnalyzePackageDestinationDemandUseCase
 import domain.usecase.FindFewestHopsRouteUseCase
 import domain.usecase.FindOptimalPathUseCase
@@ -34,6 +35,9 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.collect
 import org.koin.core.Koin
 import org.koin.core.context.startKoin
 
@@ -107,6 +111,7 @@ class Main(
         initializeRelationships()
         demoRepositories()
         demoAlgorithms()
+        demoDebouncedTelemetryQuery()
         startInteractiveCli()
     }
 
@@ -592,4 +597,75 @@ class Main(
                 )
             }
     }
+        private suspend fun demoDebouncedTelemetryQuery() {
+
+            println("\n=== Debounced Telemetry Query Pipeline ===")
+
+            val useCase = DebouncedTelemetryQueryUseCase(
+                vehicleRepository = vehicleRepository,
+                searchDelayMillis = 1000L
+            )
+
+            // Test 1: Rapid typing
+            println("\n--- Test 1: Rapid Typing ---")
+
+            val rapidQueries = flow {
+
+                val inputs = listOf(
+                    "T",
+                    "TR",
+                    "TRK",
+                    "TRK-",
+                    "TRK-000001"
+                )
+
+                inputs.forEach { query ->
+                    println("User typed: $query")
+                    emit(query)
+                    delay(40)
+                }
+            }
+
+            var completedSearches = 0
+
+            useCase.execute(rapidQueries).collect { result ->
+
+                completedSearches++
+
+                result
+                    .onSuccess { vehicle ->
+                        println("Search completed: ${vehicle?.id ?: "Not found"}")
+                    }
+                    .onFailure {
+                        println("Search failed: ${it.message}")
+                    }
+            }
+
+            println("Total completed searches: $completedSearches")
+
+            // Test 2: In-flight cancellation
+            println("\n--- Test 2: In-Flight Cancellation ---")
+
+            val cancellationQueries = flow {
+
+                println("User typed: TRK-000001")
+                emit("TRK-000001")
+
+                delay(350)
+
+                println("User typed: TRK-000002")
+                emit("TRK-000002")
+            }
+
+            useCase.execute(cancellationQueries).collect { result ->
+
+                result
+                    .onSuccess { vehicle ->
+                        println("Search completed: ${vehicle?.id ?: "Not found"}")
+                    }
+                    .onFailure {
+                        println("Search failed: ${it.message}")
+                    }
+            }
+        }
 }
