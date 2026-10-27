@@ -1,7 +1,7 @@
 package domain.algorithm.geohash
 
 private const val BASE_32 = "0123456789bcdefghjkmnpqrstuvwxyz"
-fun encode (
+fun encodeGeoHash (
     Longitude: Double,
     Latitude: Double,
     Precision : Int =12
