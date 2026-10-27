@@ -41,4 +41,4 @@ class WarehouseSpatialIndex(
 
         return results
     }
-}
+}//
