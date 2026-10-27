@@ -8,7 +8,7 @@ class WarehouseSpatialIndex(
     private val index: MutableMap<String, MutableList<Warehouse>> = HashMap()
 
     fun addWarehouse(warehouse: Warehouse) {
-        val prefix = encode(
+        val prefix = encodeGeoHash(
             Longitude = warehouse.longitude,
             Latitude = warehouse.latitude,
             Precision = precision
@@ -21,7 +21,7 @@ class WarehouseSpatialIndex(
     }
 
     fun findNearbyWarehouses(latitude: Double, longitude: Double): List<Warehouse> {
-        val currentHash = encode(
+        val currentHash = encodeGeoHash(
             Longitude = longitude,
             Latitude = latitude,
             Precision = precision
