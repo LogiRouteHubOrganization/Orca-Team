@@ -85,4 +85,4 @@ fun getNeighbors(geohash: String): NeighboringBoxes {
         southEast = safeEncode(centerLat - latDelta, centerLon + lonDelta),
         southWest = safeEncode(centerLat - latDelta, centerLon - lonDelta)
     )
-}
+}//
