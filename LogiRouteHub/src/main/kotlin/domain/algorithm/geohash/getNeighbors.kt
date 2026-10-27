@@ -28,7 +28,7 @@ data class NeighboringBoxes(
         northEast, northWest, southEast, southWest
     )
 }
-fun decode(geohash: String): BoundingBox {
+fun decodeGeoHash(geohash: String): BoundingBox {
     require(geohash.isNotEmpty()) { "Geohash cannot be empty" }
     var minLat = -90.0
     var maxLat = 90.0
@@ -58,7 +58,7 @@ fun decode(geohash: String): BoundingBox {
 
 
 fun getNeighbors(geohash: String): NeighboringBoxes {
-    val box = decode(geohash)
+    val box = decodeGeoHash(geohash)
     val precision = geohash.length
     val latDelta = box.latHeight
     val lonDelta = box.lonWidth
@@ -69,7 +69,7 @@ fun getNeighbors(geohash: String): NeighboringBoxes {
         var safeLon = lon
         if (safeLon > 180.0) safeLon -= 360.0
         if (safeLon < -180.0) safeLon += 360.0
-        return encode(
+        return encodeGeoHash(
             Longitude = safeLon,
             Latitude = safeLat,
             Precision = precision
